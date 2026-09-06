@@ -4,6 +4,7 @@ define([], function () {
 		this.announcer = announcer;
 		this.sectorObserver = null;
 		this.overlayObserver = null;
+		this.levelObserver = null;
 		this.announceTimer = null;
 		this.lastSectorSummary = "";
 		this.init();
@@ -43,6 +44,8 @@ define([], function () {
 			details.setAttribute("aria-label", "Selected sector details");
 		}
 
+		this.configureLevelOptions();
+		this.observeLevelOptions();
 		this.configureOverlayCells(document);
 		this.observeOverlayCells();
 		this.observeSectorDetails();
@@ -52,6 +55,44 @@ define([], function () {
 		let element = document.getElementById(id);
 		if (!element || element.getAttribute("aria-label") || element.getAttribute("aria-labelledby")) return;
 		element.setAttribute("aria-label", label);
+	};
+
+	AccessibilityMapHelper.prototype.configureLevelOptions = function () {
+		let select = document.getElementById("select-header-level");
+		if (!select) return;
+		let options = select.querySelectorAll("option");
+		for (let i = 0; i < options.length; i++) {
+			let option = options[i];
+			let text = this.normalize(option.textContent);
+			if (!text) continue;
+			let state = "";
+			if (/\(!\)\s*$/.test(text)) state = "new changes";
+			else if (/\(x\)\s*$/i.test(text)) state = "cleared";
+			else if (/\(-\)\s*$/.test(text)) state = "not cleared";
+			let base = text.replace(/\s*\((?:!|x|-)\)\s*$/i, "").trim();
+			option.setAttribute("aria-label", state ? base + ", " + state : base);
+		}
+
+		let bubble = document.getElementById("select-map-level-bubble");
+		if (bubble) {
+			bubble.setAttribute("aria-hidden", "true");
+			let count = parseInt(this.normalize(bubble.textContent), 10);
+			let baseLabel = "Map level";
+			if (isFinite(count) && count > 0) {
+				baseLabel += ", " + count + (count === 1 ? " level has new changes" : " levels have new changes");
+			}
+			select.setAttribute("aria-label", baseLabel);
+		}
+	};
+
+	AccessibilityMapHelper.prototype.observeLevelOptions = function () {
+		if (this.levelObserver || typeof MutationObserver === "undefined") return;
+		let select = document.getElementById("select-header-level");
+		let bubble = document.getElementById("select-map-level-bubble");
+		if (!select) return;
+		this.levelObserver = new MutationObserver(() => this.configureLevelOptions());
+		this.levelObserver.observe(select, { childList: true, characterData: true, subtree: true });
+		if (bubble) this.levelObserver.observe(bubble, { childList: true, characterData: true, subtree: true });
 	};
 
 	AccessibilityMapHelper.prototype.configureOverlayCells = function (root) {
