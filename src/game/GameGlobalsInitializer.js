@@ -41,6 +41,7 @@ define([
 	'game/helpers/ui/AccessibilityPopupHelper',
 	'game/helpers/ui/AccessibilityProgressHelper',
 	'game/helpers/ui/AccessibilityScreenHelper',
+	'game/helpers/ui/AccessibilityStructureHelper',
 	'game/helpers/ui/AccessibilityTabStatusHelper',
 	'game/helpers/ui/AccessibilityTechTreeHelper',
 	'game/helpers/ui/ChangeLogHelper',
@@ -89,6 +90,7 @@ define([
 	AccessibilityPopupHelper,
 	AccessibilityProgressHelper,
 	AccessibilityScreenHelper,
+	AccessibilityStructureHelper,
 	AccessibilityTabStatusHelper,
 	AccessibilityTechTreeHelper,
 	ChangeLogHelper,
@@ -157,6 +159,7 @@ define([
 				GameGlobals.accessibilityProgressHelper = new AccessibilityProgressHelper();
 				GameGlobals.accessibilityCollapsibleHelper = new AccessibilityCollapsibleHelper();
 				GameGlobals.accessibilityScreenHelper = new AccessibilityScreenHelper();
+				GameGlobals.accessibilityStructureHelper = new AccessibilityStructureHelper();
 				GameGlobals.accessibilityTabStatusHelper = new AccessibilityTabStatusHelper();
 				GameGlobals.accessibilityTechTreeHelper = new AccessibilityTechTreeHelper();
 				GameGlobals.uiFunctions = new UIFunctions();
