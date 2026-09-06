@@ -139,19 +139,20 @@ define([], function () {
 
 		for (let i = 0; i < controls.length; i++) {
 			let control = controls[i];
-			if (this.hasAccessibleName(control)) continue;
-
-			let type = (control.getAttribute("type") || "").toLowerCase();
-			if (type === "checkbox" || type === "radio") {
-				this.labelCheckboxLikeControl(control);
-			}
 
 			if (!this.hasAccessibleName(control)) {
-				this.labelControlFromContainer(control);
-			}
+				let type = (control.getAttribute("type") || "").toLowerCase();
+				if (type === "checkbox" || type === "radio") {
+					this.labelCheckboxLikeControl(control);
+				}
 
-			if (!this.hasAccessibleName(control)) {
-				this.labelControlFromName(control);
+				if (!this.hasAccessibleName(control)) {
+					this.labelControlFromContainer(control);
+				}
+
+				if (!this.hasAccessibleName(control)) {
+					this.labelControlFromName(control);
+				}
 			}
 
 			if (control.classList && control.classList.contains("amount")) {
@@ -233,7 +234,11 @@ define([], function () {
 			if (!target || !callout) continue;
 
 			let calloutID = this.ensureElementID(callout, "accessibility-callout");
-			callout.setAttribute("role", "tooltip");
+			let hasInteractiveContent = !!callout.querySelector("button, input, select, textarea, a[href], [tabindex]");
+			callout.setAttribute("role", hasInteractiveContent ? "group" : "tooltip");
+			if (hasInteractiveContent && !callout.getAttribute("aria-label")) {
+				callout.setAttribute("aria-label", "Details and actions");
+			}
 
 			let focusTarget = this.getFocusableCalloutTarget(target);
 			if (!focusTarget) {
