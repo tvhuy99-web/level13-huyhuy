@@ -27,6 +27,7 @@ jobs:
             node --check "$file"
           done < <(find src/game/helpers/ui -maxdepth 1 -name 'Accessibility*.js' -print0)
           node --check src/game/GameGlobalsInitializer.js
+          node --check scripts/accessibility-b1-smoke.js
 
       - name: Verify RequireJS accessibility modules exist
         shell: bash
@@ -38,3 +39,6 @@ jobs:
               exit 1
             }
           done < <(grep -o "game/helpers/ui/Accessibility[A-Za-z0-9]*" src/game/GameGlobalsInitializer.js | sort -u)
+
+      - name: Verify B1 accessibility path contract
+        run: node scripts/accessibility-b1-smoke.js
