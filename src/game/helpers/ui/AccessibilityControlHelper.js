@@ -19,12 +19,17 @@ define([], function () {
 		this.observeControls();
 	};
 
+	AccessibilityControlHelper.prototype.getSelector = function () {
+		return "button, [role='button'], input:not([type='hidden']), select, textarea, a[href]";
+	};
+
 	AccessibilityControlHelper.prototype.configureControls = function (root) {
 		if (!root) return;
 		let controls = [];
-		if (root.matches && root.matches("button, [role='button']")) controls.push(root);
+		let selector = this.getSelector();
+		if (root.matches && root.matches(selector)) controls.push(root);
 		if (root.querySelectorAll) {
-			let nested = root.querySelectorAll("button, [role='button']");
+			let nested = root.querySelectorAll(selector);
 			for (let i = 0; i < nested.length; i++) controls.push(nested[i]);
 		}
 
@@ -33,22 +38,35 @@ define([], function () {
 
 	AccessibilityControlHelper.prototype.configureControl = function (control) {
 		if (!control) return;
+		let isFormControl = control.matches && control.matches("input, select, textarea");
 		let visibleText = this.normalize(control.textContent);
-		let hasExplicitName = !!control.getAttribute("aria-label") || !!control.getAttribute("aria-labelledby");
-		let hasMeaningfulText = visibleText && !this.isGlyphOnly(visibleText);
+		let hasExplicitName = this.hasExplicitName(control);
+		let hasMeaningfulText = !isFormControl && visibleText && !this.isGlyphOnly(visibleText);
 
 		if (!hasExplicitName && !hasMeaningfulText) {
 			let label = this.getBestLabel(control);
 			if (label) control.setAttribute("aria-label", label);
 		}
 
-		let nowHasAccessibleName = !!control.getAttribute("aria-label") || !!control.getAttribute("aria-labelledby") || hasMeaningfulText;
-		if (nowHasAccessibleName) this.hideDecorativeImages(control);
+		let nowHasAccessibleName = this.hasExplicitName(control) || hasMeaningfulText;
+		if (nowHasAccessibleName && control.matches && control.matches("button, [role='button'], a[href]")) {
+			this.hideDecorativeImages(control);
+		}
+	};
+
+	AccessibilityControlHelper.prototype.hasExplicitName = function (control) {
+		if (!control) return false;
+		if (control.getAttribute("aria-label") || control.getAttribute("aria-labelledby")) return true;
+		if (control.labels && control.labels.length > 0) return true;
+		return false;
 	};
 
 	AccessibilityControlHelper.prototype.getBestLabel = function (control) {
 		let title = this.normalize(control.getAttribute("title"));
 		if (title) return title;
+
+		let placeholder = this.normalize(control.getAttribute("placeholder"));
+		if (placeholder) return placeholder;
 
 		let image = control.querySelector ? control.querySelector("img[alt]") : null;
 		let imageAlt = image ? this.normalize(image.getAttribute("alt")) : "";
@@ -56,15 +74,23 @@ define([], function () {
 
 		let id = this.normalize(control.id);
 		if (id) {
-			let idLabel = this.humanize(id.replace(/^btn[-_]?/i, ""));
+			let idLabel = id
+				.replace(/^btn[-_]?/i, "")
+				.replace(/^select[-_]?/i, "")
+				.replace(/[-_]?dropdown$/i, "")
+				.replace(/^settings[-_]?checkbox[-_]?/i, "");
+			idLabel = this.humanize(idLabel);
 			if (idLabel) return idLabel;
 		}
+
+		let name = this.normalize(control.getAttribute("name"));
+		if (name) return this.humanize(name);
 
 		let action = this.normalize(control.getAttribute("action"));
 		if (action) return this.humanize(action);
 
 		let text = this.normalize(control.textContent);
-		if (text) return this.humanize(text);
+		if (text && !(control.matches && control.matches("select"))) return this.humanize(text);
 		return "";
 	};
 
@@ -98,6 +124,7 @@ define([], function () {
 	AccessibilityControlHelper.prototype.observeControls = function () {
 		if (this.observer || typeof MutationObserver === "undefined" || !document.body) return;
 		this.observer = new MutationObserver((mutations) => {
+			let selector = this.getSelector();
 			for (let i = 0; i < mutations.length; i++) {
 				let mutation = mutations[i];
 				if (mutation.type === "childList") {
@@ -108,14 +135,14 @@ define([], function () {
 				}
 				if (mutation.type === "attributes") {
 					let target = mutation.target;
-					if (target.matches && target.matches("button, [role='button']")) this.configureControl(target);
+					if (target.matches && target.matches(selector)) this.configureControl(target);
 				}
 			}
 		});
 		this.observer.observe(document.body, {
 			childList: true,
 			attributes: true,
-			attributeFilter: ["aria-label", "aria-labelledby", "title", "action"],
+			attributeFilter: ["aria-label", "aria-labelledby", "title", "action", "placeholder", "name"],
 			subtree: true,
 		});
 	};
