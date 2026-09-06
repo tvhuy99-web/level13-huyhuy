@@ -35,6 +35,7 @@ define([], function () {
 			if (!popup.getAttribute("role")) popup.setAttribute("role", "dialog");
 			popup.setAttribute("aria-modal", "true");
 			this.ensurePopupLabel(popup);
+			this.bindFocusTrap(popup);
 
 			if (!this.popupStates.has(popup)) {
 				this.popupStates.set(popup, {
@@ -54,6 +55,50 @@ define([], function () {
 			heading.id = "accessibility-popup-title-" + this.generatedIDCounter;
 		}
 		popup.setAttribute("aria-labelledby", heading.id);
+	};
+
+	AccessibilityPopupHelper.prototype.bindFocusTrap = function (popup) {
+		if (!popup || popup.getAttribute("data-accessibility-focus-trap") === "true") return;
+		popup.setAttribute("data-accessibility-focus-trap", "true");
+		popup.addEventListener("keydown", (event) => {
+			if (event.key !== "Tab" || !this.isVisible(popup)) return;
+			let focusable = this.getFocusableElements(popup);
+			if (focusable.length === 0) {
+				event.preventDefault();
+				this.focusPopupFallback(popup);
+				return;
+			}
+
+			let first = focusable[0];
+			let last = focusable[focusable.length - 1];
+			let active = document.activeElement;
+			if (event.shiftKey && (active === first || !popup.contains(active))) {
+				event.preventDefault();
+				last.focus();
+			} else if (!event.shiftKey && (active === last || !popup.contains(active))) {
+				event.preventDefault();
+				first.focus();
+			}
+		});
+	};
+
+	AccessibilityPopupHelper.prototype.getFocusableElements = function (popup) {
+		if (!popup || !popup.querySelectorAll) return [];
+		let selector = "button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])";
+		let nodes = popup.querySelectorAll(selector);
+		let result = [];
+		for (let i = 0; i < nodes.length; i++) {
+			let element = nodes[i];
+			if (this.isElementFocusableNow(element)) result.push(element);
+		}
+		return result;
+	};
+
+	AccessibilityPopupHelper.prototype.isElementFocusableNow = function (element) {
+		if (!element || element.hidden || element.getAttribute("aria-hidden") === "true") return false;
+		let style = window.getComputedStyle ? window.getComputedStyle(element) : null;
+		if (style && (style.display === "none" || style.visibility === "hidden")) return false;
+		return element.getClientRects().length > 0;
 	};
 
 	AccessibilityPopupHelper.prototype.observePopups = function () {
@@ -113,16 +158,24 @@ define([], function () {
 		if (!this.isVisible(popup)) return;
 		if (popup.contains(document.activeElement)) return;
 
-		let focusable = popup.querySelector("button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])");
-		if (focusable) {
-			focusable.focus();
+		let focusable = this.getFocusableElements(popup);
+		if (focusable.length > 0) {
+			focusable[0].focus();
 			return;
 		}
+		this.focusPopupFallback(popup);
+	};
 
-		let heading = popup.querySelector("h1, h2, h3, h4");
+	AccessibilityPopupHelper.prototype.focusPopupFallback = function (popup) {
+		let heading = popup ? popup.querySelector("h1, h2, h3, h4") : null;
 		if (heading) {
 			heading.setAttribute("tabindex", "-1");
 			heading.focus();
+			return;
+		}
+		if (popup) {
+			popup.setAttribute("tabindex", "-1");
+			popup.focus();
 		}
 	};
 
