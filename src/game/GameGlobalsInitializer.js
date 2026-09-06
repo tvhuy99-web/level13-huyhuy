@@ -29,8 +29,11 @@ define([
 	'game/helpers/UpgradeEffectsHelper',
 	'game/helpers/ButtonHelper',
 	'game/helpers/WorldHelper',
+	'game/helpers/ui/AccessibilityDialogueHelper',
+	'game/helpers/ui/AccessibilityFightHelper',
 	'game/helpers/ui/AccessibilityHelper',
 	'game/helpers/ui/AccessibilityMapHelper',
+	'game/helpers/ui/AccessibilityPopupHelper',
 	'game/helpers/ui/ChangeLogHelper',
 	'game/helpers/ui/UIMapHelper',
 	'game/helpers/ui/UITechTreeHelper',
@@ -65,8 +68,11 @@ define([
 	UpgradeEffectsHelper,
 	ButtonHelper,
 	WorldHelper,
+	AccessibilityDialogueHelper,
+	AccessibilityFightHelper,
 	AccessibilityHelper,
 	AccessibilityMapHelper,
+	AccessibilityPopupHelper,
 	ChangeLogHelper,
 	UIMapHelper,
 	UITechTreeHelper,
@@ -123,6 +129,9 @@ define([
 			if (!headless) {
 				GameGlobals.accessibilityHelper = new AccessibilityHelper();
 				GameGlobals.accessibilityMapHelper = new AccessibilityMapHelper(GameGlobals.accessibilityHelper);
+				GameGlobals.accessibilityPopupHelper = new AccessibilityPopupHelper();
+				GameGlobals.accessibilityDialogueHelper = new AccessibilityDialogueHelper();
+				GameGlobals.accessibilityFightHelper = new AccessibilityFightHelper(GameGlobals.accessibilityHelper);
 				GameGlobals.uiFunctions = new UIFunctions();
 			}
 		}
