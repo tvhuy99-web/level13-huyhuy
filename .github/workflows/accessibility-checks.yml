@@ -29,6 +29,7 @@ jobs:
           node --check src/game/GameGlobalsInitializer.js
           node --check scripts/accessibility-b1-smoke.js
           node --check scripts/accessibility-b2-smoke.js
+          node --check scripts/accessibility-final-audit-smoke.js
 
       - name: Verify RequireJS accessibility modules exist
         shell: bash
@@ -46,3 +47,6 @@ jobs:
 
       - name: Verify B2 accessibility popup contract
         run: node scripts/accessibility-b2-smoke.js
+
+      - name: Verify final accessibility audit contract
+        run: node scripts/accessibility-final-audit-smoke.js
