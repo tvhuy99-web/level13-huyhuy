@@ -30,6 +30,7 @@ define([
 	'game/helpers/ButtonHelper',
 	'game/helpers/WorldHelper',
 	'game/helpers/ui/AccessibilityHelper',
+	'game/helpers/ui/AccessibilityMapHelper',
 	'game/helpers/ui/ChangeLogHelper',
 	'game/helpers/ui/UIMapHelper',
 	'game/helpers/ui/UITechTreeHelper',
@@ -65,6 +66,7 @@ define([
 	ButtonHelper,
 	WorldHelper,
 	AccessibilityHelper,
+	AccessibilityMapHelper,
 	ChangeLogHelper,
 	UIMapHelper,
 	UITechTreeHelper,
@@ -120,6 +122,7 @@ define([
 			
 			if (!headless) {
 				GameGlobals.accessibilityHelper = new AccessibilityHelper();
+				GameGlobals.accessibilityMapHelper = new AccessibilityMapHelper(GameGlobals.accessibilityHelper);
 				GameGlobals.uiFunctions = new UIFunctions();
 			}
 		}
