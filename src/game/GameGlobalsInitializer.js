@@ -29,6 +29,7 @@ define([
 	'game/helpers/UpgradeEffectsHelper',
 	'game/helpers/ButtonHelper',
 	'game/helpers/WorldHelper',
+	'game/helpers/ui/AccessibilityHelper',
 	'game/helpers/ui/ChangeLogHelper',
 	'game/helpers/ui/UIMapHelper',
 	'game/helpers/ui/UITechTreeHelper',
@@ -63,6 +64,7 @@ define([
 	UpgradeEffectsHelper,
 	ButtonHelper,
 	WorldHelper,
+	AccessibilityHelper,
 	ChangeLogHelper,
 	UIMapHelper,
 	UITechTreeHelper,
@@ -117,6 +119,7 @@ define([
 			}
 			
 			if (!headless) {
+				GameGlobals.accessibilityHelper = new AccessibilityHelper();
 				GameGlobals.uiFunctions = new UIFunctions();
 			}
 		}
