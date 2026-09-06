@@ -203,6 +203,8 @@ define([], function () {
 
 	AccessibilityPopupHelper.prototype.getPreferredInitialFocus = function (popup) {
 		if (!popup) return null;
+		// B2: input dialogs should start on the field, while Settings should start
+		// on the first setting instead of the Close button.
 		if (popup.id === "common-popup") {
 			let container = popup.querySelector("#common-popup-input-container");
 			let input = container ? container.querySelector("input:not([disabled])") : null;
