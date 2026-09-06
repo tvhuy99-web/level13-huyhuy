@@ -36,6 +36,7 @@ define([
 	'game/helpers/ui/AccessibilityControlHelper',
 	'game/helpers/ui/AccessibilityDialogueHelper',
 	'game/helpers/ui/AccessibilityFightHelper',
+	'game/helpers/ui/AccessibilityFinalAuditHelper',
 	'game/helpers/ui/AccessibilityHelper',
 	'game/helpers/ui/AccessibilityIndicatorHelper',
 	'game/helpers/ui/AccessibilityMapHelper',
@@ -88,6 +89,7 @@ define([
 	AccessibilityControlHelper,
 	AccessibilityDialogueHelper,
 	AccessibilityFightHelper,
+	AccessibilityFinalAuditHelper,
 	AccessibilityHelper,
 	AccessibilityIndicatorHelper,
 	AccessibilityMapHelper,
@@ -171,6 +173,7 @@ define([
 				GameGlobals.accessibilityStructureHelper = new AccessibilityStructureHelper();
 				GameGlobals.accessibilityTabStatusHelper = new AccessibilityTabStatusHelper();
 				GameGlobals.accessibilityTechTreeHelper = new AccessibilityTechTreeHelper();
+				GameGlobals.accessibilityFinalAuditHelper = new AccessibilityFinalAuditHelper(GameGlobals.accessibilityHelper);
 				GameGlobals.uiFunctions = new UIFunctions();
 			}
 		}
