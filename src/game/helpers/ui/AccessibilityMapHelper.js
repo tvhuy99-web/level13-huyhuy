@@ -3,6 +3,7 @@ define([], function () {
 	let AccessibilityMapHelper = function (announcer) {
 		this.announcer = announcer;
 		this.sectorObserver = null;
+		this.overlayObserver = null;
 		this.announceTimer = null;
 		this.lastSectorSummary = "";
 		this.init();
@@ -30,8 +31,11 @@ define([], function () {
 
 		let mapCanvas = document.getElementById("mainmap");
 		if (mapCanvas) {
-			mapCanvas.setAttribute("aria-label", "Visual level map. Use the sector navigation controls and sector details for an accessible map view.");
+			mapCanvas.setAttribute("aria-label", "Visual level map. Use the sector controls or ASCII map for an accessible map view.");
 		}
+
+		let background = document.getElementById("minimap-background");
+		if (background) background.setAttribute("aria-hidden", "true");
 
 		let details = document.getElementById("mainmap-sector-details");
 		if (details) {
@@ -39,6 +43,8 @@ define([], function () {
 			details.setAttribute("aria-label", "Selected sector details");
 		}
 
+		this.configureOverlayCells(document);
+		this.observeOverlayCells();
 		this.observeSectorDetails();
 	};
 
@@ -46,6 +52,63 @@ define([], function () {
 		let element = document.getElementById(id);
 		if (!element || element.getAttribute("aria-label") || element.getAttribute("aria-labelledby")) return;
 		element.setAttribute("aria-label", label);
+	};
+
+	AccessibilityMapHelper.prototype.configureOverlayCells = function (root) {
+		if (!root) return;
+		let cells = [];
+		if (root.matches && root.matches(".map-overlay-cell")) cells.push(root);
+		if (root.querySelectorAll) {
+			let nested = root.querySelectorAll(".map-overlay-cell");
+			for (let i = 0; i < nested.length; i++) cells.push(nested[i]);
+		}
+
+		for (let i = 0; i < cells.length; i++) this.configureOverlayCell(cells[i]);
+	};
+
+	AccessibilityMapHelper.prototype.configureOverlayCell = function (cell) {
+		if (!cell) return;
+		let level = cell.getAttribute("data-level");
+		let x = cell.getAttribute("data-x");
+		let y = cell.getAttribute("data-y");
+		cell.setAttribute("role", "button");
+		if (!cell.hasAttribute("tabindex")) cell.setAttribute("tabindex", "0");
+		cell.setAttribute("aria-label", "Sector on level " + level + ", x " + x + ", y " + y);
+		cell.setAttribute("aria-pressed", cell.classList.contains("selected") ? "true" : "false");
+
+		if (cell.getAttribute("data-accessibility-key-bound") !== "true") {
+			cell.setAttribute("data-accessibility-key-bound", "true");
+			cell.addEventListener("keydown", function (event) {
+				if (event.key !== "Enter" && event.key !== " ") return;
+				event.preventDefault();
+				cell.click();
+			});
+		}
+	};
+
+	AccessibilityMapHelper.prototype.observeOverlayCells = function () {
+		if (this.overlayObserver || typeof MutationObserver === "undefined") return;
+		let overlay = document.getElementById("mainmap-overlay");
+		if (!overlay) return;
+		this.overlayObserver = new MutationObserver((mutations) => {
+			for (let i = 0; i < mutations.length; i++) {
+				let mutation = mutations[i];
+				if (mutation.type === "childList") {
+					for (let j = 0; j < mutation.addedNodes.length; j++) {
+						let node = mutation.addedNodes[j];
+						if (node.nodeType === 1) this.configureOverlayCells(node);
+					}
+				} else if (mutation.type === "attributes") {
+					this.configureOverlayCell(mutation.target);
+				}
+			}
+		});
+		this.overlayObserver.observe(overlay, {
+			childList: true,
+			attributes: true,
+			attributeFilter: ["class"],
+			subtree: true,
+		});
 	};
 
 	AccessibilityMapHelper.prototype.observeSectorDetails = function () {
