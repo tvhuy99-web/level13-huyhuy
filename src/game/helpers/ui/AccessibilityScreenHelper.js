@@ -75,7 +75,8 @@ define([
 		let partnerRows = document.querySelectorAll("#trade-caravans-outgoing-container tr.trade-caravans-outgoing");
 		for (let i = 0; i < partnerRows.length; i++) {
 			let row = partnerRows[i];
-			let partner = this.normalize((row.querySelector(".item-name") || {}).textContent);
+			let partnerCell = row.querySelector(".item-name");
+			let partner = this.normalize(partnerCell ? partnerCell.textContent : "");
 			let toggle = row.querySelector(".btn-trade-caravans-outgoing-toggle");
 			let ordinal = row.id ? row.id.replace("trade-caravans-outgoing-", "") : "";
 			let plan = ordinal ? document.getElementById("trade-caravans-outgoing-plan-" + ordinal) : null;
@@ -113,7 +114,8 @@ define([
 		let slots = document.querySelectorAll("#container-party-slots .explorer-slot");
 		for (let i = 0; i < slots.length; i++) {
 			let slot = slots[i];
-			let type = this.normalize((slot.querySelector(".explorer-slot-type-empty, .explorer-slot-type-selected") || {}).textContent);
+			let typeElement = slot.querySelector(".explorer-slot-type-empty, .explorer-slot-type-selected");
+			let type = this.normalize(typeElement ? typeElement.textContent : "");
 			slot.setAttribute("role", "group");
 			if (type) slot.setAttribute("aria-label", type + " explorer slot");
 		}
@@ -124,8 +126,12 @@ define([
 			let portrait = explorer.querySelector("img.portrait[alt]");
 			let name = this.normalize(portrait ? portrait.getAttribute("alt") : "");
 			if (!name) {
-				let nameSpan = explorer.querySelector(":scope > span");
-				name = this.normalize(nameSpan ? nameSpan.textContent : "");
+				let directChildren = explorer.children;
+				for (let childIndex = 0; childIndex < directChildren.length; childIndex++) {
+					if (directChildren[childIndex].tagName !== "SPAN") continue;
+					name = this.normalize(directChildren[childIndex].textContent);
+					if (name) break;
+				}
 			}
 			if (name) explorer.setAttribute("aria-label", name);
 
@@ -173,14 +179,11 @@ define([
 		for (let i = 0; i < rows.length; i++) {
 			let row = rows[i];
 			let button = row.querySelector("button.action");
-			if (!button) continue;
-			let rowText = this.normalize(row.textContent);
+			let nameCell = row.querySelector("td.item-name");
+			if (!button || !nameCell) continue;
+			let name = this.normalize(nameCell.textContent);
 			let actionText = this.normalize(button.textContent);
-			let context = rowText;
-			if (actionText && context.toLowerCase().endsWith(actionText.toLowerCase())) {
-				context = this.normalize(context.substring(0, context.length - actionText.length));
-			}
-			if (context) button.setAttribute("aria-label", actionText + " " + context);
+			if (name && actionText) button.setAttribute("aria-label", actionText + " " + name);
 		}
 	};
 
