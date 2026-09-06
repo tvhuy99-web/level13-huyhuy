@@ -3,6 +3,7 @@ define([], function () {
 	let AccessibilityHelper = function () {
 		this.politeRegion = null;
 		this.assertiveRegion = null;
+		this.tabObserver = null;
 		this.init();
 	};
 
@@ -29,6 +30,7 @@ define([], function () {
 		);
 
 		this.configureGameLog();
+		this.configureTabs();
 	};
 
 	AccessibilityHelper.prototype.getOrCreateLiveRegion = function (id, role, politeness) {
@@ -59,6 +61,60 @@ define([], function () {
 		log.setAttribute("aria-atomic", "false");
 		if (!log.getAttribute("aria-label")) {
 			log.setAttribute("aria-label", "Recent game messages");
+		}
+	};
+
+	AccessibilityHelper.prototype.configureTabs = function () {
+		let tabList = document.getElementById("switch-tabs");
+		if (!tabList) return;
+
+		tabList.setAttribute("role", "tablist");
+		if (!tabList.getAttribute("aria-label")) {
+			tabList.setAttribute("aria-label", "Game sections");
+		}
+
+		let tabs = tabList.querySelectorAll(":scope > li");
+		for (let i = 0; i < tabs.length; i++) {
+			let tab = tabs[i];
+			tab.setAttribute("role", "tab");
+
+			let panels = document.querySelectorAll(".tabcontainer[data-tab='" + tab.id + "']");
+			let panelIDs = [];
+			for (let j = 0; j < panels.length; j++) {
+				let panel = panels[j];
+				if (!panel.id) continue;
+				panelIDs.push(panel.id);
+				panel.setAttribute("role", "tabpanel");
+				panel.setAttribute("aria-labelledby", tab.id);
+			}
+			if (panelIDs.length > 0) {
+				tab.setAttribute("aria-controls", panelIDs.join(" "));
+			}
+		}
+
+		this.syncTabStates();
+
+		if (!this.tabObserver && typeof MutationObserver !== "undefined") {
+			this.tabObserver = new MutationObserver(() => this.syncTabStates());
+			this.tabObserver.observe(tabList, {
+				attributes: true,
+				attributeFilter: ["class", "style"],
+				subtree: true,
+			});
+		}
+	};
+
+	AccessibilityHelper.prototype.syncTabStates = function () {
+		let tabList = document.getElementById("switch-tabs");
+		if (!tabList) return;
+
+		let tabs = tabList.querySelectorAll(":scope > li");
+		for (let i = 0; i < tabs.length; i++) {
+			let tab = tabs[i];
+			let isSelected = tab.classList.contains("selected");
+			let isDisabled = tab.classList.contains("disabled");
+			tab.setAttribute("aria-selected", isSelected ? "true" : "false");
+			tab.setAttribute("aria-disabled", isDisabled ? "true" : "false");
 		}
 	};
 
