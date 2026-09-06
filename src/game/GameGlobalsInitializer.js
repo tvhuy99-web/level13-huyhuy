@@ -37,6 +37,7 @@ define([
 	'game/helpers/ui/AccessibilityHelper',
 	'game/helpers/ui/AccessibilityIndicatorHelper',
 	'game/helpers/ui/AccessibilityMapHelper',
+	'game/helpers/ui/AccessibilityMobileOverlayHelper',
 	'game/helpers/ui/AccessibilityNavigationHelper',
 	'game/helpers/ui/AccessibilityPopupHelper',
 	'game/helpers/ui/AccessibilityProgressHelper',
@@ -86,6 +87,7 @@ define([
 	AccessibilityHelper,
 	AccessibilityIndicatorHelper,
 	AccessibilityMapHelper,
+	AccessibilityMobileOverlayHelper,
 	AccessibilityNavigationHelper,
 	AccessibilityPopupHelper,
 	AccessibilityProgressHelper,
@@ -152,6 +154,7 @@ define([
 				GameGlobals.accessibilityControlHelper = new AccessibilityControlHelper();
 				GameGlobals.accessibilityIndicatorHelper = new AccessibilityIndicatorHelper();
 				GameGlobals.accessibilityMapHelper = new AccessibilityMapHelper(GameGlobals.accessibilityHelper);
+				GameGlobals.accessibilityMobileOverlayHelper = new AccessibilityMobileOverlayHelper();
 				GameGlobals.accessibilityNavigationHelper = new AccessibilityNavigationHelper(GameGlobals.accessibilityHelper);
 				GameGlobals.accessibilityPopupHelper = new AccessibilityPopupHelper();
 				GameGlobals.accessibilityDialogueHelper = new AccessibilityDialogueHelper();
