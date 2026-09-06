@@ -4,6 +4,7 @@ define([], function () {
 		this.popupStates = new Map();
 		this.observer = null;
 		this.generatedIDCounter = 0;
+		this.lastExternalInteraction = null;
 		this.init();
 	};
 
@@ -17,8 +18,26 @@ define([], function () {
 	};
 
 	AccessibilityPopupHelper.prototype.setup = function () {
+		this.captureExternalInteractions();
 		this.configurePopups(document);
 		this.observePopups();
+	};
+
+	AccessibilityPopupHelper.prototype.captureExternalInteractions = function () {
+		let remember = (event) => {
+			let target = event.target;
+			if (!target || !target.closest) return;
+			if (target.closest(".popup")) return;
+			let candidate = target.closest("button, input, select, textarea, a[href], [role='button'], [tabindex]");
+			if (!candidate || !candidate.isConnected) return;
+			this.lastExternalInteraction = candidate;
+		};
+		document.addEventListener("pointerdown", remember, true);
+		document.addEventListener("click", remember, true);
+		document.addEventListener("keydown", (event) => {
+			if (event.key !== "Enter" && event.key !== " ") return;
+			remember(event);
+		}, true);
 	};
 
 	AccessibilityPopupHelper.prototype.configurePopups = function (root) {
@@ -152,7 +171,7 @@ define([], function () {
 		this.observer.observe(document.body, {
 			childList: true,
 			attributes: true,
-			attributeFilter: ["style", "class"],
+			attributeFilter: ["style", "class", "data-visible"],
 			subtree: true,
 		});
 	};
@@ -168,9 +187,12 @@ define([], function () {
 
 		if (isOpen) {
 			let active = document.activeElement;
-			state.opener = active && !popup.contains(active) ? active : null;
+			let activeOutside = active && !popup.contains(active) && active !== document.body && active !== document.documentElement;
+			let candidate = activeOutside ? active : this.lastExternalInteraction;
+			state.opener = candidate && candidate.isConnected && !popup.contains(candidate) ? candidate : null;
 			state.isOpen = true;
-			window.setTimeout(() => this.ensureFocusInside(popup), 60);
+			window.setTimeout(() => this.ensureFocusInside(popup, true), 60);
+			window.setTimeout(() => this.ensureFocusInside(popup, true), 180);
 		} else {
 			state.isOpen = false;
 			let opener = state.opener;
@@ -179,8 +201,27 @@ define([], function () {
 		}
 	};
 
-	AccessibilityPopupHelper.prototype.ensureFocusInside = function (popup) {
+	AccessibilityPopupHelper.prototype.getPreferredInitialFocus = function (popup) {
+		if (!popup) return null;
+		if (popup.id === "common-popup") {
+			let container = popup.querySelector("#common-popup-input-container");
+			let input = container ? container.querySelector("input:not([disabled])") : null;
+			if (container && input && this.isElementFocusableNow(input)) return input;
+		}
+		if (popup.id === "settings-popup") {
+			let firstSetting = popup.querySelector("input:not([disabled]), select:not([disabled])");
+			if (firstSetting && this.isElementFocusableNow(firstSetting)) return firstSetting;
+		}
+		return null;
+	};
+
+	AccessibilityPopupHelper.prototype.ensureFocusInside = function (popup, preferInitial) {
 		if (!this.isVisible(popup)) return;
+		let preferred = preferInitial ? this.getPreferredInitialFocus(popup) : null;
+		if (preferred && document.activeElement !== preferred) {
+			preferred.focus();
+			return;
+		}
 		if (popup.contains(document.activeElement)) return;
 
 		let focusable = this.getFocusableElements(popup);
