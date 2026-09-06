@@ -4,6 +4,8 @@ define([], function () {
 		this.politeRegion = null;
 		this.assertiveRegion = null;
 		this.tabObserver = null;
+		this.formObserver = null;
+		this.generatedIDCounter = 0;
 		this.init();
 	};
 
@@ -31,6 +33,8 @@ define([], function () {
 
 		this.configureGameLog();
 		this.configureTabs();
+		this.configureFormControls(document);
+		this.observeFormControls();
 	};
 
 	AccessibilityHelper.prototype.getOrCreateLiveRegion = function (id, role, politeness) {
@@ -73,9 +77,10 @@ define([], function () {
 			tabList.setAttribute("aria-label", "Game sections");
 		}
 
-		let tabs = tabList.querySelectorAll(":scope > li");
+		let tabs = tabList.children;
 		for (let i = 0; i < tabs.length; i++) {
 			let tab = tabs[i];
+			if (tab.tagName !== "LI") continue;
 			tab.setAttribute("role", "tab");
 
 			let panels = document.querySelectorAll(".tabcontainer[data-tab='" + tab.id + "']");
@@ -108,14 +113,120 @@ define([], function () {
 		let tabList = document.getElementById("switch-tabs");
 		if (!tabList) return;
 
-		let tabs = tabList.querySelectorAll(":scope > li");
+		let tabs = tabList.children;
 		for (let i = 0; i < tabs.length; i++) {
 			let tab = tabs[i];
+			if (tab.tagName !== "LI") continue;
 			let isSelected = tab.classList.contains("selected");
 			let isDisabled = tab.classList.contains("disabled");
 			tab.setAttribute("aria-selected", isSelected ? "true" : "false");
 			tab.setAttribute("aria-disabled", isDisabled ? "true" : "false");
 		}
+	};
+
+	AccessibilityHelper.prototype.configureFormControls = function (root) {
+		if (!root) return;
+
+		let controls = [];
+		if (root.matches && root.matches("input, select, textarea")) {
+			controls.push(root);
+		}
+		if (root.querySelectorAll) {
+			let nestedControls = root.querySelectorAll("input, select, textarea");
+			for (let i = 0; i < nestedControls.length; i++) controls.push(nestedControls[i]);
+		}
+
+		for (let i = 0; i < controls.length; i++) {
+			let control = controls[i];
+			if (this.hasAccessibleName(control)) continue;
+
+			let type = (control.getAttribute("type") || "").toLowerCase();
+			if (type === "checkbox" || type === "radio") {
+				this.labelCheckboxLikeControl(control);
+			}
+
+			if (!this.hasAccessibleName(control)) {
+				this.labelControlFromContainer(control);
+			}
+
+			if (!this.hasAccessibleName(control)) {
+				this.labelControlFromName(control);
+			}
+
+			if (control.classList && control.classList.contains("amount")) {
+				this.labelStepperButtons(control);
+			}
+		}
+	};
+
+	AccessibilityHelper.prototype.hasAccessibleName = function (control) {
+		if (!control) return false;
+		if (control.getAttribute("aria-label")) return true;
+		if (control.getAttribute("aria-labelledby")) return true;
+		if (control.labels && control.labels.length > 0) return true;
+		return false;
+	};
+
+	AccessibilityHelper.prototype.labelCheckboxLikeControl = function (control) {
+		let label = control.nextElementSibling;
+		if (!label || !label.classList || !label.classList.contains("checkbox-label")) return;
+		let labelID = this.ensureElementID(label, "accessibility-label");
+		control.setAttribute("aria-labelledby", labelID);
+	};
+
+	AccessibilityHelper.prototype.labelControlFromContainer = function (control) {
+		if (!control.closest) return;
+		let container = control.closest(".select-container, .input-container, .stepper");
+		if (!container) return;
+		let label = container.querySelector("label, .label, .checkbox-label");
+		if (!label || label === control) return;
+		let labelID = this.ensureElementID(label, "accessibility-label");
+		control.setAttribute("aria-labelledby", labelID);
+	};
+
+	AccessibilityHelper.prototype.labelControlFromName = function (control) {
+		let name = control.getAttribute("name");
+		if (!name) return;
+		let label = String(name).replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+		if (!label) return;
+		control.setAttribute("aria-label", label);
+	};
+
+	AccessibilityHelper.prototype.labelStepperButtons = function (input) {
+		let parent = input.parentElement;
+		if (!parent) return;
+
+		let inputName = input.getAttribute("aria-label") || input.getAttribute("name") || "value";
+		inputName = String(inputName).replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+		let buttons = parent.querySelectorAll("button[data-type='minus'], button[data-type='plus']");
+		for (let i = 0; i < buttons.length; i++) {
+			let button = buttons[i];
+			if (button.getAttribute("aria-label")) continue;
+			let action = button.getAttribute("data-type") === "plus" ? "Increase" : "Decrease";
+			button.setAttribute("aria-label", action + " " + inputName);
+			if (input.id) button.setAttribute("aria-controls", input.id);
+		}
+	};
+
+	AccessibilityHelper.prototype.ensureElementID = function (element, prefix) {
+		if (element.id) return element.id;
+		this.generatedIDCounter++;
+		element.id = prefix + "-" + this.generatedIDCounter;
+		return element.id;
+	};
+
+	AccessibilityHelper.prototype.observeFormControls = function () {
+		if (this.formObserver || typeof MutationObserver === "undefined" || !document.body) return;
+		this.formObserver = new MutationObserver((mutations) => {
+			for (let i = 0; i < mutations.length; i++) {
+				let addedNodes = mutations[i].addedNodes;
+				for (let j = 0; j < addedNodes.length; j++) {
+					let node = addedNodes[j];
+					if (node.nodeType === 1) this.configureFormControls(node);
+				}
+			}
+		});
+		this.formObserver.observe(document.body, { childList: true, subtree: true });
 	};
 
 	AccessibilityHelper.prototype.normalizeMessage = function (message) {
