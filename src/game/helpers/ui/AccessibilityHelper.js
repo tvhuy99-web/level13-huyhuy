@@ -246,7 +246,26 @@ define([], function () {
 			}
 
 			this.appendAriaReference(focusTarget, "aria-describedby", calloutID);
+			this.bindCalloutFocusBehavior(container, target, callout);
 		}
+	};
+
+	AccessibilityHelper.prototype.bindCalloutFocusBehavior = function (container, target, callout) {
+		if (!container || !target || !callout) return;
+		if (container.getAttribute("data-accessibility-focus-bound") === "true") return;
+		container.setAttribute("data-accessibility-focus-bound", "true");
+
+		container.addEventListener("focusin", function () {
+			callout.style.display = target.classList.contains("info-callout-target-side") ? "flex" : "block";
+		});
+
+		container.addEventListener("focusout", function () {
+			window.setTimeout(function () {
+				if (!container.contains(document.activeElement)) {
+					callout.style.removeProperty("display");
+				}
+			}, 0);
+		});
 	};
 
 	AccessibilityHelper.prototype.getFocusableCalloutTarget = function (target) {
