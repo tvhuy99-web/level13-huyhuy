@@ -34,7 +34,8 @@ define([], function () {
 		this.configureGameLog();
 		this.configureTabs();
 		this.configureFormControls(document);
-		this.observeFormControls();
+		this.configureCallouts(document);
+		this.observeDynamicUI();
 	};
 
 	AccessibilityHelper.prototype.getOrCreateLiveRegion = function (id, role, politeness) {
@@ -208,6 +209,62 @@ define([], function () {
 		}
 	};
 
+	AccessibilityHelper.prototype.configureCallouts = function (root) {
+		if (!root) return;
+
+		let containers = [];
+		if (root.matches && root.matches(".callout-container")) containers.push(root);
+		if (root.querySelectorAll) {
+			let nestedContainers = root.querySelectorAll(".callout-container");
+			for (let i = 0; i < nestedContainers.length; i++) containers.push(nestedContainers[i]);
+		}
+
+		for (let i = 0; i < containers.length; i++) {
+			let container = containers[i];
+			let target = null;
+			for (let j = 0; j < container.children.length; j++) {
+				let child = container.children[j];
+				if (child.classList && child.classList.contains("info-callout-target")) {
+					target = child;
+					break;
+				}
+			}
+			let callout = container.querySelector(".info-callout");
+			if (!target || !callout) continue;
+
+			let calloutID = this.ensureElementID(callout, "accessibility-callout");
+			callout.setAttribute("role", "tooltip");
+
+			let focusTarget = this.getFocusableCalloutTarget(target);
+			if (!focusTarget) {
+				target.setAttribute("tabindex", "0");
+				if (!target.getAttribute("role")) target.setAttribute("role", "note");
+				if (!target.getAttribute("aria-label") && !this.normalizeMessage(target.textContent)) {
+					target.setAttribute("aria-label", "More information");
+				}
+				focusTarget = target;
+			}
+
+			this.appendAriaReference(focusTarget, "aria-describedby", calloutID);
+		}
+	};
+
+	AccessibilityHelper.prototype.getFocusableCalloutTarget = function (target) {
+		if (!target) return null;
+		if (target.matches && target.matches("button, input, select, textarea, a[href], [tabindex]")) {
+			return target;
+		}
+		if (!target.querySelector) return null;
+		return target.querySelector("button, input, select, textarea, a[href], [tabindex]");
+	};
+
+	AccessibilityHelper.prototype.appendAriaReference = function (element, attribute, id) {
+		if (!element || !id) return;
+		let current = (element.getAttribute(attribute) || "").split(/\s+/).filter(Boolean);
+		if (current.indexOf(id) < 0) current.push(id);
+		element.setAttribute(attribute, current.join(" "));
+	};
+
 	AccessibilityHelper.prototype.ensureElementID = function (element, prefix) {
 		if (element.id) return element.id;
 		this.generatedIDCounter++;
@@ -215,14 +272,16 @@ define([], function () {
 		return element.id;
 	};
 
-	AccessibilityHelper.prototype.observeFormControls = function () {
+	AccessibilityHelper.prototype.observeDynamicUI = function () {
 		if (this.formObserver || typeof MutationObserver === "undefined" || !document.body) return;
 		this.formObserver = new MutationObserver((mutations) => {
 			for (let i = 0; i < mutations.length; i++) {
 				let addedNodes = mutations[i].addedNodes;
 				for (let j = 0; j < addedNodes.length; j++) {
 					let node = addedNodes[j];
-					if (node.nodeType === 1) this.configureFormControls(node);
+					if (node.nodeType !== 1) continue;
+					this.configureFormControls(node);
+					this.configureCallouts(node);
 				}
 			}
 		});
