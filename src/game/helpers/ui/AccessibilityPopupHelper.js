@@ -35,6 +35,7 @@ define([], function () {
 			if (!popup.getAttribute("role")) popup.setAttribute("role", "dialog");
 			popup.setAttribute("aria-modal", "true");
 			this.ensurePopupLabel(popup);
+			this.configurePopupFields(popup);
 			this.bindFocusTrap(popup);
 
 			if (!this.popupStates.has(popup)) {
@@ -55,6 +56,30 @@ define([], function () {
 			heading.id = "accessibility-popup-title-" + this.generatedIDCounter;
 		}
 		popup.setAttribute("aria-labelledby", heading.id);
+	};
+
+	AccessibilityPopupHelper.prototype.configurePopupFields = function (popup) {
+		if (!popup || !popup.querySelectorAll) return;
+		let heading = popup.querySelector("h1, h2, h3, h4");
+		let description = popup.querySelector("#common-popup-desc, .popup-description, .dialogue-description");
+		let headingID = heading ? this.ensureElementID(heading, "accessibility-popup-field-title") : "";
+		let descriptionID = description ? this.ensureElementID(description, "accessibility-popup-field-description") : "";
+		let fields = popup.querySelectorAll("input:not([type='hidden']), select, textarea");
+
+		for (let i = 0; i < fields.length; i++) {
+			let field = fields[i];
+			let hasName = field.getAttribute("aria-label") || field.getAttribute("aria-labelledby") || (field.labels && field.labels.length > 0);
+			if (!hasName && headingID) field.setAttribute("aria-labelledby", headingID);
+			if (descriptionID && !field.getAttribute("aria-describedby")) field.setAttribute("aria-describedby", descriptionID);
+		}
+	};
+
+	AccessibilityPopupHelper.prototype.ensureElementID = function (element, prefix) {
+		if (!element) return "";
+		if (element.id) return element.id;
+		this.generatedIDCounter++;
+		element.id = prefix + "-" + this.generatedIDCounter;
+		return element.id;
 	};
 
 	AccessibilityPopupHelper.prototype.bindFocusTrap = function (popup) {
