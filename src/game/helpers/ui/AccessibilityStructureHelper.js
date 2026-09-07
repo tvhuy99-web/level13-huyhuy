@@ -1,7 +1,10 @@
-define([], function () {
+define([
+	'game/helpers/ui/AccessibilityMobileExperienceHelper',
+], function (AccessibilityMobileExperienceHelper) {
 
 	let AccessibilityStructureHelper = function () {
 		this.observer = null;
+		this.mobileExperienceHelper = null;
 		this.init();
 	};
 
@@ -18,6 +21,7 @@ define([], function () {
 		this.configureStatuses();
 		this.configureTables(document);
 		this.configureVisualAlternatives();
+		this.mobileExperienceHelper = new AccessibilityMobileExperienceHelper();
 		this.observe();
 	};
 
