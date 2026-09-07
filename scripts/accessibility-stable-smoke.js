@@ -6,15 +6,21 @@ const initializerPath = path.join(root, 'src/game/GameGlobalsInitializer.js');
 const initializer = fs.readFileSync(initializerPath, 'utf8');
 const helperDir = path.join(root, 'src/game/helpers/ui');
 const helpers = fs.readdirSync(helperDir).filter(name => /^Accessibility.*\.js$/.test(name));
+const helperContents = helpers.map(name => ({
+  name,
+  content: fs.readFileSync(path.join(helperDir, name), 'utf8'),
+}));
 
-if (helpers.length < 19) {
-  throw new Error(`Expected at least 19 accessibility helpers, found ${helpers.length}`);
+if (helpers.length < 20) {
+  throw new Error(`Expected at least 20 accessibility helpers, found ${helpers.length}`);
 }
 
 for (const helper of helpers) {
   const moduleId = `game/helpers/ui/${helper.replace(/\.js$/, '')}`;
-  if (!initializer.includes(`'${moduleId}'`)) {
-    throw new Error(`Accessibility helper is not wired in initializer: ${moduleId}`);
+  const wiredDirectly = initializer.includes(`'${moduleId}'`);
+  const wiredThroughHelper = helperContents.some(entry => entry.name !== helper && entry.content.includes(`'${moduleId}'`));
+  if (!wiredDirectly && !wiredThroughHelper) {
+    throw new Error(`Accessibility helper is not wired: ${moduleId}`);
   }
 }
 
@@ -40,6 +46,11 @@ for (const file of sourceFiles) {
 }
 if (missing.length) {
   throw new Error(`Missing AMD dependencies on stable base:\n${missing.join('\n')}`);
+}
+
+const mobileHelper = fs.readFileSync(path.join(helperDir, 'AccessibilityMobileExperienceHelper.js'), 'utf8');
+for (const required of ["role='note'", 'accessibility-movement-status', 'Move north', 'Choose Scout']) {
+  if (!mobileHelper.includes(required)) throw new Error(`Mobile accessibility regression contract missing: ${required}`);
 }
 
 console.log(`Stable accessibility wiring OK: ${helpers.length} helpers, dependencies present.`);
