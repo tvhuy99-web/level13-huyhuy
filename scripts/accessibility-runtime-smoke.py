@@ -28,6 +28,7 @@ def snapshot(driver):
             initializer:!!(req&&req.defined('game/GameGlobalsInitializer')),
             accessibility:!!(req&&req.defined('game/helpers/ui/AccessibilityHelper')),
             mobileExperience:!!(req&&req.defined('game/helpers/ui/AccessibilityMobileExperienceHelper')),
+            overviewCleanup:!!(req&&req.defined('game/helpers/ui/AccessibilityOverviewCleanupPatch')),
             finalAudit:!!(req&&req.defined('game/helpers/ui/AccessibilityFinalAuditHelper')),
             loadingDisplay:loading?getComputedStyle(loading).display:'missing',
             mainDisplay:main?getComputedStyle(main).display:'missing'
@@ -44,6 +45,31 @@ def state(driver):
         const mp=document.getElementById('player-perks-list-mobile');
         const eq=document.getElementById('container-equipment-stats-side');
         const summaries=Array.from(document.querySelectorAll('[data-a11y-summary="1"]'));
+        const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
+        const labelOf=e=>norm(e&&e.querySelector('.label')&&e.querySelector('.label').textContent)||norm(e&&e.querySelector('img[alt]')&&e.querySelector('img[alt]').getAttribute('alt'));
+        const numbers=s=>(String(s||'').replace(/,/g,'.').match(/-?\d+(?:\.\d+)?/g)||[]).map(Number).filter(n=>!Number.isNaN(n));
+        const isZeroValue=e=>{
+            const v=e&&e.querySelector('.value');
+            const ns=numbers(v&&v.textContent);
+            return ns.length>0&&ns.every(n=>Math.abs(n)<=0.000001);
+        };
+        const firstNumber=e=>{
+            const v=e&&e.querySelector('.value');
+            const ns=numbers(v&&v.textContent);
+            return ns.length?ns[0]:null;
+        };
+        const overviewText=overview?norm(overview.textContent):'';
+        const inventoryOverviewText=inventoryOverview?norm(inventoryOverview.textContent):'';
+        const overviewLower=overviewText.toLowerCase();
+        const inventoryLower=inventoryOverviewText.toLowerCase();
+        const equipmentIndex=overviewText.indexOf('Equipment stats.');
+        const equipmentText=equipmentIndex>=0?overviewText.slice(equipmentIndex+'Equipment stats.'.length).toLowerCase():'';
+        const zeroOptionalPlayerLabels=Array.from(document.querySelectorAll('.stat-indicator-scavenge-bonus')).filter(isZeroValue).map(labelOf).filter(x=>x&&overviewLower.includes(x.toLowerCase()));
+        const zeroEquipmentLabels=Array.from(document.querySelectorAll('.container-equipment-stats .stat-indicator')).filter(isZeroValue).map(labelOf).filter(x=>x&&equipmentText.includes(x.toLowerCase()));
+        const neutralMovementLabels=Array.from(document.querySelectorAll('.container-equipment-stats .stats-equipment-movement')).filter(e=>firstNumber(e)===1).map(labelOf).filter(x=>x&&equipmentText.includes(x.toLowerCase()));
+        const zeroResourceLabels=Array.from(document.querySelectorAll("[id^='resources-bag-'],[id^='resources-camp-']")).filter(isZeroValue).map(labelOf).filter(x=>x&&inventoryLower.includes(x.toLowerCase()));
+        const tribeIndicators=Array.from(document.querySelectorAll('.statsbar-tribe-stats .stat-indicator'));
+        const tribeAllZero=tribeIndicators.length>0&&tribeIndicators.every(isZeroValue);
         const visible=e=>{
             if(!e||!e.isConnected)return false;
             for(let x=e;x&&x!==document.documentElement;x=x.parentElement){
@@ -76,16 +102,24 @@ def state(driver):
         return {
             layoutSmall:document.body.classList.contains('layout-small'),
             layoutRegular:document.body.classList.contains('layout-regular'),
-            overviewText:overview?(overview.textContent||'').trim():'',
+            overviewText,
             overviewTabindex:overview?overview.getAttribute('tabindex'):null,
             overviewAriaLabel:overview?overview.getAttribute('aria-label'):null,
             overviewRole:overview?overview.getAttribute('role'):null,
             overviewInsideVisualHeader:!!(overview&&overview.closest('#mobile-header,#header-side,#grid-main-header')),
-            inventoryOverviewText:inventoryOverview?(inventoryOverview.textContent||'').trim():'',
+            overviewClean:!!(overview&&inventoryOverview&&overview.getAttribute('data-a11y-overview-clean')==='1'&&inventoryOverview.getAttribute('data-a11y-overview-clean')==='1'),
+            inventoryOverviewText,
             inventoryOverviewTabindex:inventoryOverview?inventoryOverview.getAttribute('tabindex'):null,
             inventoryOverviewAriaLabel:inventoryOverview?inventoryOverview.getAttribute('aria-label'):null,
             inventoryOverviewRole:inventoryOverview?inventoryOverview.getAttribute('role'):null,
             inventoryOverviewInsideVisualHeader:!!(inventoryOverview&&inventoryOverview.closest('#mobile-header,#header-side,#grid-main-header')),
+            zeroOptionalPlayerLabels,
+            zeroEquipmentLabels,
+            neutralMovementLabels,
+            zeroResourceLabels,
+            tribeAllZero,
+            tribeSectionPresent:inventoryOverviewText.includes('Tribe stats.'),
+            campBareZero:/\bCamp\.\s*0(?:\.|$)/.test(inventoryOverviewText),
             badSummaryFocus:summaries.filter(s=>s.hasAttribute('tabindex')||s.hasAttribute('aria-label')||!(s.textContent||'').trim()).length,
             oldCompact:document.querySelectorAll('[data-a11y-compact="1"]').length,
             headersHidden:headers.every(h=>!h||h.getAttribute('aria-hidden')==='true'),
@@ -144,6 +178,7 @@ def core_ready(driver):
     inventory_text=a['inventoryOverviewText']
     return (
         a['headersInert']
+        and a['overviewClean']
         and player_text.startswith('Player overview.')
         and 'Player status.' in player_text
         and 'Status effects.' in player_text
@@ -168,12 +203,19 @@ def run_case(width, height):
         print(f'Runtime state {width}x{height}:',json.dumps(m,sort_keys=True))
         print(f'TalkBack state {width}x{height}:',json.dumps(a,sort_keys=True))
 
-        if not all(m[k] for k in ('requirejs','initializer','accessibility','mobileExperience','finalAudit')): raise RuntimeError('Required modules did not initialize')
+        if not all(m[k] for k in ('requirejs','initializer','accessibility','mobileExperience','overviewCleanup','finalAudit')): raise RuntimeError('Required modules did not initialize')
+        if not a['overviewClean']: raise RuntimeError('Overview cleanup patch did not mark both summaries')
         if not a['overviewText'].startswith('Player overview.'): raise RuntimeError('Player overview real-text node missing')
         if 'Player status.' not in a['overviewText'] or 'Status effects.' not in a['overviewText']: raise RuntimeError('Player overview does not contain core status information')
         if 'Inventory.' in a['overviewText']: raise RuntimeError('Inventory leaked back into Player overview')
+        if a['zeroOptionalPlayerLabels']: raise RuntimeError(f"Zero-value optional player stats leaked into overview: {a['zeroOptionalPlayerLabels']}")
+        if a['zeroEquipmentLabels']: raise RuntimeError(f"Zero-value equipment stats leaked into overview: {a['zeroEquipmentLabels']}")
+        if a['neutralMovementLabels']: raise RuntimeError(f"Neutral movement-cost stats leaked into overview: {a['neutralMovementLabels']}")
         if not a['inventoryOverviewText'].startswith('Inventory and camp overview.'): raise RuntimeError('Inventory and camp overview real-text node missing')
         if 'Inventory.' not in a['inventoryOverviewText']: raise RuntimeError('Inventory and camp overview does not contain inventory information')
+        if a['zeroResourceLabels']: raise RuntimeError(f"Zero-value resource names leaked into inventory/camp overview: {a['zeroResourceLabels']}")
+        if a['tribeAllZero'] and a['tribeSectionPresent']: raise RuntimeError('All-zero Tribe stats section should be omitted')
+        if a['campBareZero']: raise RuntimeError('Camp overview contains an unlabeled bare zero')
         if a['overviewTabindex'] is not None or a['overviewAriaLabel'] is not None or a['overviewRole'] is not None: raise RuntimeError('Player overview is still synthetic/focusable')
         if a['inventoryOverviewTabindex'] is not None or a['inventoryOverviewAriaLabel'] is not None or a['inventoryOverviewRole'] is not None: raise RuntimeError('Inventory and camp overview is still synthetic/focusable')
         if a['overviewInsideVisualHeader'] or a['inventoryOverviewInsideVisualHeader']: raise RuntimeError('An accessibility overview is inside a visual header')
@@ -208,4 +250,4 @@ def run_case(width, height):
 
 run_case(390,844)
 run_case(980,844)
-print('Two-overview TalkBack regression test passed in phone and wide viewport modes.')
+print('Clean two-overview TalkBack regression test passed in phone and wide viewport modes.')
