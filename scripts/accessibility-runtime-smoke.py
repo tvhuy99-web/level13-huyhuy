@@ -1,5 +1,4 @@
 import json
-import time
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
@@ -15,9 +14,7 @@ options.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
 def snapshot(driver):
     return driver.execute_script("""
         const loading = document.querySelector('.loading-content');
-        const thinking = document.querySelector('.thinking-content');
         const main = document.getElementById('unit-main');
-        const mobile = document.getElementById('mobile-overlay');
         const req = window.requirejs;
         const defined = req && req.s && req.s.contexts && req.s.contexts._ ? Object.keys(req.s.contexts._.defined) : [];
         return {
@@ -28,113 +25,112 @@ def snapshot(driver):
             mobileExperience: !!(req && req.defined('game/helpers/ui/AccessibilityMobileExperienceHelper')),
             finalAudit: !!(req && req.defined('game/helpers/ui/AccessibilityFinalAuditHelper')),
             definedCount: defined.length,
-            accessibilityModules: defined.filter(x => x.indexOf('Accessibility') >= 0),
             loadingDisplay: loading ? getComputedStyle(loading).display : 'missing',
-            thinkingDisplay: thinking ? getComputedStyle(thinking).display : 'missing',
-            mainDisplay: main ? getComputedStyle(main).display : 'missing',
-            mobileDisplay: mobile ? getComputedStyle(mobile).display : 'missing',
-            bodyTextStart: document.body ? document.body.innerText.slice(0, 500) : ''
+            mainDisplay: main ? getComputedStyle(main).display : 'missing'
         };
     """)
 
 def accessibility_state(driver):
     return driver.execute_script("""
-        const body = document.body;
-        const small = !!(body && body.classList.contains('layout-small'));
-        const activePerks = document.getElementById(small ? 'player-perks-list-mobile' : 'player-perks-list-regular');
-        const inactivePerks = document.getElementById(small ? 'player-perks-list-regular' : 'player-perks-list-mobile');
-        const noteTargets = activePerks ? Array.from(activePerks.querySelectorAll('.info-callout-target[role="note"]')) : [];
-        const exposedCallouts = activePerks ? Array.from(activePerks.querySelectorAll('.info-callout:not([aria-hidden="true"])')) : [];
-        const firstTarget = activePerks ? activePerks.querySelector('.info-callout-target') : null;
-        const firstImage = firstTarget ? firstTarget.querySelector('img') : null;
-        const movementStatus = document.getElementById('accessibility-movement-status');
-        const north = document.getElementById('out-action-move-north');
-        const compass = document.getElementById('out-container-compass-actions');
+        const visible = e => {
+            if (!e || !e.isConnected) return false;
+            for (let x=e; x && x!==document.documentElement; x=x.parentElement) {
+                const s=getComputedStyle(x);
+                if (s.display==='none' || s.visibility==='hidden' || x.hidden) return false;
+            }
+            return true;
+        };
+        const body=document.body;
+        const small=!!(body && body.classList.contains('layout-small'));
+        const activePerks=document.getElementById(small ? 'player-perks-list-mobile' : 'player-perks-list-regular');
+        const inactivePerks=document.getElementById(small ? 'player-perks-list-regular' : 'player-perks-list-mobile');
+        const playerStats=Array.from(document.querySelectorAll('.player-stats-container')).find(visible) || null;
+        const compactVisible=Array.from(document.querySelectorAll('[data-a11y-compact="1"]')).filter(visible);
+        const silentCalloutStops=Array.from(document.querySelectorAll('.info-callout-target[tabindex="0"]')).filter(t => {
+            const c=t.closest('.callout-container');
+            const d=c && c.querySelector('.info-callout');
+            if (!d) return false;
+            return !d.querySelector("button,input,select,textarea,a[href],[role='button'],[role='radio'],[role='option']");
+        });
+        const compactWithFocusableChildren=compactVisible.filter(e => e.querySelector("button,input,select,textarea,a[href],[tabindex='0'],[role='button'],[role='radio'],[role='option']"));
+        const activePerkChildren=activePerks ? Array.from(activePerks.children) : [];
+        const movementStatus=document.getElementById('accessibility-movement-status');
+        const north=document.getElementById('out-action-move-north');
+        const compass=document.getElementById('out-container-compass-actions');
         return {
             smallLayout: small,
-            activePerksID: activePerks ? activePerks.id : null,
-            activeNoteCount: noteTargets.length,
-            activeExposedCalloutCount: exposedCallouts.length,
-            firstPerkLabel: firstTarget ? firstTarget.getAttribute('aria-label') : null,
-            firstPerkRole: firstTarget ? firstTarget.getAttribute('role') : null,
-            firstPerkImageAlt: firstImage ? firstImage.getAttribute('alt') : null,
-            firstPerkImageHidden: firstImage ? firstImage.getAttribute('aria-hidden') : null,
+            compactCount: compactVisible.length,
+            compactLabels: compactVisible.slice(0, 12).map(e => e.getAttribute('aria-label')),
+            silentCalloutStopCount: silentCalloutStops.length,
+            compactWithFocusableChildrenCount: compactWithFocusableChildren.length,
+            playerStatsCompact: !!(playerStats && playerStats.getAttribute('data-a11y-compact') === '1'),
+            playerStatsTabIndex: playerStats ? playerStats.getAttribute('tabindex') : null,
+            playerStatsLabel: playerStats ? playerStats.getAttribute('aria-label') : null,
+            playerStatsVisibleChildCount: playerStats ? Array.from(playerStats.children).filter(c => c.getAttribute('aria-hidden') !== 'true').length : null,
+            activePerksCompact: !!(activePerks && activePerks.getAttribute('data-a11y-compact') === '1'),
+            activePerksTabIndex: activePerks ? activePerks.getAttribute('tabindex') : null,
+            activePerksLabel: activePerks ? activePerks.getAttribute('aria-label') : null,
+            activePerkVisibleChildCount: activePerkChildren.filter(c => c.getAttribute('aria-hidden') !== 'true').length,
             inactivePerksHidden: inactivePerks ? inactivePerks.getAttribute('aria-hidden') : null,
-            movementStatusExists: !!movementStatus,
+            noteCount: document.querySelectorAll('.info-callout-target[role="note"]').length,
             movementStatusText: movementStatus ? movementStatus.textContent.trim() : '',
             northLabel: north ? north.getAttribute('aria-label') : null,
-            compassLabel: compass ? compass.getAttribute('aria-label') : null,
-            compassHidden: compass ? compass.getAttribute('aria-hidden') : null
+            compassLabel: compass ? compass.getAttribute('aria-label') : null
         };
     """)
 
-def print_browser_logs(driver):
-    logs = driver.get_log('browser')
-    print('Browser console entries:', len(logs))
+def browser_logs(driver):
+    logs=driver.get_log('browser')
     for entry in logs:
         print(f"BROWSER {entry.get('level')}: {entry.get('message')}")
     return logs
 
-driver = webdriver.Chrome(options=options)
+driver=webdriver.Chrome(options=options)
 try:
     driver.get('http://127.0.0.1:8000/')
-
-    def game_started(d):
-        state = snapshot(d)
-        loading_hidden = state['loadingDisplay'] == 'none'
-        main_visible = state['mainDisplay'] != 'none'
-        return loading_hidden and main_visible
-
     try:
-        WebDriverWait(driver, 45).until(game_started)
+        WebDriverWait(driver,45).until(lambda d: snapshot(d)['loadingDisplay']=='none' and snapshot(d)['mainDisplay']!='none')
     except TimeoutException:
-        print('TIMEOUT runtime state:', json.dumps(snapshot(driver), sort_keys=True))
-        print_browser_logs(driver)
-        raise
+        print('TIMEOUT:', json.dumps(snapshot(driver), sort_keys=True)); browser_logs(driver); raise
 
-    module_state = snapshot(driver)
+    module_state=snapshot(driver)
     print('Runtime state:', json.dumps(module_state, sort_keys=True))
-
-    if not all(module_state[k] for k in ('requirejs', 'initializer', 'accessibility', 'mobileExperience', 'finalAudit')):
-        print_browser_logs(driver)
-        raise RuntimeError('Required game/accessibility modules did not initialize')
+    if not all(module_state[k] for k in ('requirejs','initializer','accessibility','mobileExperience','finalAudit')):
+        browser_logs(driver); raise RuntimeError('Required modules did not initialize')
 
     try:
-        WebDriverWait(driver, 8).until(lambda d: (
-            accessibility_state(d)['movementStatusExists'] and
-            accessibility_state(d)['activeNoteCount'] == 0 and
-            accessibility_state(d)['activeExposedCalloutCount'] == 0 and
-            accessibility_state(d)['northLabel'] == 'Move north'
+        WebDriverWait(driver,10).until(lambda d: (
+            accessibility_state(d)['playerStatsCompact'] and
+            accessibility_state(d)['activePerksCompact'] and
+            accessibility_state(d)['northLabel']=='Move north'
         ))
     except TimeoutException:
-        print('ACCESSIBILITY REGRESSION STATE:', json.dumps(accessibility_state(driver), sort_keys=True))
-        print_browser_logs(driver)
-        raise
+        print('A11Y TIMEOUT:', json.dumps(accessibility_state(driver), sort_keys=True)); browser_logs(driver); raise
 
-    a11y = accessibility_state(driver)
-    print('Accessibility state:', json.dumps(a11y, sort_keys=True))
+    a=accessibility_state(driver)
+    print('Accessibility state:', json.dumps(a, sort_keys=True))
+    if a['silentCalloutStopCount'] != 0:
+        raise RuntimeError(f"Found {a['silentCalloutStopCount']} information-only callout focus stops")
+    if a['noteCount'] != 0:
+        raise RuntimeError(f"Found {a['noteCount']} role=note callout stops")
+    if a['playerStatsTabIndex'] != '0' or not a['playerStatsLabel']:
+        raise RuntimeError('Player stats are not exposed as one labelled focus stop')
+    if a['playerStatsVisibleChildCount'] != 0:
+        raise RuntimeError('Player stats still expose child swipe stops')
+    if a['activePerksTabIndex'] != '0' or not a['activePerksLabel']:
+        raise RuntimeError('Status effects are not exposed as one labelled focus stop')
+    if a['activePerkVisibleChildCount'] != 0:
+        raise RuntimeError('Status effects still expose individual child swipe stops')
+    if a['inactivePerksHidden'] != 'true':
+        raise RuntimeError('Inactive desktop/mobile status copy is exposed')
+    if not a['movementStatusText'] or a['compassLabel'] != 'Movement and travel actions':
+        raise RuntimeError('Movement accessibility regression')
 
-    if a11y['firstPerkRole'] == 'note':
-        raise RuntimeError('Status effect still exposes a duplicate role=note stop')
-    if a11y['firstPerkLabel'] == 'More information':
-        raise RuntimeError('Status effect still exposes generic More information label')
-    if a11y['firstPerkImageAlt'] not in ('', None) or a11y['firstPerkImageHidden'] != 'true':
-        raise RuntimeError('Status effect image still creates a duplicate accessible name')
-    if a11y['inactivePerksHidden'] != 'true':
-        raise RuntimeError('Inactive mobile/desktop status copy is still exposed')
-    if not a11y['movementStatusText']:
-        raise RuntimeError('Movement guidance region is empty')
-    if a11y['compassLabel'] != 'Movement and travel actions':
-        raise RuntimeError('Movement group is missing an accessible name')
-
-    severe = []
-    for entry in print_browser_logs(driver):
-        message = entry.get('message', '')
-        if entry.get('level') == 'SEVERE' and ('127.0.0.1:8000' in message or 'Uncaught' in message or 'ReferenceError' in message or 'TypeError' in message):
-            severe.append(message)
-    if severe:
-        raise RuntimeError('Browser console errors:\n' + '\n'.join(severe))
-
-    print('Browser runtime smoke test passed: game booted and mobile status/movement accessibility regressions are fixed.')
+    severe=[]
+    for entry in browser_logs(driver):
+        m=entry.get('message','')
+        if entry.get('level')=='SEVERE' and ('127.0.0.1:8000' in m or 'Uncaught' in m or 'ReferenceError' in m or 'TypeError' in m): severe.append(m)
+    if severe: raise RuntimeError('Browser console errors:\n'+'\n'.join(severe))
+    print('Compact focus runtime test passed.')
 finally:
     driver.quit()
