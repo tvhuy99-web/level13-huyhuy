@@ -27,6 +27,6 @@ require.config({
 		}
 	},
 	
-	urlArgs: "v=0.6.3&build=a11y-focus-stability-20260907-4",
+	urlArgs: "v=0.6.3&build=a11y-live-header-stable-20260907-5",
 
 });
