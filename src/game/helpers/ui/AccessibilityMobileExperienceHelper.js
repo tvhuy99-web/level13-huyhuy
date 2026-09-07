@@ -73,24 +73,39 @@ summary.setAttribute("data-a11y-summary", "1");
 summary.setAttribute("data-a11y-summary-key", "player-overview");
 host.insertBefore(summary, host.firstChild);
 }
-let parts = [];
+let inventorySummary = document.getElementById("accessibility-inventory-camp-overview");
+if (!inventorySummary) {
+inventorySummary = document.createElement("p");
+inventorySummary.id = "accessibility-inventory-camp-overview";
+inventorySummary.className = "hide-from-visual-layout accessibility-compact-summary";
+inventorySummary.setAttribute("data-a11y-summary", "1");
+inventorySummary.setAttribute("data-a11y-summary-key", "inventory-camp-overview");
+if (summary.nextSibling) host.insertBefore(inventorySummary, summary.nextSibling);
+else host.appendChild(inventorySummary);
+}
+let playerParts = [];
 let player = this.firstStatText(".player-stats-container");
-if (player) parts.push("Player status. " + player);
+if (player) playerParts.push("Player status. " + player);
 let statuses = this.statusText();
-if (statuses) parts.push("Status effects. " + statuses);
+if (statuses) playerParts.push("Status effects. " + statuses);
 let equipment = this.firstText(".container-equipment-stats");
-if (equipment) parts.push("Equipment stats. " + equipment);
+if (equipment) playerParts.push("Equipment stats. " + equipment);
+let inventoryParts = [];
 let bag = this.inventoryText();
-if (bag) parts.push("Inventory. " + bag);
+if (bag) inventoryParts.push("Inventory. " + bag);
 let tribe = this.firstStatText(".statsbar-tribe-stats");
-if (tribe) parts.push("Tribe stats. " + tribe);
+if (tribe) inventoryParts.push("Tribe stats. " + tribe);
 let camp = this.campText();
-if (camp) parts.push("Camp. " + camp);
-summary.textContent = "Player overview. " + (parts.length ? parts.join(". ") : "No status information available yet.");
-summary.removeAttribute("tabindex");
-summary.removeAttribute("aria-label");
-summary.removeAttribute("role");
-summary.removeAttribute("aria-hidden");
+if (camp) inventoryParts.push("Camp. " + camp);
+summary.textContent = "Player overview. " + (playerParts.length ? playerParts.join(". ") : "No player status information available yet.");
+inventorySummary.textContent = "Inventory and camp overview. " + (inventoryParts.length ? inventoryParts.join(". ") : "No inventory or camp information available yet.");
+let summaries = [summary, inventorySummary];
+for (let i = 0; i < summaries.length; i++) {
+summaries[i].removeAttribute("tabindex");
+summaries[i].removeAttribute("aria-label");
+summaries[i].removeAttribute("role");
+summaries[i].removeAttribute("aria-hidden");
+}
 };
 H.prototype.statusText = function () {
 let ids = [
