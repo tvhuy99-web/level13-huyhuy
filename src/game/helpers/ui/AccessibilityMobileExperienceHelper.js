@@ -60,11 +60,15 @@ define([], function () {
 			d.removeAttribute("role");
 			d.removeAttribute("tabindex");
 			let owner = t.closest("li,.stat-indicator,.item-slot,.npc-container");
-			if (owner && !this.hasActions(owner)) {
+			if (owner && !this.inStatusList(owner) && !this.hasActions(owner)) {
 				let base = this.norm(owner.getAttribute("aria-label")) || this.norm(owner.innerText || owner.textContent);
 				this.compact(owner, this.unique(base, label), owner.tagName === "LI" ? "listitem" : "group");
 			}
 		}
+	};
+
+	H.prototype.inStatusList = function (e) {
+		return !!(e && e.closest && e.closest("#player-perks-list-mobile,#player-statuses-list-mobile,#player-perks-list-regular,#player-statuses-list-regular"));
 	};
 
 	H.prototype.compactIndicators = function () {
@@ -96,28 +100,32 @@ define([], function () {
 			let s = this.norm(it.getAttribute("aria-label")) || (t && this.norm(t.getAttribute("description"))) || this.alt(it) || this.norm(it.innerText || it.textContent);
 			if (d) s = this.unique(s, this.norm(d.innerText || d.textContent));
 			if (s) parts.push(s);
+			this.decompact(it);
+			it.removeAttribute("tabindex");
+			if (["note", "group", "listitem"].indexOf(it.getAttribute("role")) >= 0) it.removeAttribute("role");
+			it.setAttribute("aria-hidden", "true");
 		}
-		if (parts.length) this.compact(list, "Status effects. " + parts.join(". "), "group");
+		if (parts.length) this.compact(list, "Status effects. " + parts.join(". "), "group", true);
 		else this.decompact(list);
 	};
 
 	H.prototype.compactClusters = function () {
 		let cfg = [
-			[".player-stats-container", "Player status"],
-			[".statsbar-tribe-stats", "Tribe stats"],
-			[".container-equipment-stats", "Equipment stats"],
-			[".statsbar-resources", "Camp resources"],
-			[".bag-resources", "Bag resources"]
+			[".player-stats-container", "Player status", true],
+			[".statsbar-tribe-stats", "Tribe stats", false],
+			[".container-equipment-stats", "Equipment stats", false],
+			[".statsbar-resources", "Camp resources", false],
+			[".bag-resources", "Bag resources", false]
 		];
 		for (let i = 0; i < cfg.length; i++) {
 			let els = document.querySelectorAll(cfg[i][0]);
 			for (let j = 0; j < els.length; j++) {
-				let e = els[j];
-				if (!this.visible(e)) { this.decompact(e); e.setAttribute("aria-hidden", "true"); continue; }
+				let e = els[j], force = cfg[i][2];
+				if (!this.visualVisible(e)) { this.decompact(e); continue; }
 				e.removeAttribute("aria-hidden");
-				if (this.hasActions(e)) continue;
-				let text = this.statText(e) || this.norm(e.innerText || e.textContent);
-				if (text) this.compact(e, cfg[i][1] + ". " + text, "group");
+				if (!force && this.hasActions(e)) continue;
+				let text = this.statTextVisual(e) || this.norm(e.innerText || e.textContent);
+				if (text) this.compact(e, cfg[i][1] + ". " + text, "group", force);
 			}
 		}
 	};
@@ -127,7 +135,7 @@ define([], function () {
 		let els = document.querySelectorAll(q);
 		for (let i = 0; i < els.length; i++) {
 			let e = els[i];
-			if (!this.visible(e) || e.closest("[data-a11y-compact='1']") || this.hasActions(e)) continue;
+			if (!this.visualVisible(e) || e.closest("[data-a11y-compact='1']") || this.hasActions(e)) continue;
 			let l = e.querySelector(".label"), v = e.querySelector(".value");
 			let text = this.unique(this.norm(l && l.textContent), this.norm(v && v.textContent)) || this.norm(e.innerText || e.textContent);
 			if (text) this.compact(e, text, "group");
@@ -138,14 +146,14 @@ define([], function () {
 		let rows = document.querySelectorAll("table tr");
 		for (let i = 0; i < rows.length; i++) {
 			let r = rows[i];
-			if (!this.visible(r) || r.querySelector("th") || this.hasActions(r) || r.closest("[data-a11y-compact='1']")) continue;
+			if (!this.visualVisible(r) || r.querySelector("th") || this.hasActions(r) || r.closest("[data-a11y-compact='1']")) continue;
 			let text = this.norm(r.innerText || r.textContent);
 			if (text) this.compact(r, text, "row");
 		}
 	};
 
-	H.prototype.compact = function (e, label, role) {
-		if (!e || !label || this.hasActions(e)) return;
+	H.prototype.compact = function (e, label, role, force) {
+		if (!e || !label || (!force && this.hasActions(e))) return;
 		e.setAttribute("data-a11y-compact", "1");
 		e.setAttribute("tabindex", "0");
 		e.setAttribute("aria-label", this.norm(label));
@@ -170,10 +178,10 @@ define([], function () {
 		for (let i = 0; i < xs.length; i++) { xs[i].removeAttribute("aria-hidden"); xs[i].removeAttribute("data-a11y-hidden"); }
 	};
 
-	H.prototype.statText = function (e) {
+	H.prototype.statTextVisual = function (e) {
 		let xs = e.querySelectorAll(".stat-indicator"), parts = [];
 		for (let i = 0; i < xs.length; i++) {
-			if (!this.visible(xs[i])) continue;
+			if (!this.visualVisible(xs[i])) continue;
 			let l = xs[i].querySelector(".label"), v = xs[i].querySelector(".value");
 			let name = this.norm(l && l.textContent) || this.alt(xs[i]);
 			let s = this.unique(name, this.norm(v && v.textContent));
@@ -208,7 +216,8 @@ define([], function () {
 	H.prototype.norm = function (s) { return String(s || "").replace(/\s+/g, " ").trim(); };
 	H.prototype.unique = function (a, b) { a=this.norm(a); b=this.norm(b); if(!a)return b;if(!b)return a;let x=a.toLowerCase(),y=b.toLowerCase();if(x===y||x.indexOf(y)>=0)return a;if(y.indexOf(x)>=0)return b;return a+". "+b; };
 	H.prototype.removeRef = function (e, a, id) { if(!e||!id)return;let xs=(e.getAttribute(a)||"").split(/\s+/).filter(Boolean).filter(x=>x!==id);if(xs.length)e.setAttribute(a,xs.join(" "));else e.removeAttribute(a); };
-	H.prototype.visible = function (e) { if(!e||!e.isConnected)return false;for(let x=e;x&&x!==document.documentElement;x=x.parentElement){let s=getComputedStyle(x);if(s.display==="none"||s.visibility==="hidden"||x.hidden)return false;if(x!==e&&x.getAttribute("aria-hidden")==="true")return false;}return true; };
+	H.prototype.visualVisible = function (e) { if(!e||!e.isConnected)return false;for(let x=e;x&&x!==document.documentElement;x=x.parentElement){let s=getComputedStyle(x);if(s.display==="none"||s.visibility==="hidden"||x.hidden)return false;}return true; };
+	H.prototype.visible = function (e) { if(!this.visualVisible(e))return false;for(let x=e.parentElement;x&&x!==document.documentElement;x=x.parentElement){if(x.getAttribute("aria-hidden")==="true")return false;}return true; };
 	H.prototype.anyPopup = function () { let xs=document.querySelectorAll(".popup");for(let i=0;i<xs.length;i++)if(this.visible(xs[i]))return true;return false; };
 	H.prototype.observe = function () { if(this.observer||typeof MutationObserver==="undefined"||!document.body)return;this.observer=new MutationObserver(()=>this.schedule());this.observer.observe(document.body,{childList:true,characterData:true,attributes:true,attributeFilter:["class","style","hidden","description","role","aria-label","aria-describedby","aria-valuenow","aria-valuetext"],subtree:true}); };
 
