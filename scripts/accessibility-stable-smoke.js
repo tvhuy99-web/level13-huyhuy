@@ -89,6 +89,16 @@ if (!focusPatch.includes('if (summary.textContent !== label) summary.textContent
 if (!focusPatch.includes('isGeneratedAccessibilityMutationTarget')) {
   throw new Error('Generated accessibility mutations must be ignored by the mobile observer');
 }
+if (!focusPatch.includes('hasInitializedHeaderOverviews') ||
+    !focusPatch.includes('isRealtimeVisualHeaderMutationTarget') ||
+    !focusPatch.includes('#mobile-header,#header-side,#grid-main-header') ||
+    !focusPatch.includes('if (this.isRealtimeVisualHeaderMutationTarget(mutation.target)) continue;')) {
+  throw new Error('Live visual-header mutations must not rebuild initialized TalkBack overviews');
+}
+if (!focusPatch.includes('playerText.indexOf("Player status.") >= 0') ||
+    !focusPatch.includes('inventoryText.indexOf("Inventory.") >= 0')) {
+  throw new Error('Header mutation filtering must wait until both TalkBack overviews are initialized');
+}
 const observerStart = focusPatch.indexOf('H.prototype.observe');
 const observerBody = focusPatch.slice(observerStart);
 if (!observerBody.includes('attributeFilter: ["class", "style", "hidden", "description"]')) {
@@ -99,4 +109,4 @@ for (const noisyAttr of ['aria-label', 'aria-describedby', 'aria-valuenow', 'ari
   if (filterLine && filterLine[0].includes(noisyAttr)) throw new Error(`Observer must not watch helper-written attribute: ${noisyAttr}`);
 }
 
-console.log(`Stable accessibility wiring OK: ${helpers.length} helpers, two real-text header overviews and stable TalkBack browse mutations present.`);
+console.log(`Stable accessibility wiring OK: ${helpers.length} helpers, two real-text header overviews and live-stat-safe TalkBack browse mutations present.`);
