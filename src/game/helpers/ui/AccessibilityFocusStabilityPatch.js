@@ -1,6 +1,7 @@
 define([
-	'game/helpers/ui/AccessibilityOverviewCleanupPatch'
-], function (AccessibilityMobileExperienceHelper) {
+	'game/helpers/ui/AccessibilityOverviewCleanupPatch',
+	'game/helpers/ui/AccessibilityAutoScoutCoordinatesHelper'
+], function (AccessibilityMobileExperienceHelper, AccessibilityAutoScoutCoordinatesHelper) {
 
 	let H = AccessibilityMobileExperienceHelper;
 
