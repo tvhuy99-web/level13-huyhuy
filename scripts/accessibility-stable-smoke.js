@@ -83,6 +83,9 @@ const focusPatch = fs.readFileSync(focusPatchPath, 'utf8');
 if (!focusPatch.includes("'game/helpers/ui/AccessibilityOverviewCleanupPatch'")) {
   throw new Error('Focus stability patch must load after the overview cleanup patch');
 }
+if (!focusPatch.includes("'game/helpers/ui/AccessibilityAutoScoutCoordinatesHelper'")) {
+  throw new Error('Automatic sector scouting helper must be loaded with the stable accessibility patch');
+}
 if (!focusPatch.includes('if (summary.textContent !== label) summary.textContent = label;')) {
   throw new Error('Read-only summaries must not replace identical text nodes');
 }
@@ -143,4 +146,30 @@ if (!actionCallout.includes('this.updateActionButtonLabel(button, callout);')) {
   throw new Error('Action callout helper must apply purpose and cost to the same button focus');
 }
 
-console.log(`Stable accessibility wiring OK: ${helpers.length} helpers, stable TalkBack overviews, action details, and movement guidance present.`);
+const autoScoutPath = path.join(helperDir, 'AccessibilityAutoScoutCoordinatesHelper.js');
+if (!fs.existsSync(autoScoutPath)) throw new Error('Automatic sector scouting / coordinate helper is missing');
+const autoScout = fs.readFileSync(autoScoutPath, 'utf8');
+for (const autoScoutContract of [
+  'sectorStatus.scouted = true',
+  'GlobalSignals.sectorScoutedSignal.dispatch(sector)',
+  'unlockFeature("evidence")',
+  'unlockFeature("scout")',
+  'accessibility-location-coordinates',
+  'Vị trí. Tầng ',
+  'data-a11y-summary-key", "location-coordinates',
+  'summary.textContent !== text',
+  'formatCoordinate',
+  'playerLocationChangedSignal',
+  'playerMoveCompletedSignal',
+  '#out-action-scout{display:none !important;}'
+]) {
+  if (!autoScout.includes(autoScoutContract)) throw new Error(`Automatic scouting/coordinates contract missing: ${autoScoutContract}`);
+}
+if (autoScout.includes('startAction("scout")') || autoScout.includes('completeAction("scout")')) {
+  throw new Error('Automatic sector scouting must not become a separate player action');
+}
+if (autoScout.includes('setAttribute("role", "status")') || autoScout.includes('setAttribute("aria-live"')) {
+  throw new Error('Coordinates must be stable browse text, not a live region that can steal TalkBack attention');
+}
+
+console.log(`Stable accessibility wiring OK: ${helpers.length} helpers, stable TalkBack overviews, action details, automatic scouting, coordinates, and movement guidance present.`);
