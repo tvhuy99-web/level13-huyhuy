@@ -38,6 +38,7 @@ def snapshot(driver):
 def state(driver):
     return driver.execute_script("""
         const overview=document.getElementById('accessibility-player-overview');
+        const inventoryOverview=document.getElementById('accessibility-inventory-camp-overview');
         const headers=['mobile-header','header-side','grid-main-header'].map(id=>document.getElementById(id));
         const rp=document.getElementById('player-perks-list-regular');
         const mp=document.getElementById('player-perks-list-mobile');
@@ -80,6 +81,11 @@ def state(driver):
             overviewAriaLabel:overview?overview.getAttribute('aria-label'):null,
             overviewRole:overview?overview.getAttribute('role'):null,
             overviewInsideVisualHeader:!!(overview&&overview.closest('#mobile-header,#header-side,#grid-main-header')),
+            inventoryOverviewText:inventoryOverview?(inventoryOverview.textContent||'').trim():'',
+            inventoryOverviewTabindex:inventoryOverview?inventoryOverview.getAttribute('tabindex'):null,
+            inventoryOverviewAriaLabel:inventoryOverview?inventoryOverview.getAttribute('aria-label'):null,
+            inventoryOverviewRole:inventoryOverview?inventoryOverview.getAttribute('role'):null,
+            inventoryOverviewInsideVisualHeader:!!(inventoryOverview&&inventoryOverview.closest('#mobile-header,#header-side,#grid-main-header')),
             badSummaryFocus:summaries.filter(s=>s.hasAttribute('tabindex')||s.hasAttribute('aria-label')||!(s.textContent||'').trim()).length,
             oldCompact:document.querySelectorAll('[data-a11y-compact="1"]').length,
             headersHidden:headers.every(h=>!h||h.getAttribute('aria-hidden')==='true'),
@@ -134,8 +140,16 @@ def browser_logs(driver):
 
 def core_ready(driver):
     a=state(driver)
-    text=a['overviewText']
-    return a['headersInert'] and text.startswith('Player overview.') and 'Player status.' in text and 'Status effects.' in text
+    player_text=a['overviewText']
+    inventory_text=a['inventoryOverviewText']
+    return (
+        a['headersInert']
+        and player_text.startswith('Player overview.')
+        and 'Player status.' in player_text
+        and 'Status effects.' in player_text
+        and inventory_text.startswith('Inventory and camp overview.')
+        and 'Inventory.' in inventory_text
+    )
 
 
 def run_case(width, height):
@@ -155,10 +169,14 @@ def run_case(width, height):
         print(f'TalkBack state {width}x{height}:',json.dumps(a,sort_keys=True))
 
         if not all(m[k] for k in ('requirejs','initializer','accessibility','mobileExperience','finalAudit')): raise RuntimeError('Required modules did not initialize')
-        if not a['overviewText'].startswith('Player overview.'): raise RuntimeError('Single Player overview real-text node missing')
+        if not a['overviewText'].startswith('Player overview.'): raise RuntimeError('Player overview real-text node missing')
         if 'Player status.' not in a['overviewText'] or 'Status effects.' not in a['overviewText']: raise RuntimeError('Player overview does not contain core status information')
+        if 'Inventory.' in a['overviewText']: raise RuntimeError('Inventory leaked back into Player overview')
+        if not a['inventoryOverviewText'].startswith('Inventory and camp overview.'): raise RuntimeError('Inventory and camp overview real-text node missing')
+        if 'Inventory.' not in a['inventoryOverviewText']: raise RuntimeError('Inventory and camp overview does not contain inventory information')
         if a['overviewTabindex'] is not None or a['overviewAriaLabel'] is not None or a['overviewRole'] is not None: raise RuntimeError('Player overview is still synthetic/focusable')
-        if a['overviewInsideVisualHeader']: raise RuntimeError('Player overview is inside a visual header')
+        if a['inventoryOverviewTabindex'] is not None or a['inventoryOverviewAriaLabel'] is not None or a['inventoryOverviewRole'] is not None: raise RuntimeError('Inventory and camp overview is still synthetic/focusable')
+        if a['overviewInsideVisualHeader'] or a['inventoryOverviewInsideVisualHeader']: raise RuntimeError('An accessibility overview is inside a visual header')
         if a['badSummaryFocus']!=0 or a['oldCompact']!=0: raise RuntimeError('Read-only summaries still create synthetic swipe stops')
         if not a['headersHidden'] or not a['headersInert'] or a['headerFocusableCount']!=0: raise RuntimeError('A visual header remains reachable by TalkBack')
         if not a['regularPerksInert'] or a['regularPerksTabindex'] is not None: raise RuntimeError('player-perks-list-regular remains reachable')
@@ -171,9 +189,12 @@ def run_case(width, height):
 
         expose_background_for_ax_probe(driver)
         names=ax_names(driver)
-        overview_names=[n for n in names if n.startswith('Player overview.')]
-        print(f'AX overview {width}x{height}:',json.dumps(overview_names[:3]))
-        if len(overview_names)!=1: raise RuntimeError(f'Expected exactly one Player overview AX node, found {len(overview_names)}')
+        player_overview_names=[n for n in names if n.startswith('Player overview.')]
+        inventory_overview_names=[n for n in names if n.startswith('Inventory and camp overview.')]
+        print(f'AX player overview {width}x{height}:',json.dumps(player_overview_names[:3]))
+        print(f'AX inventory overview {width}x{height}:',json.dumps(inventory_overview_names[:3]))
+        if len(player_overview_names)!=1: raise RuntimeError(f'Expected exactly one Player overview AX node, found {len(player_overview_names)}')
+        if len(inventory_overview_names)!=1: raise RuntimeError(f'Expected exactly one Inventory and camp overview AX node, found {len(inventory_overview_names)}')
         if any(n in names for n in ('player-perks-list-regular','container-equipment-stats-side')): raise RuntimeError('Visual header IDs leaked into AX names')
 
         severe=[]
@@ -187,4 +208,4 @@ def run_case(width, height):
 
 run_case(390,844)
 run_case(980,844)
-print('Single-overview TalkBack regression test passed in phone and wide viewport modes.')
+print('Two-overview TalkBack regression test passed in phone and wide viewport modes.')
