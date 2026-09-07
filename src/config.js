@@ -27,6 +27,6 @@ require.config({
 		}
 	},
 	
-	urlArgs: "v=0.6.3&build=a11y-action-details-movement-20260907-6",
+	urlArgs: "v=0.6.3&build=a11y-auto-scout-coordinates-20260908-7",
 
 });
