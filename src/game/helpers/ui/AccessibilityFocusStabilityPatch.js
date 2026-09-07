@@ -86,5 +86,81 @@ define([
 		this.suppressVisualTree(source, "summary");
 	};
 
+	// Keep the movement explanation next to the movement/action area in browse
+	// order instead of at the very top of the whole exploration panel.
+	H.prototype.movementRegion = function () {
+		let region = document.getElementById("accessibility-movement-status");
+		let host = document.getElementById("container-tab-two-out-actions") || document.getElementById("container-tab-two-out") || document.body;
+		if (!host) return null;
+		if (!region) {
+			region = document.createElement("p");
+			region.id = "accessibility-movement-status";
+			region.className = "hide-from-visual-layout";
+			region.setAttribute("role", "status");
+			region.setAttribute("aria-live", "polite");
+			region.setAttribute("aria-atomic", "true");
+		}
+		if (region.parentElement !== host) host.insertBefore(region, host.firstChild);
+		return region;
+	};
+
+	H.prototype.configureMovement = function () {
+		let dirs = { nw:"northwest", north:"north", ne:"northeast", west:"west", east:"east", sw:"southwest", south:"south", se:"southeast" };
+		let directionButtons = [];
+		for (let k in dirs) {
+			let button = document.getElementById("out-action-move-" + k);
+			let emergencyButton = document.getElementById("out-action-move-" + k + "-grit");
+			if (button) {
+				button.setAttribute("aria-label", "Move " + dirs[k]);
+				directionButtons.push(button);
+			}
+			if (emergencyButton) {
+				emergencyButton.setAttribute("aria-label", "Move " + dirs[k] + " using emergency movement");
+				directionButtons.push(emergencyButton);
+			}
+		}
+
+		let compass = document.getElementById("out-container-compass-actions");
+		if (compass) {
+			compass.setAttribute("role", "group");
+			compass.setAttribute("aria-label", "Movement and travel actions");
+		}
+
+		let region = this.movementRegion();
+		if (!region) return;
+
+		let popup = this.anyPopup();
+		let getUp = this.visible(document.getElementById("out-action-get-up"));
+		let movementTable = document.getElementById("table-out-actions-movement");
+		let hasVisibleMovementTable = this.visible(movementTable);
+		let visibleDirectionCount = 0;
+		for (let i = 0; i < directionButtons.length; i++) {
+			if (this.visible(directionButtons[i])) visibleDirectionCount++;
+		}
+		let movementAvailable = hasVisibleMovementTable && visibleDirectionCount > 0;
+		let buildCamp = document.querySelector("button[action='build_out_camp']");
+		let enterCamp = document.getElementById("out-action-enter");
+		let scout = document.getElementById("out-action-scout");
+
+		let message = "";
+		if (popup) {
+			message = "Movement is not available during the current dialogue or popup. Continue or close it first.";
+		} else if (getUp) {
+			message = "Movement is not available yet. Choose Get up.";
+		} else if (movementAvailable) {
+			message = "Movement is available. Direction buttons follow: north, northeast, east, southeast, south, southwest, west, and northwest.";
+		} else if (this.visible(buildCamp)) {
+			message = "Movement directions are not unlocked yet. This is the opening exploration area: build a camp, enter it, then leave camp when ready to explore to unlock direction buttons.";
+		} else if (this.visible(enterCamp)) {
+			message = "Movement directions are not unlocked yet. Enter camp, prepare for exploration, then leave camp to unlock direction buttons.";
+		} else if (this.visible(scout)) {
+			message = "Movement directions are not unlocked yet. Complete the available exploration actions first.";
+		} else {
+			message = "Movement directions are currently unavailable.";
+		}
+
+		if (region.textContent !== message) region.textContent = message;
+	};
+
 	return H;
 });
