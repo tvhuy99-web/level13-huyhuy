@@ -27,6 +27,6 @@ require.config({
 		}
 	},
 	
-	urlArgs: "v=0.6.3&build=a11y-split-overview-20260907-2",
+	urlArgs: "v=0.6.3&build=a11y-clean-overviews-20260907-3",
 
 });
