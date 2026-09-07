@@ -49,8 +49,11 @@ if (missing.length) {
 }
 
 const mobileHelper = fs.readFileSync(path.join(helperDir, 'AccessibilityMobileExperienceHelper.js'), 'utf8');
-for (const required of ["role='note'", 'accessibility-movement-status', 'directions[key]', 'Choose Scout', 'aria-hidden']) {
+for (const required of ['data-a11y-compact', 'Status effects.', 'Player status', 'accessibility-movement-status', 'Choose Scout', 't.removeAttribute("tabindex")', 'aria-hidden']) {
   if (!mobileHelper.includes(required)) throw new Error(`Mobile accessibility regression contract missing: ${required}`);
 }
+if (mobileHelper.includes('setAttribute("role", "note")') || mobileHelper.includes("setAttribute('role', 'note')")) {
+  throw new Error('Compact focus model must not create note-only swipe stops');
+}
 
-console.log(`Stable accessibility wiring OK: ${helpers.length} helpers, dependencies present.`);
+console.log(`Stable accessibility wiring OK: ${helpers.length} helpers, dependencies present, compact focus contract present.`);
