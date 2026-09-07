@@ -1,7 +1,6 @@
 import json
-import sys
-import time
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -12,39 +11,63 @@ options.add_argument('--disable-dev-shm-usage')
 options.add_argument('--window-size=390,844')
 options.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
 
+def snapshot(driver):
+    return driver.execute_script("""
+        const loading = document.querySelector('.loading-content');
+        const thinking = document.querySelector('.thinking-content');
+        const main = document.getElementById('unit-main');
+        const mobile = document.getElementById('mobile-overlay');
+        const req = window.requirejs;
+        const defined = req && req.s && req.s.contexts && req.s.contexts._ ? Object.keys(req.s.contexts._.defined) : [];
+        return {
+            readyState: document.readyState,
+            requirejs: !!req,
+            initializer: !!(req && req.defined('game/GameGlobalsInitializer')),
+            accessibility: !!(req && req.defined('game/helpers/ui/AccessibilityHelper')),
+            finalAudit: !!(req && req.defined('game/helpers/ui/AccessibilityFinalAuditHelper')),
+            definedCount: defined.length,
+            accessibilityModules: defined.filter(x => x.indexOf('Accessibility') >= 0),
+            loadingDisplay: loading ? getComputedStyle(loading).display : 'missing',
+            thinkingDisplay: thinking ? getComputedStyle(thinking).display : 'missing',
+            mainDisplay: main ? getComputedStyle(main).display : 'missing',
+            mobileDisplay: mobile ? getComputedStyle(mobile).display : 'missing',
+            bodyTextStart: document.body ? document.body.innerText.slice(0, 500) : ''
+        };
+    """)
+
+def print_browser_logs(driver):
+    logs = driver.get_log('browser')
+    print('Browser console entries:', len(logs))
+    for entry in logs:
+        print(f"BROWSER {entry.get('level')}: {entry.get('message')}")
+    return logs
+
 driver = webdriver.Chrome(options=options)
 try:
     driver.get('http://127.0.0.1:8000/')
 
     def game_started(d):
-        return d.execute_script("""
-            const loading = document.querySelector('.loading-content');
-            const main = document.getElementById('unit-main');
-            if (!loading || !main) return false;
-            const loadingHidden = getComputedStyle(loading).display === 'none' || loading.hidden;
-            const mainVisible = getComputedStyle(main).display !== 'none';
-            return loadingHidden && mainVisible;
-        """)
+        state = snapshot(d)
+        loading_hidden = state['loadingDisplay'] == 'none'
+        main_visible = state['mainDisplay'] != 'none'
+        return loading_hidden and main_visible
 
-    WebDriverWait(driver, 45).until(game_started)
+    try:
+        WebDriverWait(driver, 45).until(game_started)
+    except TimeoutException:
+        print('TIMEOUT runtime state:', json.dumps(snapshot(driver), sort_keys=True))
+        print_browser_logs(driver)
+        raise
 
-    module_state = driver.execute_script("""
-        return {
-            requirejs: !!window.requirejs,
-            initializer: !!(window.requirejs && requirejs.defined('game/GameGlobalsInitializer')),
-            accessibility: !!(window.requirejs && requirejs.defined('game/helpers/ui/AccessibilityHelper')),
-            finalAudit: !!(window.requirejs && requirejs.defined('game/helpers/ui/AccessibilityFinalAuditHelper')),
-            loadingDisplay: getComputedStyle(document.querySelector('.loading-content')).display,
-            mainDisplay: getComputedStyle(document.getElementById('unit-main')).display
-        };
-    """)
+    module_state = snapshot(driver)
     print('Runtime state:', json.dumps(module_state, sort_keys=True))
 
     if not all(module_state[k] for k in ('requirejs', 'initializer', 'accessibility', 'finalAudit')):
+        print_browser_logs(driver)
         raise RuntimeError('Required game/accessibility modules did not initialize')
 
     severe = []
-    for entry in driver.get_log('browser'):
+    for entry in print_browser_logs(driver):
         message = entry.get('message', '')
         if entry.get('level') == 'SEVERE' and ('127.0.0.1:8000' in message or 'Uncaught' in message or 'ReferenceError' in message or 'TypeError' in message):
             severe.append(message)
