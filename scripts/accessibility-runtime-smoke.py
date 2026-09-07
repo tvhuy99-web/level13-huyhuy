@@ -99,8 +99,6 @@ try:
         print_browser_logs(driver)
         raise RuntimeError('Required game/accessibility modules did not initialize')
 
-    # Give UIList/callout generation and the accessibility observer a short moment
-    # to settle, then require the exact mobile accessibility regression fixes.
     try:
         WebDriverWait(driver, 8).until(lambda d: (
             accessibility_state(d)['movementStatusExists'] and
