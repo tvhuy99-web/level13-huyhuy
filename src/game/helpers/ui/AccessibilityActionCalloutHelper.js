@@ -20,14 +20,26 @@ define([], function () {
 		this.observeActionCallouts();
 	};
 
+	AccessibilityActionCalloutHelper.prototype.normalize = function (text) {
+		return String(text || "").replace(/\s+/g, " ").trim();
+	};
+
 	AccessibilityActionCalloutHelper.prototype.configureActionCallouts = function (root) {
 		if (!root) return;
 
 		let containers = [];
-		if (root.matches && root.matches(".callout-container")) containers.push(root);
+		let seen = [];
+		let add = function (container) {
+			if (!container || seen.indexOf(container) >= 0) return;
+			seen.push(container);
+			containers.push(container);
+		};
+
+		if (root.matches && root.matches(".callout-container")) add(root);
+		if (root.closest) add(root.closest(".callout-container"));
 		if (root.querySelectorAll) {
 			let nested = root.querySelectorAll(".callout-container");
-			for (let i = 0; i < nested.length; i++) containers.push(nested[i]);
+			for (let i = 0; i < nested.length; i++) add(nested[i]);
 		}
 
 		for (let i = 0; i < containers.length; i++) {
@@ -53,6 +65,7 @@ define([], function () {
 		let calloutID = this.ensureID(callout);
 		callout.setAttribute("role", "tooltip");
 		this.appendAriaReference(button, "aria-describedby", calloutID);
+		this.updateActionButtonLabel(button, callout);
 
 		if (root.getAttribute("data-accessibility-action-callout-bound") === "true") return;
 		root.setAttribute("data-accessibility-action-callout-bound", "true");
@@ -68,6 +81,75 @@ define([], function () {
 				}
 			}, 0);
 		});
+	};
+
+	AccessibilityActionCalloutHelper.prototype.updateActionButtonLabel = function (button, callout) {
+		if (!button || !callout) return;
+
+		let labelElement = button.querySelector(".btn-label");
+		let visibleLabel = this.normalize(labelElement && labelElement.textContent);
+		let storedLabel = this.normalize(button.getAttribute("data-a11y-action-base-label"));
+		let existingLabel = this.normalize(button.getAttribute("aria-label"));
+		let baseLabel = visibleLabel || storedLabel || existingLabel || this.normalize(button.textContent);
+		if (!baseLabel) return;
+
+		if (visibleLabel) button.setAttribute("data-a11y-action-base-label", visibleLabel);
+		else if (!storedLabel) button.setAttribute("data-a11y-action-base-label", baseLabel);
+
+		let action = this.normalize(button.getAttribute("action"));
+		let isBuildAction = button.classList.contains("action-build") || action.indexOf("build_") === 0;
+		let isImproveAction = button.classList.contains("action-improve") || action.indexOf("improve_") === 0;
+		if (!isBuildAction && !isImproveAction) return;
+
+		let parts = [baseLabel];
+		let costText = this.getActionCostText(callout);
+		if (costText) parts.push("Cost: " + costText);
+
+		let descriptionText = this.getActionDescriptionText(callout);
+		if (descriptionText) parts.push(descriptionText);
+
+		if (button.disabled) {
+			let disabledReason = this.getDisabledReasonText(callout);
+			if (disabledReason) parts.push(disabledReason);
+		}
+
+		let label = parts.join(". ");
+		if (button.getAttribute("aria-label") !== label) button.setAttribute("aria-label", label);
+		button.setAttribute("data-a11y-action-details", "1");
+	};
+
+	AccessibilityActionCalloutHelper.prototype.getActionCostText = function (callout) {
+		let elements = callout.querySelectorAll(".action-cost");
+		let parts = [];
+		let seen = {};
+		for (let i = 0; i < elements.length; i++) {
+			let text = this.normalize(elements[i].textContent).replace(/\s*:\s*/g, " ");
+			let key = text.toLowerCase();
+			if (!text || seen[key]) continue;
+			seen[key] = true;
+			parts.push(text);
+		}
+		return parts.join(", ");
+	};
+
+	AccessibilityActionCalloutHelper.prototype.getActionDescriptionText = function (callout) {
+		let selectors = [".action-description", ".action-effect-description"];
+		let parts = [];
+		let seen = {};
+		for (let i = 0; i < selectors.length; i++) {
+			let element = callout.querySelector(selectors[i]);
+			let text = this.normalize(element && element.textContent);
+			let key = text.toLowerCase();
+			if (!text || seen[key]) continue;
+			seen[key] = true;
+			parts.push(text);
+		}
+		return parts.join(". ");
+	};
+
+	AccessibilityActionCalloutHelper.prototype.getDisabledReasonText = function (callout) {
+		let element = callout.querySelector(".btn-disabled-reason");
+		return this.normalize(element && element.textContent);
 	};
 
 	AccessibilityActionCalloutHelper.prototype.ensureID = function (element) {
@@ -88,14 +170,23 @@ define([], function () {
 		if (this.observer || typeof MutationObserver === "undefined" || !document.body) return;
 		this.observer = new MutationObserver((mutations) => {
 			for (let i = 0; i < mutations.length; i++) {
-				let addedNodes = mutations[i].addedNodes;
+				let mutation = mutations[i];
+				let target = mutation.target && mutation.target.nodeType === 1 ? mutation.target : mutation.target && mutation.target.parentElement;
+				if (target) this.configureActionCallouts(target);
+				let addedNodes = mutation.addedNodes || [];
 				for (let j = 0; j < addedNodes.length; j++) {
 					let node = addedNodes[j];
 					if (node.nodeType === 1) this.configureActionCallouts(node);
 				}
 			}
 		});
-		this.observer.observe(document.body, { childList: true, subtree: true });
+		this.observer.observe(document.body, {
+			childList: true,
+			characterData: true,
+			attributes: true,
+			attributeFilter: ["class", "style", "disabled"],
+			subtree: true
+		});
 	};
 
 	return AccessibilityActionCalloutHelper;
