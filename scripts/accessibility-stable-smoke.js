@@ -49,7 +49,7 @@ if (missing.length) {
 }
 
 const mobileHelper = fs.readFileSync(path.join(helperDir, 'AccessibilityMobileExperienceHelper.js'), 'utf8');
-for (const required of ["role='note'", 'accessibility-movement-status', 'Move north', 'Choose Scout']) {
+for (const required of ["role='note'", 'accessibility-movement-status', 'directions[key]', 'Choose Scout', 'aria-hidden']) {
   if (!mobileHelper.includes(required)) throw new Error(`Mobile accessibility regression contract missing: ${required}`);
 }
 
