@@ -77,4 +77,26 @@ if (!suppressBody.includes('setAttribute("aria-hidden", "true")') || !suppressBo
   throw new Error('Visual headers must be aria-hidden and inert');
 }
 
-console.log(`Stable accessibility wiring OK: ${helpers.length} helpers, two real-text header overview contract present.`);
+const focusPatchPath = path.join(helperDir, 'AccessibilityFocusStabilityPatch.js');
+if (!fs.existsSync(focusPatchPath)) throw new Error('TalkBack focus stability patch is missing');
+const focusPatch = fs.readFileSync(focusPatchPath, 'utf8');
+if (!focusPatch.includes("'game/helpers/ui/AccessibilityOverviewCleanupPatch'")) {
+  throw new Error('Focus stability patch must load after the overview cleanup patch');
+}
+if (!focusPatch.includes('if (summary.textContent !== label) summary.textContent = label;')) {
+  throw new Error('Read-only summaries must not replace identical text nodes');
+}
+if (!focusPatch.includes('isGeneratedAccessibilityMutationTarget')) {
+  throw new Error('Generated accessibility mutations must be ignored by the mobile observer');
+}
+const observerStart = focusPatch.indexOf('H.prototype.observe');
+const observerBody = focusPatch.slice(observerStart);
+if (!observerBody.includes('attributeFilter: ["class", "style", "hidden", "description"]')) {
+  throw new Error('Mobile observer must be limited to game-state attributes');
+}
+for (const noisyAttr of ['aria-label', 'aria-describedby', 'aria-valuenow', 'aria-valuetext', '"role"']) {
+  const filterLine = observerBody.match(/attributeFilter:\s*\[[^\]]*\]/);
+  if (filterLine && filterLine[0].includes(noisyAttr)) throw new Error(`Observer must not watch helper-written attribute: ${noisyAttr}`);
+}
+
+console.log(`Stable accessibility wiring OK: ${helpers.length} helpers, two real-text header overviews and stable TalkBack browse mutations present.`);
