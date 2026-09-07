@@ -29,6 +29,25 @@ define([
 	'game/helpers/UpgradeEffectsHelper',
 	'game/helpers/ButtonHelper',
 	'game/helpers/WorldHelper',
+	'game/helpers/ui/AccessibilityActionCalloutHelper',
+	'game/helpers/ui/AccessibilityB1Helper',
+	'game/helpers/ui/AccessibilityB2Helper',
+	'game/helpers/ui/AccessibilityCollapsibleHelper',
+	'game/helpers/ui/AccessibilityControlHelper',
+	'game/helpers/ui/AccessibilityDialogueHelper',
+	'game/helpers/ui/AccessibilityFightHelper',
+	'game/helpers/ui/AccessibilityFinalAuditHelper',
+	'game/helpers/ui/AccessibilityHelper',
+	'game/helpers/ui/AccessibilityIndicatorHelper',
+	'game/helpers/ui/AccessibilityMapHelper',
+	'game/helpers/ui/AccessibilityMobileOverlayHelper',
+	'game/helpers/ui/AccessibilityNavigationHelper',
+	'game/helpers/ui/AccessibilityPopupHelper',
+	'game/helpers/ui/AccessibilityProgressHelper',
+	'game/helpers/ui/AccessibilityScreenHelper',
+	'game/helpers/ui/AccessibilityStructureHelper',
+	'game/helpers/ui/AccessibilityTabStatusHelper',
+	'game/helpers/ui/AccessibilityTechTreeHelper',
 	'game/helpers/ui/ChangeLogHelper',
 	'game/helpers/ui/UIMapHelper',
 	'game/helpers/ui/UITechTreeHelper',
@@ -63,6 +82,25 @@ define([
 	UpgradeEffectsHelper,
 	ButtonHelper,
 	WorldHelper,
+	AccessibilityActionCalloutHelper,
+	AccessibilityB1Helper,
+	AccessibilityB2Helper,
+	AccessibilityCollapsibleHelper,
+	AccessibilityControlHelper,
+	AccessibilityDialogueHelper,
+	AccessibilityFightHelper,
+	AccessibilityFinalAuditHelper,
+	AccessibilityHelper,
+	AccessibilityIndicatorHelper,
+	AccessibilityMapHelper,
+	AccessibilityMobileOverlayHelper,
+	AccessibilityNavigationHelper,
+	AccessibilityPopupHelper,
+	AccessibilityProgressHelper,
+	AccessibilityScreenHelper,
+	AccessibilityStructureHelper,
+	AccessibilityTabStatusHelper,
+	AccessibilityTechTreeHelper,
 	ChangeLogHelper,
 	UIMapHelper,
 	UITechTreeHelper,
@@ -117,6 +155,25 @@ define([
 			}
 			
 			if (!headless) {
+				GameGlobals.accessibilityHelper = new AccessibilityHelper();
+				GameGlobals.accessibilityActionCalloutHelper = new AccessibilityActionCalloutHelper();
+				GameGlobals.accessibilityB1Helper = new AccessibilityB1Helper(GameGlobals.accessibilityHelper);
+				GameGlobals.accessibilityB2Helper = new AccessibilityB2Helper(GameGlobals.accessibilityHelper);
+				GameGlobals.accessibilityControlHelper = new AccessibilityControlHelper();
+				GameGlobals.accessibilityIndicatorHelper = new AccessibilityIndicatorHelper();
+				GameGlobals.accessibilityMapHelper = new AccessibilityMapHelper(GameGlobals.accessibilityHelper);
+				GameGlobals.accessibilityMobileOverlayHelper = new AccessibilityMobileOverlayHelper();
+				GameGlobals.accessibilityNavigationHelper = new AccessibilityNavigationHelper(GameGlobals.accessibilityHelper);
+				GameGlobals.accessibilityPopupHelper = new AccessibilityPopupHelper();
+				GameGlobals.accessibilityDialogueHelper = new AccessibilityDialogueHelper();
+				GameGlobals.accessibilityFightHelper = new AccessibilityFightHelper(GameGlobals.accessibilityHelper);
+				GameGlobals.accessibilityProgressHelper = new AccessibilityProgressHelper();
+				GameGlobals.accessibilityCollapsibleHelper = new AccessibilityCollapsibleHelper();
+				GameGlobals.accessibilityScreenHelper = new AccessibilityScreenHelper();
+				GameGlobals.accessibilityStructureHelper = new AccessibilityStructureHelper();
+				GameGlobals.accessibilityTabStatusHelper = new AccessibilityTabStatusHelper();
+				GameGlobals.accessibilityTechTreeHelper = new AccessibilityTechTreeHelper();
+				GameGlobals.accessibilityFinalAuditHelper = new AccessibilityFinalAuditHelper(GameGlobals.accessibilityHelper);
 				GameGlobals.uiFunctions = new UIFunctions();
 			}
 		}

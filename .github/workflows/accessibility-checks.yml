@@ -1,0 +1,52 @@
+name: Accessibility checks
+
+on:
+  pull_request:
+    branches: [ master ]
+  push:
+    branches: [ accessibility-phase-1 ]
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check accessibility helper syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            echo "Checking $file"
+            node --check "$file"
+          done < <(find src/game/helpers/ui -maxdepth 1 -name 'Accessibility*.js' -print0)
+          node --check src/game/GameGlobalsInitializer.js
+          node --check scripts/accessibility-b1-smoke.js
+          node --check scripts/accessibility-b2-smoke.js
+          node --check scripts/accessibility-final-audit-smoke.js
+
+      - name: Verify RequireJS accessibility modules exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r module; do
+            test -f "src/${module}.js" || {
+              echo "Missing module file for ${module}"
+              exit 1
+            }
+          done < <(grep -o "game/helpers/ui/Accessibility[A-Za-z0-9]*" src/game/GameGlobalsInitializer.js | sort -u)
+
+      - name: Verify B1 accessibility path contract
+        run: node scripts/accessibility-b1-smoke.js
+
+      - name: Verify B2 accessibility popup contract
+        run: node scripts/accessibility-b2-smoke.js
+
+      - name: Verify final accessibility audit contract
+        run: node scripts/accessibility-final-audit-smoke.js
