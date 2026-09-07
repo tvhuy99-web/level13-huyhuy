@@ -1,4 +1,5 @@
 import json
+import time
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
@@ -24,6 +25,7 @@ def snapshot(driver):
             requirejs: !!req,
             initializer: !!(req && req.defined('game/GameGlobalsInitializer')),
             accessibility: !!(req && req.defined('game/helpers/ui/AccessibilityHelper')),
+            mobileExperience: !!(req && req.defined('game/helpers/ui/AccessibilityMobileExperienceHelper')),
             finalAudit: !!(req && req.defined('game/helpers/ui/AccessibilityFinalAuditHelper')),
             definedCount: defined.length,
             accessibilityModules: defined.filter(x => x.indexOf('Accessibility') >= 0),
@@ -32,6 +34,37 @@ def snapshot(driver):
             mainDisplay: main ? getComputedStyle(main).display : 'missing',
             mobileDisplay: mobile ? getComputedStyle(mobile).display : 'missing',
             bodyTextStart: document.body ? document.body.innerText.slice(0, 500) : ''
+        };
+    """)
+
+def accessibility_state(driver):
+    return driver.execute_script("""
+        const body = document.body;
+        const small = !!(body && body.classList.contains('layout-small'));
+        const activePerks = document.getElementById(small ? 'player-perks-list-mobile' : 'player-perks-list-regular');
+        const inactivePerks = document.getElementById(small ? 'player-perks-list-regular' : 'player-perks-list-mobile');
+        const noteTargets = activePerks ? Array.from(activePerks.querySelectorAll('.info-callout-target[role="note"]')) : [];
+        const exposedCallouts = activePerks ? Array.from(activePerks.querySelectorAll('.info-callout:not([aria-hidden="true"])')) : [];
+        const firstTarget = activePerks ? activePerks.querySelector('.info-callout-target') : null;
+        const firstImage = firstTarget ? firstTarget.querySelector('img') : null;
+        const movementStatus = document.getElementById('accessibility-movement-status');
+        const north = document.getElementById('out-action-move-north');
+        const compass = document.getElementById('out-container-compass-actions');
+        return {
+            smallLayout: small,
+            activePerksID: activePerks ? activePerks.id : null,
+            activeNoteCount: noteTargets.length,
+            activeExposedCalloutCount: exposedCallouts.length,
+            firstPerkLabel: firstTarget ? firstTarget.getAttribute('aria-label') : null,
+            firstPerkRole: firstTarget ? firstTarget.getAttribute('role') : null,
+            firstPerkImageAlt: firstImage ? firstImage.getAttribute('alt') : null,
+            firstPerkImageHidden: firstImage ? firstImage.getAttribute('aria-hidden') : null,
+            inactivePerksHidden: inactivePerks ? inactivePerks.getAttribute('aria-hidden') : null,
+            movementStatusExists: !!movementStatus,
+            movementStatusText: movementStatus ? movementStatus.textContent.trim() : '',
+            northLabel: north ? north.getAttribute('aria-label') : null,
+            compassLabel: compass ? compass.getAttribute('aria-label') : null,
+            compassHidden: compass ? compass.getAttribute('aria-hidden') : null
         };
     """)
 
@@ -62,9 +95,39 @@ try:
     module_state = snapshot(driver)
     print('Runtime state:', json.dumps(module_state, sort_keys=True))
 
-    if not all(module_state[k] for k in ('requirejs', 'initializer', 'accessibility', 'finalAudit')):
+    if not all(module_state[k] for k in ('requirejs', 'initializer', 'accessibility', 'mobileExperience', 'finalAudit')):
         print_browser_logs(driver)
         raise RuntimeError('Required game/accessibility modules did not initialize')
+
+    # Give UIList/callout generation and the accessibility observer a short moment
+    # to settle, then require the exact mobile accessibility regression fixes.
+    try:
+        WebDriverWait(driver, 8).until(lambda d: (
+            accessibility_state(d)['movementStatusExists'] and
+            accessibility_state(d)['activeNoteCount'] == 0 and
+            accessibility_state(d)['activeExposedCalloutCount'] == 0 and
+            accessibility_state(d)['northLabel'] == 'Move north'
+        ))
+    except TimeoutException:
+        print('ACCESSIBILITY REGRESSION STATE:', json.dumps(accessibility_state(driver), sort_keys=True))
+        print_browser_logs(driver)
+        raise
+
+    a11y = accessibility_state(driver)
+    print('Accessibility state:', json.dumps(a11y, sort_keys=True))
+
+    if a11y['firstPerkRole'] == 'note':
+        raise RuntimeError('Status effect still exposes a duplicate role=note stop')
+    if a11y['firstPerkLabel'] == 'More information':
+        raise RuntimeError('Status effect still exposes generic More information label')
+    if a11y['firstPerkImageAlt'] not in ('', None) or a11y['firstPerkImageHidden'] != 'true':
+        raise RuntimeError('Status effect image still creates a duplicate accessible name')
+    if a11y['inactivePerksHidden'] != 'true':
+        raise RuntimeError('Inactive mobile/desktop status copy is still exposed')
+    if not a11y['movementStatusText']:
+        raise RuntimeError('Movement guidance region is empty')
+    if a11y['compassLabel'] != 'Movement and travel actions':
+        raise RuntimeError('Movement group is missing an accessible name')
 
     severe = []
     for entry in print_browser_logs(driver):
@@ -74,6 +137,6 @@ try:
     if severe:
         raise RuntimeError('Browser console errors:\n' + '\n'.join(severe))
 
-    print('Browser runtime smoke test passed: game left Loading state and accessibility modules initialized.')
+    print('Browser runtime smoke test passed: game booted and mobile status/movement accessibility regressions are fixed.')
 finally:
     driver.quit()
