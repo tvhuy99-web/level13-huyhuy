@@ -146,25 +146,44 @@ define([
 				GameGlobals.campVisHelper = new CampVisHelper();
 			}
 
-			GameGlobals.accessibilityHelper = new AccessibilityHelper();
-			GameGlobals.accessibilityActionCalloutHelper = new AccessibilityActionCalloutHelper();
-			GameGlobals.accessibilityB1Helper = new AccessibilityB1Helper(GameGlobals.accessibilityHelper);
-			GameGlobals.accessibilityB2Helper = new AccessibilityB2Helper(GameGlobals.accessibilityHelper);
-			GameGlobals.accessibilityControlHelper = new AccessibilityControlHelper();
-			GameGlobals.accessibilityIndicatorHelper = new AccessibilityIndicatorHelper();
-			GameGlobals.accessibilityMapHelper = new AccessibilityMapHelper(GameGlobals.accessibilityHelper);
-			GameGlobals.accessibilityMobileOverlayHelper = new AccessibilityMobileOverlayHelper();
-			GameGlobals.accessibilityNavigationHelper = new AccessibilityNavigationHelper(GameGlobals.accessibilityHelper);
-			GameGlobals.accessibilityPopupHelper = new AccessibilityPopupHelper();
-			GameGlobals.accessibilityDialogueHelper = new AccessibilityDialogueHelper();
-			GameGlobals.accessibilityFightHelper = new AccessibilityFightHelper(GameGlobals.accessibilityHelper);
-			GameGlobals.accessibilityProgressHelper = new AccessibilityProgressHelper();
-			GameGlobals.accessibilityCollapsibleHelper = new AccessibilityCollapsibleHelper();
-			GameGlobals.accessibilityScreenHelper = new AccessibilityScreenHelper();
-			GameGlobals.accessibilityStructureHelper = new AccessibilityStructureHelper();
-			GameGlobals.accessibilityTabStatusHelper = new AccessibilityTabStatusHelper();
-			GameGlobals.accessibilityTechTreeHelper = new AccessibilityTechTreeHelper();
-			GameGlobals.accessibilityFinalAuditHelper = new AccessibilityFinalAuditHelper(GameGlobals.accessibilityHelper);
+			var safeInitAccessibility = function (propertyName, factory) {
+				try {
+					GameGlobals[propertyName] = factory();
+				} catch (error) {
+					console.error("Accessibility helper failed to initialize: " + propertyName, error);
+				}
+			};
+
+			safeInitAccessibility("accessibilityHelper", function () { return new AccessibilityHelper(); });
+			safeInitAccessibility("accessibilityActionCalloutHelper", function () { return new AccessibilityActionCalloutHelper(); });
+			safeInitAccessibility("accessibilityB1Helper", function () { return new AccessibilityB1Helper(GameGlobals.accessibilityHelper); });
+			safeInitAccessibility("accessibilityB2Helper", function () { return new AccessibilityB2Helper(GameGlobals.accessibilityHelper); });
+			safeInitAccessibility("accessibilityControlHelper", function () { return new AccessibilityControlHelper(); });
+			safeInitAccessibility("accessibilityIndicatorHelper", function () { return new AccessibilityIndicatorHelper(); });
+			safeInitAccessibility("accessibilityMapHelper", function () { return new AccessibilityMapHelper(GameGlobals.accessibilityHelper); });
+			safeInitAccessibility("accessibilityMobileOverlayHelper", function () { return new AccessibilityMobileOverlayHelper(); });
+			safeInitAccessibility("accessibilityNavigationHelper", function () { return new AccessibilityNavigationHelper(GameGlobals.accessibilityHelper); });
+			safeInitAccessibility("accessibilityPopupHelper", function () { return new AccessibilityPopupHelper(); });
+			safeInitAccessibility("accessibilityDialogueHelper", function () { return new AccessibilityDialogueHelper(); });
+			safeInitAccessibility("accessibilityFightHelper", function () { return new AccessibilityFightHelper(GameGlobals.accessibilityHelper); });
+			safeInitAccessibility("accessibilityProgressHelper", function () { return new AccessibilityProgressHelper(); });
+			safeInitAccessibility("accessibilityCollapsibleHelper", function () { return new AccessibilityCollapsibleHelper(); });
+			safeInitAccessibility("accessibilityStructureHelper", function () { return new AccessibilityStructureHelper(); });
+			safeInitAccessibility("accessibilityTabStatusHelper", function () { return new AccessibilityTabStatusHelper(); });
+			safeInitAccessibility("accessibilityTechTreeHelper", function () { return new AccessibilityTechTreeHelper(); });
+			safeInitAccessibility("accessibilityFinalAuditHelper", function () { return new AccessibilityFinalAuditHelper(GameGlobals.accessibilityHelper); });
+
+			var initScreenAccessibilityWhenReady = function () {
+				if (GameGlobals.accessibilityScreenHelper) return;
+				var tribeHelper = GameGlobals.tribeHelper;
+				var upgradesReady = tribeHelper && tribeHelper.tribeUpgradesNodes && tribeHelper.tribeUpgradesNodes.head && tribeHelper.tribeUpgradesNodes.head.upgrades;
+				if (upgradesReady) {
+					safeInitAccessibility("accessibilityScreenHelper", function () { return new AccessibilityScreenHelper(); });
+					return;
+				}
+				if (typeof window !== "undefined") window.setTimeout(initScreenAccessibilityWhenReady, 250);
+			};
+			initScreenAccessibilityWhenReady();
 		}
 		
 	};
