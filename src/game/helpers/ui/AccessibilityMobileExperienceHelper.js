@@ -131,6 +131,7 @@ define([], function () {
 		let region = this.getMovementStatusRegion();
 		if (!region) return;
 
+		let introPopupVisible = this.isAnyPopupVisible();
 		let getUp = document.getElementById("out-action-get-up");
 		let scout = document.getElementById("out-action-scout");
 		let compassVisible = this.isVisible(compass);
@@ -143,12 +144,14 @@ define([], function () {
 		}
 
 		let message = "";
-		if (getUpVisible) {
-			message = "Movement is not available yet. Continue the introduction, then choose Get up.";
+		if (introPopupVisible) {
+			message = "Movement is not available during the introduction. Continue or close the current dialogue first.";
+		} else if (getUpVisible) {
+			message = "Movement is not available yet. Choose Get up.";
 		} else if (!compassVisible && scoutVisible) {
 			message = "Movement is not available until this sector is scouted. Choose Scout.";
 		} else if (!compassVisible) {
-			message = "Movement controls are not unlocked yet. Complete the available exploration actions to continue.";
+			message = "Movement controls are not unlocked yet. Complete the available exploration action to continue.";
 		} else {
 			message = "Movement is available. Choose a direction: north, northeast, east, southeast, south, southwest, west, or northwest.";
 		}
@@ -157,6 +160,14 @@ define([], function () {
 			this.lastMovementMessage = message;
 			region.textContent = message;
 		}
+	};
+
+	AccessibilityMobileExperienceHelper.prototype.isAnyPopupVisible = function () {
+		let popups = document.querySelectorAll(".popup");
+		for (let i = 0; i < popups.length; i++) {
+			if (this.isVisible(popups[i])) return true;
+		}
+		return false;
 	};
 
 	AccessibilityMobileExperienceHelper.prototype.getMovementStatusRegion = function () {
@@ -183,13 +194,12 @@ define([], function () {
 
 	AccessibilityMobileExperienceHelper.prototype.isVisible = function (element) {
 		if (!element || !element.isConnected) return false;
-		let style = window.getComputedStyle ? window.getComputedStyle(element) : null;
-		if (style && (style.display === "none" || style.visibility === "hidden")) return false;
-		let parent = element.parentElement;
-		while (parent && parent !== document.body) {
-			let parentStyle = window.getComputedStyle ? window.getComputedStyle(parent) : null;
-			if (parentStyle && (parentStyle.display === "none" || parentStyle.visibility === "hidden")) return false;
-			parent = parent.parentElement;
+		let current = element;
+		while (current && current !== document.documentElement) {
+			let style = window.getComputedStyle ? window.getComputedStyle(current) : null;
+			if (style && (style.display === "none" || style.visibility === "hidden")) return false;
+			if (current.hidden) return false;
+			current = current.parentElement;
 		}
 		return true;
 	};
@@ -204,7 +214,7 @@ define([], function () {
 		this.observer.observe(document.body, {
 			childList: true,
 			attributes: true,
-			attributeFilter: ["class", "style", "disabled", "description", "role", "aria-label", "aria-describedby"],
+			attributeFilter: ["class", "style", "hidden", "disabled", "description", "role", "aria-label", "aria-describedby"],
 			subtree: true,
 		});
 	};
