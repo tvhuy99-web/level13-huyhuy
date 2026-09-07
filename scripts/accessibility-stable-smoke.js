@@ -49,11 +49,43 @@ if (missing.length) {
 }
 
 const mobileHelper = fs.readFileSync(path.join(helperDir, 'AccessibilityMobileExperienceHelper.js'), 'utf8');
-for (const required of ['data-a11y-compact', 'Status effects.', 'Player status', 'accessibility-movement-status', 'Choose Scout', 't.removeAttribute("tabindex")', 'aria-hidden']) {
-  if (!mobileHelper.includes(required)) throw new Error(`Mobile accessibility regression contract missing: ${required}`);
-}
-if (mobileHelper.includes('setAttribute("role", "note")') || mobileHelper.includes("setAttribute('role', 'note')")) {
-  throw new Error('Compact focus model must not create note-only swipe stops');
+for (const required of [
+  'data-a11y-summary',
+  'accessibility-compact-summary',
+  'Status effects.',
+  'Player status',
+  'data-a11y-layout-inactive',
+  'setInert',
+  'header-side',
+  'grid-main-header',
+  'player-perks-list-regular',
+  'container-equipment-stats',
+  'accessibility-movement-status',
+  'Choose Scout',
+  't.removeAttribute("tabindex")'
+]) {
+  if (!mobileHelper.includes(required)) {
+    throw new Error(`TalkBack accessibility regression contract missing: ${required}`);
+  }
 }
 
-console.log(`Stable accessibility wiring OK: ${helpers.length} helpers, dependencies present, compact focus contract present.`);
+if (mobileHelper.includes('setAttribute("role", "note")') || mobileHelper.includes("setAttribute('role', 'note')")) {
+  throw new Error('Accessibility code must not create note-only swipe stops');
+}
+
+// The new model intentionally migrates old data-a11y-compact nodes, but it must
+// never create a new generic focus stop for a read-only summary.
+const setSummaryStart = mobileHelper.indexOf('H.prototype.setReadOnlySummary');
+const setSummaryEnd = mobileHelper.indexOf('H.prototype.clearReadOnlySummary');
+const setSummaryBody = mobileHelper.slice(setSummaryStart, setSummaryEnd);
+if (setSummaryBody.includes('setAttribute("tabindex", "0")') || setSummaryBody.includes("setAttribute('tabindex', '0')")) {
+  throw new Error('Read-only summaries must not use tabindex=0');
+}
+if (!setSummaryBody.includes('summary.textContent = label')) {
+  throw new Error('Read-only summaries must expose real text content');
+}
+if (!setSummaryBody.includes('summary.removeAttribute("aria-label")')) {
+  throw new Error('Read-only summaries must not depend on synthetic aria-label text');
+}
+
+console.log(`Stable accessibility wiring OK: ${helpers.length} helpers, real-text TalkBack summary contract present.`);
