@@ -1,0 +1,25 @@
+name: Baseline runtime check
+
+on:
+  push:
+    branches: [ stable-baseline-runtime-test ]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install browser test dependency
+        run: python3 -m pip install --disable-pip-version-check selenium
+
+      - name: Verify baseline game leaves Loading state in Chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8000 >/tmp/level13-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          python3 scripts/baseline-runtime-smoke.py
