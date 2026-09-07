@@ -26,64 +26,37 @@ def snapshot(driver):
             requirejs: !!req,
             initializer: !!(req && req.defined('game/GameGlobalsInitializer')),
             accessibility: !!(req && req.defined('game/helpers/ui/AccessibilityHelper')),
+            mobileExperience: !!(req && req.defined('game/helpers/ui/AccessibilityMobileExperienceHelper')),
             finalAudit: !!(req && req.defined('game/helpers/ui/AccessibilityFinalAuditHelper')),
             definedCount: defined.length,
             loadingDisplay: loading ? getComputedStyle(loading).display : 'missing',
-            mainDisplay: main ? getComputedStyle(main).display : 'missing',
-            bodyTextStart: document.body ? document.body.innerText.slice(0, 500) : ''
+            mainDisplay: main ? getComputedStyle(main).display : 'missing'
         };
     """)
 
-def simple_state(driver):
+def a11y_state(driver):
     return driver.execute_script("""
-        function state(id) {
-            const el = document.getElementById(id);
-            if (!el) return null;
-            const cs = getComputedStyle(el);
-            return { id, display: cs.display, visibility: cs.visibility, disabled: !!el.disabled, text: (el.innerText || el.textContent || '').trim(), ariaLabel: el.getAttribute('aria-label') };
-        }
+        const small = document.body.classList.contains('layout-small');
+        const active = document.getElementById(small ? 'player-perks-list-mobile' : 'player-perks-list-regular');
+        const inactive = document.getElementById(small ? 'player-perks-list-regular' : 'player-perks-list-mobile');
+        const target = active ? active.querySelector('.info-callout-target') : null;
+        const image = target ? target.querySelector('img') : null;
+        const movement = document.getElementById('accessibility-movement-status');
+        const north = document.getElementById('out-action-move-north');
+        const compass = document.getElementById('out-container-compass-actions');
         return {
-            getUp: state('out-action-get-up'),
-            scout: state('out-action-scout'),
-            compass: state('out-container-compass-actions'),
-            north: state('out-action-move-north'),
-            east: state('out-action-move-east'),
-            south: state('out-action-move-south'),
-            west: state('out-action-move-west')
+            noteCount: active ? active.querySelectorAll('.info-callout-target[role="note"]').length : -1,
+            exposedTooltipCount: active ? active.querySelectorAll('.info-callout:not([aria-hidden="true"])').length : -1,
+            firstLabel: target ? target.getAttribute('aria-label') : null,
+            firstRole: target ? target.getAttribute('role') : null,
+            firstImageAlt: image ? image.getAttribute('alt') : null,
+            firstImageHidden: image ? image.getAttribute('aria-hidden') : null,
+            inactiveHidden: inactive ? inactive.getAttribute('aria-hidden') : null,
+            movementText: movement ? movement.textContent.trim() : '',
+            northLabel: north ? north.getAttribute('aria-label') : null,
+            compassLabel: compass ? compass.getAttribute('aria-label') : null
         };
     """)
-
-def perk_diagnostics(driver):
-    return driver.execute_script("""
-        function d(el) {
-            if (!el) return null;
-            return {tag: el.tagName, role: el.getAttribute('role'), ariaLabel: el.getAttribute('aria-label'), ariaDescribedby: el.getAttribute('aria-describedby'), ariaHidden: el.getAttribute('aria-hidden'), text: (el.innerText || el.textContent || '').trim(), description: el.getAttribute('description')};
-        }
-        return ['player-perks-list-mobile','player-perks-list-regular'].map(id => {
-            const list = document.getElementById(id);
-            return { id, display: list ? getComputedStyle(list).display : 'missing', items: list ? Array.from(list.querySelectorAll(':scope > li')).map(li => ({li:d(li), target:d(li.querySelector('.info-callout-target')), callout:d(li.querySelector('.info-callout')), imgAlt: li.querySelector('img') ? li.querySelector('img').getAttribute('alt') : null})) : [] };
-        });
-    """)
-
-def click_visible(driver, text):
-    return driver.execute_script("""
-        const target = arguments[0].toLowerCase();
-        const button = Array.from(document.querySelectorAll('button')).find(b => {
-            const cs = getComputedStyle(b);
-            return (b.innerText || b.textContent || '').trim().toLowerCase() === target && cs.display !== 'none' && cs.visibility !== 'hidden' && !b.disabled;
-        });
-        if (!button) return false;
-        button.click();
-        return true;
-    """, text)
-
-def is_hidden(driver, element_id):
-    return driver.execute_script("""
-        const el = document.getElementById(arguments[0]);
-        if (!el) return true;
-        const cs = getComputedStyle(el);
-        return cs.display === 'none' || cs.visibility === 'hidden';
-    """, element_id)
 
 def browser_logs(driver):
     logs = driver.get_log('browser')
@@ -99,31 +72,26 @@ try:
 
     state = snapshot(driver)
     print('LIVE Runtime state:', json.dumps(state, sort_keys=True), flush=True)
-    print('PERKS initial:', json.dumps(perk_diagnostics(driver), ensure_ascii=False, sort_keys=True), flush=True)
-    print('MOVEMENT initial:', json.dumps(simple_state(driver), ensure_ascii=False, sort_keys=True), flush=True)
-
-    if not all(state[k] for k in ('requirejs', 'initializer', 'accessibility', 'finalAudit')):
+    if not all(state[k] for k in ('requirejs', 'initializer', 'accessibility', 'mobileExperience', 'finalAudit')):
         raise RuntimeError('Deployed Pages build is missing required modules')
 
-    print('Clicked continue:', click_visible(driver, 'continue'), flush=True)
-    time.sleep(0.5)
-    print('Clicked get up:', click_visible(driver, 'get up'), flush=True)
-    try:
-        WebDriverWait(driver, 20).until(lambda d: is_hidden(d, 'out-action-get-up'))
-        print('Get up action completed.', flush=True)
-    except TimeoutException:
-        print('Get up still visible after 20 seconds.', flush=True)
-    print('MOVEMENT after get up completes/waits:', json.dumps(simple_state(driver), ensure_ascii=False, sort_keys=True), flush=True)
+    WebDriverWait(driver, 8).until(lambda d: (
+        a11y_state(d)['noteCount'] == 0 and
+        a11y_state(d)['exposedTooltipCount'] == 0 and
+        a11y_state(d)['northLabel'] == 'Move north' and
+        bool(a11y_state(d)['movementText'])
+    ))
+    a11y = a11y_state(driver)
+    print('LIVE Accessibility state:', json.dumps(a11y, sort_keys=True), flush=True)
 
-    scout = simple_state(driver).get('scout')
-    if scout and scout['display'] != 'none' and scout['visibility'] != 'hidden' and not scout['disabled']:
-        print('Clicked scout:', click_visible(driver, scout['text'] or 'scout'), flush=True)
-        try:
-            WebDriverWait(driver, 20).until(lambda d: not is_hidden(d, 'out-container-compass-actions'))
-            print('Compass became visible after scout.', flush=True)
-        except TimeoutException:
-            print('Compass still hidden after scout wait.', flush=True)
-    print('MOVEMENT final:', json.dumps(simple_state(driver), ensure_ascii=False, sort_keys=True), flush=True)
+    if a11y['firstRole'] == 'note' or a11y['firstLabel'] == 'More information':
+        raise RuntimeError('Live status effect still exposes duplicate note semantics')
+    if a11y['firstImageAlt'] not in ('', None) or a11y['firstImageHidden'] != 'true':
+        raise RuntimeError('Live status image still duplicates the status name')
+    if a11y['inactiveHidden'] != 'true':
+        raise RuntimeError('Live inactive header copy remains exposed to screen readers')
+    if a11y['compassLabel'] != 'Movement and travel actions':
+        raise RuntimeError('Live movement controls are missing accessible grouping')
 
     severe = []
     for entry in browser_logs(driver):
@@ -133,6 +101,6 @@ try:
     if severe:
         raise RuntimeError('Deployed Pages browser errors:\n' + '\n'.join(severe))
 
-    print('Live GitHub Pages runtime diagnostic passed.', flush=True)
+    print('Live GitHub Pages accessibility regression test passed.', flush=True)
 finally:
     driver.quit()
