@@ -35,9 +35,8 @@ define([], function () {
 		this.configureMovement();
 	};
 
-	// Older accessibility builds made generic DIV/UL elements keyboard-focusable and
-	// gave them an aria-label. Real TalkBack can still land on those visual/icon
-	// containers without speaking the synthetic name. Remove that model completely.
+	// Old builds used tabindex + aria-label on generic visual containers. Real
+	// TalkBack can still stop on the icon/container and say nothing. Remove it.
 	H.prototype.migrateOldCompactFocus = function () {
 		let old = document.querySelectorAll("[data-a11y-compact='1']");
 		for (let i = 0; i < old.length; i++) {
@@ -54,8 +53,8 @@ define([], function () {
 		}
 	};
 
-	// The game renders a mobile header and desktop header at the same time. CSS alone
-	// is not sufficient for TalkBack: the visually unused copy must be inert as well.
+	// The mobile and desktop headers exist simultaneously in the DOM. Only the
+	// currently used copy is allowed in the accessibility tree.
 	H.prototype.configureLayoutCopies = function () {
 		let small = document.body.classList.contains("layout-small");
 		this.setLayoutActive(document.getElementById("mobile-header"), small);
@@ -93,11 +92,12 @@ define([], function () {
 				t.removeAttribute("aria-hidden");
 				if (label && t.matches("button,input,select,textarea,a[href],[role='button']")) t.setAttribute("aria-label", label);
 				d.removeAttribute("aria-hidden");
+				this.setInert(d, false);
 				d.setAttribute("role", "group");
 				continue;
 			}
 
-			// Information-only callouts must never create a swipe/focus stop by themselves.
+			// Information-only callouts must never be their own swipe stop.
 			t.removeAttribute("tabindex");
 			if (["note", "tooltip", "group", "img"].indexOf(t.getAttribute("role")) >= 0) t.removeAttribute("role");
 			if (t.getAttribute("aria-label") === "More information") t.removeAttribute("aria-label");
@@ -126,7 +126,8 @@ define([], function () {
 	H.prototype.compactIndicators = function () {
 		let xs = document.querySelectorAll(".item-comparison-indicator[aria-label]");
 		for (let i = 0; i < xs.length; i++) {
-			let x = xs[i], label = this.norm(x.getAttribute("aria-label"));
+			let x = xs[i];
+			let label = this.norm(x.getAttribute("aria-label"));
 			let owner = x.closest("button,[role='button'],.item-slot,.npc-container,li");
 			if (owner && label && owner.matches("button,[role='button']")) {
 				owner.setAttribute("aria-label", this.unique(this.norm(owner.getAttribute("aria-label")) || this.norm(owner.innerText || owner.textContent), label));
@@ -134,45 +135,37 @@ define([], function () {
 				this.setReadOnlySummary(owner, this.unique(this.norm(owner.innerText || owner.textContent), label));
 			}
 			x.setAttribute("aria-hidden", "true");
-		x.removeAttribute("role");
-		x.removeAttribute("tabindex");
-	};
+			x.removeAttribute("role");
+			x.removeAttribute("tabindex");
+		}
 	};
 
-	// Perks and temporary statuses are one meaningful read-only unit. The original
-	// icon lists are hidden/inert and a real off-screen paragraph carries the text.
+	// Perks and temporary statuses become one real text paragraph. The original
+	// icon lists are hidden + inert, so TalkBack cannot land on their icons.
 	H.prototype.compactStatusCopies = function () {
 		let small = document.body.classList.contains("layout-small");
-		this.renderStatusSummary(
-			["player-perks-list-mobile", "player-statuses-list-mobile"],
-			document.getElementById("mobile-header-status"),
-			"status-mobile",
-			small
-		);
-		this.renderStatusSummary(
-			["player-perks-list-regular", "player-statuses-list-regular"],
-			document.getElementById("header-self-bar"),
-			"status-regular",
-			!small
-		);
+		this.renderStatusSummary(["player-perks-list-mobile", "player-statuses-list-mobile"], document.getElementById("mobile-header-status"), "status-mobile", small);
+		this.renderStatusSummary(["player-perks-list-regular", "player-statuses-list-regular"], document.getElementById("header-self-bar"), "status-regular", !small);
 	};
 
 	H.prototype.renderStatusSummary = function (ids, parent, key, active) {
-		let lists = [], parts = [];
+		let lists = [];
+		let parts = [];
 		for (let i = 0; i < ids.length; i++) {
 			let list = document.getElementById(ids[i]);
 			if (!list) continue;
 			lists.push(list);
 			let items = list.querySelectorAll(":scope > li");
 			for (let j = 0; j < items.length; j++) {
-				let it = items[j], t = it.querySelector(".info-callout-target"), d = it.querySelector(".info-callout");
+				let it = items[j];
+				let t = it.querySelector(".info-callout-target");
+				let d = it.querySelector(".info-callout");
 				let s = (t && this.norm(t.getAttribute("description"))) || this.alt(it) || this.norm(it.innerText || it.textContent);
 				if (d) s = this.unique(s, this.norm(d.innerText || d.textContent));
 				if (s) parts.push(s);
 			}
 			this.suppressVisualTree(list, "status");
 		}
-
 		if (!parent || !active || !parts.length) {
 			this.removeGroupSummary(parent, key);
 			return;
@@ -192,11 +185,7 @@ define([], function () {
 			let els = document.querySelectorAll(cfg[i][0]);
 			for (let j = 0; j < els.length; j++) {
 				let e = els[j];
-				if (!this.visualVisible(e) || this.isInactiveLayout(e)) {
-					this.clearReadOnlySummary(e);
-					continue;
-				}
-				if (this.hasActions(e)) {
+				if (!this.visualVisible(e) || this.isInactiveLayout(e) || this.hasActions(e)) {
 					this.clearReadOnlySummary(e);
 					continue;
 				}
@@ -216,7 +205,9 @@ define([], function () {
 				this.clearReadOnlySummary(e);
 				continue;
 			}
-			let l = e.querySelector(".label"), v = e.querySelector(".value"), vt = e.querySelector(".value-total");
+			let l = e.querySelector(".label");
+			let v = e.querySelector(".value");
+			let vt = e.querySelector(".value-total");
 			let text = this.unique(this.norm(l && l.textContent), this.norm(v && v.textContent));
 			if (vt && this.norm(vt.textContent)) text = this.unique(text, "total " + this.norm(vt.textContent));
 			if (!text) text = this.norm(e.innerText || e.textContent);
@@ -225,9 +216,8 @@ define([], function () {
 		}
 	};
 
-	// Replace a visual/icon-only read-only subtree with one real text paragraph in the
-	// accessibility tree. The paragraph itself is not tabindex-focusable; TalkBack
-	// reaches it as ordinary text, while the visual source is aria-hidden + inert.
+	// Critical TalkBack rule: a read-only summary is actual text, not a focusable
+	// generic DIV with a synthetic aria-label.
 	H.prototype.setReadOnlySummary = function (source, label) {
 		label = this.norm(label);
 		if (!source || !label || !source.parentElement || this.hasActions(source)) return;
@@ -319,8 +309,7 @@ define([], function () {
 		let oldInert = e.getAttribute("data-a11y-prev-inert-" + reason);
 		if (oldHidden === "__none__" || oldHidden === null) e.removeAttribute("aria-hidden");
 		else e.setAttribute("aria-hidden", oldHidden);
-		if (oldInert === "1") this.setInert(e, true);
-		else this.setInert(e, false);
+		this.setInert(e, oldInert === "1");
 		this.restoreTabStops(e, reason);
 		e.removeAttribute(marker);
 		e.removeAttribute("data-a11y-prev-hidden-" + reason);
@@ -349,7 +338,8 @@ define([], function () {
 		let nested = root.querySelectorAll("[" + attr + "]");
 		for (let i = 0; i < nested.length; i++) nodes.push(nested[i]);
 		for (let i = 0; i < nodes.length; i++) {
-			let n = nodes[i], old = n.getAttribute(attr);
+			let n = nodes[i];
+			let old = n.getAttribute(attr);
 			if (old !== null) n.setAttribute("tabindex", old);
 			n.removeAttribute(attr);
 		}
@@ -381,10 +371,12 @@ define([], function () {
 	};
 
 	H.prototype.statTextVisual = function (e) {
-		let xs = e.querySelectorAll(".stat-indicator"), parts = [];
+		let xs = e.querySelectorAll(".stat-indicator");
+		let parts = [];
 		for (let i = 0; i < xs.length; i++) {
 			if (!this.visualVisible(xs[i])) continue;
-			let l = xs[i].querySelector(".label"), v = xs[i].querySelector(".value");
+			let l = xs[i].querySelector(".label");
+			let v = xs[i].querySelector(".value");
 			let name = this.norm(l && l.textContent) || this.alt(xs[i]);
 			let s = this.unique(name, this.norm(v && v.textContent));
 			if (s) parts.push(s);
@@ -395,22 +387,36 @@ define([], function () {
 	H.prototype.configureMovement = function () {
 		let dirs = { nw:"northwest", north:"north", ne:"northeast", west:"west", east:"east", sw:"southwest", south:"south", se:"southeast" };
 		for (let k in dirs) {
-			let b = document.getElementById("out-action-move-" + k), g = document.getElementById("out-action-move-" + k + "-grit");
+			let b = document.getElementById("out-action-move-" + k);
+			let g = document.getElementById("out-action-move-" + k + "-grit");
 			if (b) b.setAttribute("aria-label", "Move " + dirs[k]);
 			if (g) g.setAttribute("aria-label", "Move " + dirs[k] + " using emergency movement");
 		}
 		let compass = document.getElementById("out-container-compass-actions");
 		if (compass) { compass.setAttribute("role", "group"); compass.setAttribute("aria-label", "Movement and travel actions"); }
-		let region = this.movementRegion(); if (!region) return;
-		let popup = this.anyPopup(), up = this.visible(document.getElementById("out-action-get-up")), scout = this.visible(document.getElementById("out-action-scout")), move = this.visible(compass);
+		let region = this.movementRegion();
+		if (!region) return;
+		let popup = this.anyPopup();
+		let up = this.visible(document.getElementById("out-action-get-up"));
+		let scout = this.visible(document.getElementById("out-action-scout"));
+		let move = this.visible(compass);
 		let msg = popup ? "Movement is not available during the introduction. Continue or close the current dialogue first." : up ? "Movement is not available yet. Choose Get up." : (!move && scout) ? "Movement is not available until this sector is scouted. Choose Scout." : !move ? "Movement controls are not unlocked yet. Complete the available exploration action to continue." : "Movement is available. Choose a direction: north, northeast, east, southeast, south, southwest, west, or northwest.";
 		if (msg !== this.lastMovementMessage) { this.lastMovementMessage = msg; region.textContent = msg; }
 	};
 
 	H.prototype.movementRegion = function () {
-		let r = document.getElementById("accessibility-movement-status"); if (r) return r;
-		let h = document.getElementById("container-tab-two-out") || document.body; if (!h) return null;
-		r = document.createElement("p"); r.id = "accessibility-movement-status"; r.className = "hide-from-visual-layout"; r.setAttribute("role", "status"); r.setAttribute("aria-live", "polite"); r.setAttribute("aria-atomic", "true"); h.insertBefore(r, h.firstChild); return r;
+		let r = document.getElementById("accessibility-movement-status");
+		if (r) return r;
+		let h = document.getElementById("container-tab-two-out") || document.body;
+		if (!h) return null;
+		r = document.createElement("p");
+		r.id = "accessibility-movement-status";
+		r.className = "hide-from-visual-layout";
+		r.setAttribute("role", "status");
+		r.setAttribute("aria-live", "polite");
+		r.setAttribute("aria-atomic", "true");
+		h.insertBefore(r, h.firstChild);
+		return r;
 	};
 
 	H.prototype.hasActions = function (e) { return !!(e && e.querySelector && e.querySelector("button,input,select,textarea,a[href],[role='button'],[role='radio'],[role='option'],[contenteditable='true']")); };
