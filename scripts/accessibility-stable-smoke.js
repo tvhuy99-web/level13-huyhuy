@@ -109,4 +109,38 @@ for (const noisyAttr of ['aria-label', 'aria-describedby', 'aria-valuenow', 'ari
   if (filterLine && filterLine[0].includes(noisyAttr)) throw new Error(`Observer must not watch helper-written attribute: ${noisyAttr}`);
 }
 
-console.log(`Stable accessibility wiring OK: ${helpers.length} helpers, two real-text header overviews and live-stat-safe TalkBack browse mutations present.`);
+for (const movementContract of [
+  'table-out-actions-movement',
+  'visibleDirectionCount',
+  "button[action='build_out_camp']",
+  'build a camp, enter it, then leave camp when ready to explore',
+  'Direction buttons follow',
+  'container-tab-two-out-actions'
+]) {
+  if (!focusPatch.includes(movementContract)) throw new Error(`Movement accessibility contract missing: ${movementContract}`);
+}
+if (focusPatch.includes('let move = this.visible(compass)')) {
+  throw new Error('Movement availability must not be inferred from the scout-gated compass container');
+}
+
+const actionCalloutPath = path.join(helperDir, 'AccessibilityActionCalloutHelper.js');
+const actionCallout = fs.readFileSync(actionCalloutPath, 'utf8');
+for (const actionContract of [
+  'updateActionButtonLabel',
+  'data-a11y-action-base-label',
+  'data-a11y-action-details',
+  '.action-cost',
+  '.action-description',
+  '.action-effect-description',
+  'Cost: ',
+  'button.classList.contains("action-build")',
+  'characterData: true',
+  'attributeFilter: ["class", "style", "disabled"]'
+]) {
+  if (!actionCallout.includes(actionContract)) throw new Error(`Action detail accessibility contract missing: ${actionContract}`);
+}
+if (!actionCallout.includes('this.updateActionButtonLabel(button, callout);')) {
+  throw new Error('Action callout helper must apply purpose and cost to the same button focus');
+}
+
+console.log(`Stable accessibility wiring OK: ${helpers.length} helpers, stable TalkBack overviews, action details, and movement guidance present.`);
