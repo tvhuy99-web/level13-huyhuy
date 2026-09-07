@@ -54,6 +54,7 @@ def accessibility_state(driver):
         });
         const compactWithFocusableChildren=compactVisible.filter(e => e.querySelector("button,input,select,textarea,a[href],[tabindex='0'],[role='button'],[role='radio'],[role='option']"));
         const activePerkChildren=activePerks ? Array.from(activePerks.children) : [];
+        const activePerkCompactChildren=activePerks ? Array.from(activePerks.querySelectorAll(':scope > [data-a11y-compact="1"]')) : [];
         const movementStatus=document.getElementById('accessibility-movement-status');
         const north=document.getElementById('out-action-move-north');
         const compass=document.getElementById('out-container-compass-actions');
@@ -71,6 +72,7 @@ def accessibility_state(driver):
             activePerksTabIndex: activePerks ? activePerks.getAttribute('tabindex') : null,
             activePerksLabel: activePerks ? activePerks.getAttribute('aria-label') : null,
             activePerkVisibleChildCount: activePerkChildren.filter(c => c.getAttribute('aria-hidden') !== 'true').length,
+            activePerkCompactChildCount: activePerkCompactChildren.length,
             inactivePerksHidden: inactivePerks ? inactivePerks.getAttribute('aria-hidden') : null,
             noteCount: document.querySelectorAll('.info-callout-target[role="note"]').length,
             movementStatusText: movementStatus ? movementStatus.textContent.trim() : '',
@@ -113,14 +115,16 @@ try:
         raise RuntimeError(f"Found {a['silentCalloutStopCount']} information-only callout focus stops")
     if a['noteCount'] != 0:
         raise RuntimeError(f"Found {a['noteCount']} role=note callout stops")
+    if a['compactWithFocusableChildrenCount'] != 0:
+        raise RuntimeError(f"Found {a['compactWithFocusableChildrenCount']} compact read-only groups containing interactive focus stops")
     if a['playerStatsTabIndex'] != '0' or not a['playerStatsLabel']:
         raise RuntimeError('Player stats are not exposed as one labelled focus stop')
     if a['playerStatsVisibleChildCount'] != 0:
         raise RuntimeError('Player stats still expose child swipe stops')
     if a['activePerksTabIndex'] != '0' or not a['activePerksLabel']:
         raise RuntimeError('Status effects are not exposed as one labelled focus stop')
-    if a['activePerkVisibleChildCount'] != 0:
-        raise RuntimeError('Status effects still expose individual child swipe stops')
+    if a['activePerkVisibleChildCount'] != 0 or a['activePerkCompactChildCount'] != 0:
+        raise RuntimeError('Status effects still expose or compact individual child swipe stops')
     if a['inactivePerksHidden'] != 'true':
         raise RuntimeError('Inactive desktop/mobile status copy is exposed')
     if not a['movementStatusText'] or a['compassLabel'] != 'Movement and travel actions':
