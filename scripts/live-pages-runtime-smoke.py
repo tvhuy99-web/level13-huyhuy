@@ -3,7 +3,6 @@ import time
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 
 URL = 'https://tvhuy99-web.github.io/level13-huyhuy/?runtime-smoke=' + str(int(time.time()))
@@ -35,55 +34,56 @@ def snapshot(driver):
         };
     """)
 
-def a11y_diagnostics(driver):
+def simple_state(driver):
     return driver.execute_script("""
-        function details(el) {
+        function state(id) {
+            const el = document.getElementById(id);
             if (!el) return null;
             const cs = getComputedStyle(el);
-            return {
-                id: el.id || null,
-                tag: el.tagName,
-                text: (el.innerText || el.textContent || '').trim(),
-                role: el.getAttribute('role'),
-                ariaHidden: el.getAttribute('aria-hidden'),
-                ariaLabel: el.getAttribute('aria-label'),
-                description: el.getAttribute('description'),
-                display: cs.display,
-                visibility: cs.visibility
-            };
+            return { id, display: cs.display, visibility: cs.visibility, disabled: !!el.disabled, text: (el.innerText || el.textContent || '').trim(), ariaLabel: el.getAttribute('aria-label') };
         }
-        const perkLists = ['player-perks-list-mobile','player-perks-list-regular'].map(id => {
-            const list = document.getElementById(id);
-            return {
-                list: details(list),
-                items: list ? Array.from(list.querySelectorAll(':scope > li')).map(li => ({
-                    li: details(li),
-                    child: details(li.querySelector('.info-callout-target')),
-                    imgAlt: li.querySelector('img') ? li.querySelector('img').getAttribute('alt') : null
-                })) : []
-            };
-        });
-        const movement = Array.from(document.querySelectorAll('[id^="out-action-move-"]')).map(details);
-        const compass = details(document.getElementById('out-container-compass-actions'));
-        const getUp = details(document.getElementById('out-action-get-up'));
-        const continueButton = Array.from(document.querySelectorAll('#dialogue-popup button, .popup button')).find(b => (b.innerText || '').trim().toLowerCase() === 'continue');
-        return { perkLists, movement, compass, getUp, continueButton: details(continueButton) };
+        return {
+            getUp: state('out-action-get-up'),
+            scout: state('out-action-scout'),
+            compass: state('out-container-compass-actions'),
+            north: state('out-action-move-north'),
+            east: state('out-action-move-east'),
+            south: state('out-action-move-south'),
+            west: state('out-action-move-west')
+        };
     """)
 
-def click_visible_by_text(driver, text):
-    text = text.lower()
+def perk_diagnostics(driver):
     return driver.execute_script("""
-        const target = arguments[0];
-        const candidates = Array.from(document.querySelectorAll('button'));
-        const button = candidates.find(b => {
-            const label = (b.innerText || b.textContent || '').trim().toLowerCase();
+        function d(el) {
+            if (!el) return null;
+            return {tag: el.tagName, role: el.getAttribute('role'), ariaLabel: el.getAttribute('aria-label'), ariaDescribedby: el.getAttribute('aria-describedby'), ariaHidden: el.getAttribute('aria-hidden'), text: (el.innerText || el.textContent || '').trim(), description: el.getAttribute('description')};
+        }
+        return ['player-perks-list-mobile','player-perks-list-regular'].map(id => {
+            const list = document.getElementById(id);
+            return { id, display: list ? getComputedStyle(list).display : 'missing', items: list ? Array.from(list.querySelectorAll(':scope > li')).map(li => ({li:d(li), target:d(li.querySelector('.info-callout-target')), callout:d(li.querySelector('.info-callout')), imgAlt: li.querySelector('img') ? li.querySelector('img').getAttribute('alt') : null})) : [] };
+        });
+    """)
+
+def click_visible(driver, text):
+    return driver.execute_script("""
+        const target = arguments[0].toLowerCase();
+        const button = Array.from(document.querySelectorAll('button')).find(b => {
             const cs = getComputedStyle(b);
-            return label === target && cs.display !== 'none' && cs.visibility !== 'hidden' && !b.disabled;
+            return (b.innerText || b.textContent || '').trim().toLowerCase() === target && cs.display !== 'none' && cs.visibility !== 'hidden' && !b.disabled;
         });
         if (!button) return false;
         button.click();
         return true;
     """, text)
+
+def is_hidden(driver, element_id):
+    return driver.execute_script("""
+        const el = document.getElementById(arguments[0]);
+        if (!el) return true;
+        const cs = getComputedStyle(el);
+        return cs.display === 'none' || cs.visibility === 'hidden';
+    """, element_id)
 
 def browser_logs(driver):
     logs = driver.get_log('browser')
@@ -95,33 +95,35 @@ driver = webdriver.Chrome(options=options)
 try:
     print('Opening', URL, flush=True)
     driver.get(URL)
-
-    def game_started(d):
-        state = snapshot(d)
-        return state['loadingDisplay'] == 'none' and state['mainDisplay'] != 'none'
-
-    try:
-        WebDriverWait(driver, 45).until(game_started)
-    except TimeoutException:
-        print('LIVE TIMEOUT:', json.dumps(snapshot(driver), sort_keys=True), flush=True)
-        browser_logs(driver)
-        raise
+    WebDriverWait(driver, 45).until(lambda d: snapshot(d)['loadingDisplay'] == 'none' and snapshot(d)['mainDisplay'] != 'none')
 
     state = snapshot(driver)
     print('LIVE Runtime state:', json.dumps(state, sort_keys=True), flush=True)
-    print('A11Y before intro actions:', json.dumps(a11y_diagnostics(driver), ensure_ascii=False, sort_keys=True), flush=True)
+    print('PERKS initial:', json.dumps(perk_diagnostics(driver), ensure_ascii=False, sort_keys=True), flush=True)
+    print('MOVEMENT initial:', json.dumps(simple_state(driver), ensure_ascii=False, sort_keys=True), flush=True)
 
     if not all(state[k] for k in ('requirejs', 'initializer', 'accessibility', 'finalAudit')):
-        browser_logs(driver)
         raise RuntimeError('Deployed Pages build is missing required modules')
 
-    clicked_continue = click_visible_by_text(driver, 'continue')
-    print('Clicked continue:', clicked_continue, flush=True)
-    time.sleep(1)
-    clicked_get_up = click_visible_by_text(driver, 'get up')
-    print('Clicked get up:', clicked_get_up, flush=True)
-    time.sleep(2)
-    print('A11Y after intro actions:', json.dumps(a11y_diagnostics(driver), ensure_ascii=False, sort_keys=True), flush=True)
+    print('Clicked continue:', click_visible(driver, 'continue'), flush=True)
+    time.sleep(0.5)
+    print('Clicked get up:', click_visible(driver, 'get up'), flush=True)
+    try:
+        WebDriverWait(driver, 20).until(lambda d: is_hidden(d, 'out-action-get-up'))
+        print('Get up action completed.', flush=True)
+    except TimeoutException:
+        print('Get up still visible after 20 seconds.', flush=True)
+    print('MOVEMENT after get up completes/waits:', json.dumps(simple_state(driver), ensure_ascii=False, sort_keys=True), flush=True)
+
+    scout = simple_state(driver).get('scout')
+    if scout and scout['display'] != 'none' and scout['visibility'] != 'hidden' and not scout['disabled']:
+        print('Clicked scout:', click_visible(driver, scout['text'] or 'scout'), flush=True)
+        try:
+            WebDriverWait(driver, 20).until(lambda d: not is_hidden(d, 'out-container-compass-actions'))
+            print('Compass became visible after scout.', flush=True)
+        except TimeoutException:
+            print('Compass still hidden after scout wait.', flush=True)
+    print('MOVEMENT final:', json.dumps(simple_state(driver), ensure_ascii=False, sort_keys=True), flush=True)
 
     severe = []
     for entry in browser_logs(driver):
@@ -131,6 +133,6 @@ try:
     if severe:
         raise RuntimeError('Deployed Pages browser errors:\n' + '\n'.join(severe))
 
-    print('Live GitHub Pages runtime smoke test passed.', flush=True)
+    print('Live GitHub Pages runtime diagnostic passed.', flush=True)
 finally:
     driver.quit()
