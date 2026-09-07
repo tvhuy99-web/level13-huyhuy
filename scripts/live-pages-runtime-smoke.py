@@ -3,6 +3,7 @@ import time
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 
 URL = 'https://tvhuy99-web.github.io/level13-huyhuy/?runtime-smoke=' + str(int(time.time()))
@@ -34,6 +35,56 @@ def snapshot(driver):
         };
     """)
 
+def a11y_diagnostics(driver):
+    return driver.execute_script("""
+        function details(el) {
+            if (!el) return null;
+            const cs = getComputedStyle(el);
+            return {
+                id: el.id || null,
+                tag: el.tagName,
+                text: (el.innerText || el.textContent || '').trim(),
+                role: el.getAttribute('role'),
+                ariaHidden: el.getAttribute('aria-hidden'),
+                ariaLabel: el.getAttribute('aria-label'),
+                description: el.getAttribute('description'),
+                display: cs.display,
+                visibility: cs.visibility
+            };
+        }
+        const perkLists = ['player-perks-list-mobile','player-perks-list-regular'].map(id => {
+            const list = document.getElementById(id);
+            return {
+                list: details(list),
+                items: list ? Array.from(list.querySelectorAll(':scope > li')).map(li => ({
+                    li: details(li),
+                    child: details(li.querySelector('.info-callout-target')),
+                    imgAlt: li.querySelector('img') ? li.querySelector('img').getAttribute('alt') : null
+                })) : []
+            };
+        });
+        const movement = Array.from(document.querySelectorAll('[id^="out-action-move-"]')).map(details);
+        const compass = details(document.getElementById('out-container-compass-actions'));
+        const getUp = details(document.getElementById('out-action-get-up'));
+        const continueButton = Array.from(document.querySelectorAll('#dialogue-popup button, .popup button')).find(b => (b.innerText || '').trim().toLowerCase() === 'continue');
+        return { perkLists, movement, compass, getUp, continueButton: details(continueButton) };
+    """)
+
+def click_visible_by_text(driver, text):
+    text = text.lower()
+    return driver.execute_script("""
+        const target = arguments[0];
+        const candidates = Array.from(document.querySelectorAll('button'));
+        const button = candidates.find(b => {
+            const label = (b.innerText || b.textContent || '').trim().toLowerCase();
+            const cs = getComputedStyle(b);
+            return label === target && cs.display !== 'none' && cs.visibility !== 'hidden' && !b.disabled;
+        });
+        if (!button) return false;
+        button.click();
+        return true;
+    """, text)
+
 def browser_logs(driver):
     logs = driver.get_log('browser')
     for entry in logs:
@@ -58,9 +109,19 @@ try:
 
     state = snapshot(driver)
     print('LIVE Runtime state:', json.dumps(state, sort_keys=True), flush=True)
+    print('A11Y before intro actions:', json.dumps(a11y_diagnostics(driver), ensure_ascii=False, sort_keys=True), flush=True)
+
     if not all(state[k] for k in ('requirejs', 'initializer', 'accessibility', 'finalAudit')):
         browser_logs(driver)
         raise RuntimeError('Deployed Pages build is missing required modules')
+
+    clicked_continue = click_visible_by_text(driver, 'continue')
+    print('Clicked continue:', clicked_continue, flush=True)
+    time.sleep(1)
+    clicked_get_up = click_visible_by_text(driver, 'get up')
+    print('Clicked get up:', clicked_get_up, flush=True)
+    time.sleep(2)
+    print('A11Y after intro actions:', json.dumps(a11y_diagnostics(driver), ensure_ascii=False, sort_keys=True), flush=True)
 
     severe = []
     for entry in browser_logs(driver):
