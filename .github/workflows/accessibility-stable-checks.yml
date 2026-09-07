@@ -1,0 +1,32 @@
+name: Stable accessibility checks
+
+on:
+  push:
+    branches: [ accessibility-stable-live ]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check helper syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            echo "Checking $file"
+            node --check "$file"
+          done < <(find src/game/helpers/ui -maxdepth 1 -name 'Accessibility*.js' -print0)
+          node --check src/game/GameGlobalsInitializer.js
+          node --check scripts/accessibility-stable-smoke.js
+
+      - name: Verify stable accessibility wiring
+        run: node scripts/accessibility-stable-smoke.js
