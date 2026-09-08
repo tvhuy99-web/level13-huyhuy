@@ -27,6 +27,6 @@ require.config({
 		}
 	},
 	
-	urlArgs: "v=0.7.6&build=map-icon-path-fix-20260908",
+	urlArgs: "v=0.7.7&build=overview-refresh-fix-20260908",
 
 });
