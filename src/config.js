@@ -1,6 +1,6 @@
 require.config({
 
-	deps: ["game/helpers/ui/AccessibilityDetailedErrorHelper", "level13-app"],
+	deps: ["game/helpers/ui/AccessibilityDetailedErrorHelper", "level13-bootstrap"],
 
 	waitSeconds: 30,
 
