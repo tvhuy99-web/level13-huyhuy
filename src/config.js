@@ -27,6 +27,6 @@ require.config({
 		}
 	},
 	
-	urlArgs: "v=0.7.2",
+	urlArgs: "v=0.7.3&build=fresh-start-fix-20260908",
 
 });
