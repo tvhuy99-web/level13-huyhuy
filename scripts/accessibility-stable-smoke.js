@@ -151,8 +151,13 @@ if (!fs.existsSync(autoScoutPath)) throw new Error('Automatic sector scouting / 
 const autoScout = fs.readFileSync(autoScoutPath, 'utf8');
 for (const autoScoutContract of [
   'autoPressScout',
+  'autoScoutAttempted',
+  'getSectorKey',
   'checkAvailability("scout", false, sector)',
   'actions.startAction("scout")',
+  'this.autoScoutAttempted[sectorKey] = true',
+  'if (action === "scout") showResultPopup = false',
+  'actions.handleOutActionResults = originalHandleOutActionResults',
   'accessibility-location-coordinates',
   'Vị trí. Tầng ',
   'data-a11y-summary-key", "location-coordinates',
@@ -162,10 +167,12 @@ for (const autoScoutContract of [
   'playerMoveCompletedSignal',
   'featureUnlockedSignal',
   'visionChangedSignal',
-  'actionCompletedSignal',
-  '#out-action-scout{display:none !important;}'
+  'actionCompletedSignal'
 ]) {
   if (!autoScout.includes(autoScoutContract)) throw new Error(`Automatic scouting/coordinates contract missing: ${autoScoutContract}`);
+}
+if (autoScout.includes('#out-action-scout{display:none !important;}') || autoScout.includes('setAttribute("aria-hidden", "true")') || autoScout.includes('setAttribute("tabindex", "-1")')) {
+  throw new Error('Manual Scout button must remain available as a fallback; auto-scout must not hide or disable it');
 }
 if (autoScout.includes('sectorStatus.scouted = true') || autoScout.includes('GlobalSignals.sectorScoutedSignal.dispatch(sector)')) {
   throw new Error('Automatic scouting must not reimplement Scout state changes; it must execute the original action');
@@ -177,4 +184,4 @@ if (autoScout.includes('setAttribute("role", "status")') || autoScout.includes('
   throw new Error('Coordinates must be stable browse text, not a live region that can steal TalkBack attention');
 }
 
-console.log(`Stable accessibility wiring OK: ${helpers.length} helpers, stable TalkBack overviews, action details, original-action automatic scouting, coordinates, and movement guidance present.`);
+console.log(`Stable accessibility wiring OK: ${helpers.length} helpers, stable TalkBack overviews, action details, one-shot automatic scouting with manual fallback, coordinates, and movement guidance present.`);
