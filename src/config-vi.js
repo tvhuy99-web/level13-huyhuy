@@ -27,6 +27,6 @@ require.config({
 		}
 	},
 	
-	urlArgs: "v=0.7.4&build=detailed-errors-20260908",
+	urlArgs: "v=0.7.5&build=direct-error-details-20260908",
 
 });

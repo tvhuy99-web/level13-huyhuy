@@ -4,6 +4,8 @@ const path = require('path');
 const root = process.cwd();
 const initializerPath = path.join(root, 'src/game/GameGlobalsInitializer.js');
 const initializer = fs.readFileSync(initializerPath, 'utf8');
+const bootstrapPath = path.join(root, 'src/level13-bootstrap.js');
+const bootstrap = fs.readFileSync(bootstrapPath, 'utf8');
 const configPaths = [path.join(root, 'src/config.js'), path.join(root, 'src/config-vi.js')];
 const configContents = configPaths.filter(fs.existsSync).map(file => fs.readFileSync(file, 'utf8'));
 const helperDir = path.join(root, 'src/game/helpers/ui');
@@ -16,8 +18,9 @@ for (const helper of helpers) {
   const moduleId = `game/helpers/ui/${helper.replace(/\.js$/, '')}`;
   const wiredDirectly = initializer.includes(`'${moduleId}'`);
   const wiredThroughHelper = helperContents.some(entry => entry.name !== helper && entry.content.includes(`'${moduleId}'`));
-  const wiredThroughConfig = configContents.some(content => content.includes(`'${moduleId}'`) || content.includes(`"${moduleId}"`));
-  if (!wiredDirectly && !wiredThroughHelper && !wiredThroughConfig) throw new Error(`Accessibility helper is not wired: ${moduleId}`);
+  const wiredThroughConfig = configContents.some(content => content.includes(`'${moduleId}'`) || content.includes(`\"${moduleId}\"`));
+  const wiredThroughBootstrap = bootstrap.includes(`'${moduleId}'`) || bootstrap.includes(`\"${moduleId}\"`);
+  if (!wiredDirectly && !wiredThroughHelper && !wiredThroughConfig && !wiredThroughBootstrap) throw new Error(`Accessibility helper is not wired: ${moduleId}`);
 }
 
 if (!initializer.includes('init: function (engine, gameManager, headless)')) {
@@ -30,13 +33,13 @@ if (!initializer.includes('if (!headless)')) {
   throw new Error('Accessibility/UI initialization must stay out of headless mode');
 }
 
-const sourceFiles = [initializerPath, ...helpers.map(name => path.join(helperDir, name))];
+const sourceFiles = [initializerPath, bootstrapPath, ...helpers.map(name => path.join(helperDir, name))];
 const missing = [];
 for (const file of sourceFiles) {
   const content = fs.readFileSync(file, 'utf8');
   const match = content.match(/define\s*\(\s*\[([\s\S]*?)\]\s*,/);
   if (!match) continue;
-  const deps = [...match[1].matchAll(/['"]([^'"]+)['"]/g)].map(m => m[1]);
+  const deps = [...match[1].matchAll(/['\"]([^'\"]+)['\"]/g)].map(m => m[1]);
   for (const dep of deps) {
     if (!/^(game|text|utils|worldcreator)\//.test(dep)) continue;
     const target = path.join(root, 'src', `${dep}.js`);
@@ -97,4 +100,18 @@ for (const required of [
   if (!actionCallout.includes(required)) throw new Error(`Disabled-action feedback contract missing: ${required}`);
 }
 
-console.log(`Master accessibility wiring OK: ${helpers.length} helpers, master 0.7.x initializer preserved, TalkBack summaries, movement, auto-scout, detailed errors, and disabled-action feedback present.`);
+const directError = fs.readFileSync(path.join(helperDir, 'AccessibilityDirectErrorPopupHelper.js'), 'utf8');
+for (const required of [
+  'Level13.prototype.handleException',
+  'showQuestionPopup',
+  'Chi tiết kỹ thuật.',
+  '__level13LastDetailedError',
+  'Ngăn xếp:'
+]) {
+  if (!directError.includes(required)) throw new Error(`Direct fatal-error detail contract missing: ${required}`);
+}
+if (!bootstrap.includes("'game/helpers/ui/AccessibilityDirectErrorPopupHelper'")) {
+  throw new Error('Direct fatal-error popup patch must load before level13-app');
+}
+
+console.log(`Master accessibility wiring OK: ${helpers.length} helpers, master 0.7.x initializer preserved, TalkBack summaries, movement, auto-scout, direct detailed errors, and disabled-action feedback present.`);
