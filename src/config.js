@@ -27,6 +27,6 @@ require.config({
 		}
 	},
 	
-	urlArgs: "v=0.6.3&build=a11y-blocked-directions-20260908-10",
+	urlArgs: "v=0.6.3&build=a11y-temporary-movement-20260908-11",
 
 });
