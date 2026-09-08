@@ -43,18 +43,18 @@ define([
 
 	AccessibilityStructureHelper.prototype.getTableLabels = function () {
 		return {
-			"#in-assign-workers": "Worker assignments",
-			"#embark-resources": "Resources to carry",
-			"#embark-items": "Items to carry",
-			"#recruits-container table": "Available recruits",
-			"#trade-caravans-outgoing-container table": "Trade partners and outgoing caravans",
-			"#trade-caravans-incoming-container table": "Incoming traders",
-			"#in-improvements-level table": "Available level projects",
-			"#in-improvements-colony table": "Available colony projects",
-			"#in-improvements-level-built table": "Built level projects",
-			"#in-improvements-colony-built table": "Built colony projects",
-			"#upgrades-list": "Available upgrades",
-			"#blueprints-list": "Blueprints",
+			"#in-assign-workers": "Phân công người lao động",
+			"#embark-resources": "Tài nguyên mang theo",
+			"#embark-items": "Vật phẩm mang theo",
+			"#recruits-container table": "Người được tuyển khả dụng",
+			"#trade-caravans-outgoing-container table": "Đối tác buôn bán và đoàn buôn đang đi",
+			"#trade-caravans-incoming-container table": "Thương nhân đang đến",
+			"#in-improvements-level table": "Dự án khả dụng ở tầng",
+			"#in-improvements-colony table": "Dự án thuộc địa khả dụng",
+			"#in-improvements-level-built table": "Dự án tầng đã xây",
+			"#in-improvements-colony-built table": "Dự án thuộc địa đã xây",
+			"#upgrades-list": "Nâng cấp khả dụng",
+			"#blueprints-list": "Bản thiết kế",
 		};
 	};
 

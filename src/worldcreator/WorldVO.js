@@ -1,31 +1,54 @@
-define(['ash'], function (Ash) {
+// result of world generation, used to create level and sector entities
+define(['ash', 'worldcreator/WorldCreatorConstants'], function (Ash, WorldCreatorConstants) {
 
-	var WorldVO = Ash.Class.extend({
+	let WorldVO = Ash.Class.extend({
 	
-		constructor: function (seed, topLevel, bottomLevel) {
+		constructor: function (seed, version) {
 			this.seed = seed;
-			this.topLevel = topLevel;
-			this.bottomLevel = bottomLevel;
+			this.version = version; // version originally generated in
+			this.topLevel = 1;
+			this.bottomLevel = 0;
 			
-			this.features = [];
-			this.stages = [];
-			this.campPositions = [];
-			this.passagePositions = [];
-			this.districts = [];
+			this.campPositions = {}; // level -> position
+			this.examineSpotsPerLevel = {}; // level -> list of ids
+			this.features = []; // list of WorldFeatureVO
+			this.levelCenterPositions = {}; // level -> PositionVO
+			this.passagePositions = {}; // level -> { up: PositionVO, down: PositionVO }
+			this.passageTypes = {}; // level -> { up: string, down: string }
+			this.requiredPositions = {}; // level -> list of positions (can be empty)
+			this.stages = []; // list of StageVO
 			
-			this.levels = [];
+			this.levels = {}; // level -> levelVO
+
+			this.resetCaches();
 		},
-		
-		clear: function () {
-			for (var l = this.topLevel; l >= this.bottomLevel; l--) {
-				var levelVO = this.levels[l];
-				levelVO.clear();
+
+		// called at the end of a world creation step
+		resetPaths: function () {
+			for (let l = this.topLevel; l >= this.bottomLevel; l--) {
+				let levelVO = this.levels[l];
+				if (levelVO) levelVO.resetPaths();
 			}
-			this.levels = [];
 		},
-		
-		addLevel: function (l) {
-			this.levels[l.level] = l;
+
+		// called at the end of a world creation call
+		resetInternalData: function () {
+			this.featuresByPosition = [];
+			
+			for (let l = this.topLevel; l >= this.bottomLevel; l--) {
+				let levelVO = this.levels[l];
+				if (levelVO) levelVO.resetInternalData();
+			}
+		},
+
+		// called after entities have been generated
+		resetCaches: function () {
+			this.featuresByPosition = [];
+
+			for (let l = this.topLevel; l >= this.bottomLevel; l--) {
+				let levelVO = this.levels[l];
+				if (levelVO) levelVO.resetCaches();
+			}
 		},
 		
 		getLevel: function (l) {
@@ -43,13 +66,39 @@ define(['ash'], function (Ash) {
 			return result;
 		},
 		
-		getFeaturesByPos: function (pos) {
+		getFeaturesByLevel: function (level) {
 			let result = [];
 			for (let i = 0; i < this.features.length; i++) {
-				if (this.features[i].containsPosition(pos)) {
+				if (this.features[i].spansLevel(level)) {
 					result.push(this.features[i]);
 				}
 			}
+			return result;
+		},
+		
+		getFeatureTypesByPos: function (pos) {
+			if (this.featuresByPosition[pos.level] && this.featuresByPosition[pos.level][pos.sectorX] && this.featuresByPosition[pos.level][pos.sectorX][pos.sectorY]) {
+				return this.featuresByPosition[pos.level][pos.sectorX][pos.sectorY];
+			}
+
+			let result = [];
+
+			for (let i = 0; i < this.features.length; i++) {
+				let featureVO = this.features[i];
+				if (featureVO.containsPosition(pos)) {
+					result.push(featureVO.type);
+				} else if (featureVO.bordersPosition(pos)) {
+					let edgeFeature = WorldCreatorConstants.getEdgeFeature(featureVO.type);
+					if (edgeFeature) {
+						result.push(edgeFeature);
+					}
+				}
+			}
+
+			if (!this.featuresByPosition[pos.level]) this.featuresByPosition[pos.level] = [];
+			if (!this.featuresByPosition[pos.level][pos.sectorX]) this.featuresByPosition[pos.level][pos.sectorX] = [];
+			this.featuresByPosition[pos.level][pos.sectorX][pos.sectorY] = result;
+
 			return result;
 		},
 		
@@ -61,35 +110,6 @@ define(['ash'], function (Ash) {
 				}
 			}
 			return result;
-		},
-		
-		getPath: function (pos1, pos2, blockedByBlockers, stage, anyPath) {
-			let map = anyPath ? this.pathsAny : this.pathsLatest;
-			if (!map) return null;
-			var key = this.getPathKey(pos1, pos2, blockedByBlockers, stage);
-			return map[key];
-		},
-		
-		addPath: function (pos1, pos2, blockedByBlockers, stage, path) {
-			var key = this.getPathKey(pos1, pos2, blockedByBlockers, stage);
-			if (!this.pathsAny) this.pathsAny = {};
-			if (!this.pathsLatest) this.pathsLatest = {};
-			this.pathsAny[key] = path;
-			this.pathsLatest[key] = path;
-		},
-		
-		resetPaths: function () {
-			this.pathsLatest = {};
-			for (var l = this.topLevel; l >= this.bottomLevel; l--) {
-				var levelVO = this.levels[l];
-				levelVO.resetPaths();
-			}
-		},
-		
-		getPathKey: function (pos1, pos2, blockedByBlockers, stage) {
-			var start = this.getPathStart(pos1, pos2);
-			var end = this.getPathEnd(pos1, pos2);
-			return start.toString() + "-" + end.toString() + (blockedByBlockers ? "-1" : "-0") + (stage ? stage : "-");
 		},
 		
 		getPathStart: function (pos1, pos2) {
@@ -107,6 +127,31 @@ define(['ash'], function (Ash) {
 				return pos2;
 			}
 		},
+
+		getPassageUp: function (level, sectorX, sectorY) {
+			var sectorVO = this.getLevel(level).getSector(sectorX, sectorY);
+			if (sectorVO.passageUpType) return sectorVO.passageUpType;
+			return null;
+		},
+
+		getPassageDown: function (level, sectorX, sectorY) {
+			var sectorVO = this.getLevel(level).getSector(sectorX, sectorY);
+			if (sectorVO.passageDownType) return sectorVO.passageDownType;
+			return null;
+		},
+
+		getFeature: function (level, sectorX, sectorY) {
+			let pos = { level: level, sectorX: sectorX, sectorY: sectorY };
+
+			for (let i = 0; i < this.features.length; i++) {
+				let feature = this.features[i];
+				if (feature.containsPosition(pos)) {
+					return feature;
+				}
+			}
+			
+			return false;
+		}
 		
 	});
 

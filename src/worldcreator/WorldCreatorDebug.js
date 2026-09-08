@@ -1,51 +1,26 @@
 // debug helpers for the WorldCreator
-define(['ash', 'core/ConsoleLogger', 'game/constants/WorldConstants', 'worldcreator/WorldCreatorHelper', 'worldcreator/WorldCreatorLogger'],
-function (Ash, ConsoleLogger, WorldConstants, WorldCreatorHelper, WorldCreatorLogger) {
+define(['ash', 'core/ConsoleLogger', 'game/constants/UpgradeConstants', 'game/constants/WorldConstants', 'worldcreator/WorldCreatorHelper', 'worldcreator/WorldCreatorLogger'],
+function (Ash, ConsoleLogger, UpgradeConstants, WorldConstants, WorldCreatorHelper, WorldCreatorLogger) {
 
-	var WorldCreatorDebug = {
-		
-		printWorldTemplate: function (worldVO) {
-			WorldCreatorLogger.groupCollapsed("World seed " + worldVO.seed);
-			var s = "";
-			for (var l = worldVO.topLevel; l >= worldVO.bottomLevel; l--) {
-				var campOrdinal = WorldCreatorHelper.getCampOrdinal(worldVO.seed, l);
-				var r = 40;
-				var pieces = [];
-				for (let i = 0; i <= r * 2; i++) {
-					var x = i - r;
-					var piece = "-";
-					pieces[i] = piece;
-				}
-				if (worldVO.districts[l]) {
-					for (let i = 0; i < worldVO.districts[l].length; i++) {
-						var district = worldVO.districts[l][i];
-						for (var x = district.getMinX(); x <= district.getMaxX(); x++) {
-							pieces[x + r] = district.type.substring(0,1);
-						}
-					}
-				}
-				for (let i = 0; i < worldVO.features.length; i++) {
-					var feature = worldVO.features[i];
-					if (!feature.spansLevel(l)) continue;
-					for (var x = feature.getMinX(); x <= feature.getMaxX(); x++) {
-						pieces[x + r] = feature.type.substring(0,1);
-					}
-				}
-				if (worldVO.passagePositions[l]) {
-					var posUp = worldVO.passagePositions[l].up;
-					var posDown = worldVO.passagePositions[l].down;
-					if (posUp) pieces[posUp.sectorX + r] = "U";
-					if (posDown) pieces[posDown.sectorX + r] = "D";
-					var campPos = worldVO.campPositions[l];
-					if (campPos) pieces[campPos.sectorX + r] = "{C|red}";
-				}
-				
-				var ls = this.addPadding(l, 2);
-				var cs = this.addPadding(campOrdinal, 2);
-				s += "lvl " + ls + " camp " + cs + " " + pieces.join("") + "\n";
-			}
-			this.printWithHighlights(s);
-			WorldCreatorLogger.groupEnd();
+	let WorldCreatorDebug = {
+
+		getTestProgressionConfig: function () {
+			let config = {};
+
+			config.unlockCampOrdinals = {};
+			config.unlockCampOrdinals.actionClearWasteToxic = 3;
+			config.unlockCampOrdinals.actionClearWasteRadioactive = 8;
+			config.unlockCampOrdinals.passageElevator = 5;
+			config.unlockCampOrdinals.passageHole = 7;
+			config.unlockCampOrdinals.inn = 3;
+
+			config.unlockCampOrdinalAndSteps = {};
+			config.unlockCampOrdinalAndSteps.staminaPerk1 = { campOrdinal: 11, step: WorldConstants.CAMP_STEP_POI_2 };
+			config.unlockCampOrdinalAndSteps.staminaPerk2 = { campOrdinal: 13, step: WorldConstants.CAMP_STEP_POI_2 };
+
+			config.blueprintPiecesByCampOrdinal = UpgradeConstants.getAllBlueprintPiecesByCampOrdinal();
+
+			return config;
 		},
 		
 		printLevelTemplates: function (worldVO) {
@@ -55,10 +30,10 @@ function (Ash, ConsoleLogger, WorldConstants, WorldCreatorHelper, WorldCreatorLo
 				var levelVO = worldVO.levels[l];
 				var stages = worldVO.getStages(l);
 				var stagess = stages.map(stage => stage.stage).join(",");
-				WorldCreatorLogger.i("Level " + levelVO.level + ", camp ordinal: " + levelVO.campOrdinal + ", stages: " + stagess + ", sectors: " + levelVO.numSectors + ", zones: " + levelVO.zones.length);
+				WorldCreatorLogger.i("Level " + levelVO.level + ", camp ordinal: " + levelVO.campOrdinal + ", stages: " + stagess + ", sectors: " + levelVO.numSectors);
 				WorldCreatorLogger.i("- passage positions: up: " + levelVO.passageUpPosition + ", down: " + levelVO.passageDownPosition);
 				WorldCreatorLogger.i("- camp position: " + levelVO.campPosition);
-				WorldCreatorLogger.i("- excursion start position: " + levelVO.excursionStartPosition);
+				WorldCreatorLogger.i("- excursion start position: " + levelVO.getExcursionStartPosition());
 				for (let i = 0; i < stages.length; i++) {
 					var stageVO = stages[i];
 					WorldCreatorLogger.i("- stage center positions [" + stageVO.stage + "]: " + levelVO.stageCenterPositions[stageVO.stage].join(","));
@@ -69,8 +44,8 @@ function (Ash, ConsoleLogger, WorldConstants, WorldCreatorHelper, WorldCreatorLo
 		
 		printLevelStructure: function (worldVO) {
 			if (!ConsoleLogger.logInfo) return;
-			for (var l = worldVO.topLevel; l >= worldVO.bottomLevel; l--) {
-				var levelVO = worldVO.levels[l];
+			for (let l = worldVO.topLevel; l >= worldVO.bottomLevel; l--) {
+				let levelVO = worldVO.levels[l];
 				this.printLevel(worldVO, levelVO, function (sectorVO) {});
 			}
 		},
@@ -79,7 +54,6 @@ function (Ash, ConsoleLogger, WorldConstants, WorldCreatorHelper, WorldCreatorLo
 			for (var l = worldVO.topLevel; l >= worldVO.bottomLevel; l--) {
 				var levelVO = worldVO.getLevel(l);
 				this.printLevel(worldVO, levelVO, function (sectorVO) {
-					var criticalPath = sectorVO.getCriticalPathC();
 					var zone = sectorVO.getZoneC();
 					return { char: zone, color: null }
 				});
@@ -121,7 +95,14 @@ function (Ash, ConsoleLogger, WorldConstants, WorldCreatorHelper, WorldCreatorLo
 				+ ", early: " + levelVO.getNumSectorsByStage(WorldConstants.CAMP_STAGE_EARLY) + "/" + levelVO.numSectorsByStage[WorldConstants.CAMP_STAGE_EARLY]
 				+ ", late: " + levelVO.getNumSectorsByStage(WorldConstants.CAMP_STAGE_LATE) + "/" + levelVO.numSectorsByStage[WorldConstants.CAMP_STAGE_LATE]
 			);
-			var print = "seed: " + worldVO.seed + ", " + ", center: " + levelVO.levelCenterPosition + ", bounds: " + levelVO.minX + "." + levelVO.minY + "-" + levelVO.maxX + "." + levelVO.maxY;
+			var print = "seed: " + worldVO.seed + ", " + ", center: " + levelVO.levelPOICenterPosition + ", bounds: " + levelVO.minX + "." + levelVO.minY + "-" + levelVO.maxX + "." + levelVO.maxY;
+
+			if (levelVO.sectors.length == 0) {
+				WorldCreatorLogger.i(print);
+				WorldCreatorLogger.groupEnd();
+				return;
+			}
+
 			print += "\n";
 			print += "\t";
 			var rx = 20;
@@ -140,7 +121,7 @@ function (Ash, ConsoleLogger, WorldConstants, WorldCreatorHelper, WorldCreatorLo
 				print += y + "\t";
 				for (var x = minX; x <= maxX; x++) {
 					var position = { level: levelVO.level, sectorX: x, sectorY: y};
-					var features = worldVO.getFeaturesByPos(position);
+					var features = worldVO.getFeatureTypesByPos(position);
 					if (levelVO.hasSector(x, y)) {
 						var sectorVO = levelVO.getSector(x, y);
 						var defaultColor = sectorVO.stage == WorldConstants.CAMP_STAGE_EARLY ? "#111" : "#abc";
@@ -159,16 +140,14 @@ function (Ash, ConsoleLogger, WorldConstants, WorldCreatorHelper, WorldCreatorLo
 							print += "{D|" + defaultColor + "} ";
 						else if (sectorVO.isCamp)
 							print += "{C|" + defaultColor + "} ";
-						else if (levelVO.levelCenterPosition.equals(position))
+						else if (levelVO.levelPOICenterPosition.equals(position))
 							print += "{C|#eb2} ";
 						else if (sectorVO.isConnectionPoint)
 							print += "{c|" + defaultColor + "} ";
-						else if (sectorVO.isFill)
-							print += "{F|" + defaultColor + "} ";
 						else
 							print += "{+|" + defaultColor + "} ";
 					} else {
-						if (levelVO.levelCenterPosition.equals(position)) {
+						if (levelVO.levelPOICenterPosition.equals(position)) {
 							print += "{C|#eb2} ";
 						} else if (levelVO.isInvalidPosition(position)) {
 							print += "{·|#e11} ";

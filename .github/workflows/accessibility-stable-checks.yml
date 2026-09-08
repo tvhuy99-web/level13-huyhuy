@@ -1,8 +1,10 @@
-name: Stable accessibility checks
+name: Accessibility checks
 
 on:
   push:
-    branches: [ accessibility-stable-live ]
+    branches: [ accessibility-master-integration, master ]
+  pull_request:
+    branches: [ master ]
   workflow_dispatch:
 
 jobs:
@@ -28,17 +30,17 @@ jobs:
           node --check src/game/GameGlobalsInitializer.js
           node --check scripts/accessibility-stable-smoke.js
 
-      - name: Verify stable accessibility wiring
+      - name: Verify accessibility wiring on master
         run: node scripts/accessibility-stable-smoke.js
 
       - name: Install browser test dependency
         run: python3 -m pip install --disable-pip-version-check selenium
 
-      - name: Verify game leaves Loading state in Chrome
+      - name: Verify accessibility compatibility in Chrome
         shell: bash
         run: |
           set -euo pipefail
           python3 -m http.server 8000 >/tmp/level13-http.log 2>&1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID || true' EXIT
-          python3 scripts/accessibility-runtime-smoke.py
+          python3 scripts/accessibility-master-runtime-smoke.py

@@ -28,7 +28,7 @@ define(function () {
 		getVO: function (context, key) {
 			if (!this.caches[context]) return null;
 			if (!this.caches[context].items[key]) return null;
-			var cached = this.caches[context].items[key];
+			let cached = this.caches[context].items[key];
 			cached.accesstime = new Date().getTime();
 			return cached.vo;
 		},
@@ -87,7 +87,7 @@ define(function () {
 		},
 		
 		getDefaultKey: function (...args) {
-			var res = "";
+			let res = "";
 			for (let i = 0; i < args.length; i++) {
 				if (typeof(args[i]) == undefined || args[i] == null) {
 					continue;

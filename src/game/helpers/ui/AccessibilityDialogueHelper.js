@@ -39,7 +39,7 @@ define([], function () {
 		let buttonBox = document.querySelector("#dialogue-popup .buttonbox");
 		if (buttonBox) {
 			buttonBox.setAttribute("role", "group");
-			buttonBox.setAttribute("aria-label", "Dialogue choices");
+			buttonBox.setAttribute("aria-label", "Lựa chọn hội thoại");
 			this.observeOptions(buttonBox);
 		}
 	};

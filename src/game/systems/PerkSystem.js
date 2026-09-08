@@ -167,19 +167,19 @@ define([
 			let msg = "";
 			switch (perkID) {
 				case PerkConstants.perkIds.hazardCold:
-					msg = "It's unbearably cold.";
+					msg = "Lạnh đến mức không thể chịu nổi.";
 					break;
 					
 				case PerkConstants.perkIds.hazardPoison:
-					msg = "The air here is toxic.";
+					msg = "Không khí ở đây độc hại.";
 					break;
 					
 				case PerkConstants.perkIds.hazardRadiation:
-					msg = "Feeling nauseous.";
+					msg = "Cảm thấy buồn nôn.";
 					break;
 					
 				case PerkConstants.perkIds.lightBeacon:
-					msg =  "Nearby beacon lights the way";
+					msg =  "Đèn hiệu gần đó soi đường";
 					break;
 					
 				default:
@@ -207,26 +207,26 @@ define([
 			let msg = "";
 			switch (perkID) {
 				case PerkConstants.perkIds.hazardCold:
-					msg = "Warmer now.";
+					msg = "Giờ đã ấm hơn.";
 					break;
 					
 				case PerkConstants.perkIds.hazardRadiation:
-					msg = "Safe from radiation now.";
+					msg = "Giờ đã an toàn trước phóng xạ.";
 					break;
 				
 				case PerkConstants.perkIds.hazardPoison:
-					msg = "Safe from pollution now.";
+					msg = "Giờ đã an toàn trước ô nhiễm.";
 					break;
 					
 				case PerkConstants.perkIds.lightBeacon:
-					msg = playerPos.inCamp ? "" : "Outside the beacon's range.";
+					msg = playerPos.inCamp ? "" : "Đã ở ngoài tầm của đèn hiệu.";
 					break;
 					
 				case PerkConstants.perkIds.tired:
 					return;
 					
 				default:
-					msg = "Safer here.";
+					msg = "Ở đây an toàn hơn.";
 					break;
 			}
 			
@@ -244,19 +244,19 @@ define([
 			var msg = "";
 			switch (perkID) {
 				case PerkConstants.perkIds.hazardCold:
-					msg = "Feeling warm again.";
+					msg = "Lại cảm thấy ấm áp.";
 					break;
 					
 				case PerkConstants.perkIds.hazardPoison:
-					msg = "Feeling better again.";
+					msg = "Lại cảm thấy khá hơn.";
 					break;
 					
 				case PerkConstants.perkIds.hazardRadiation:
-					msg = "Feeling better again.";
+					msg = "Lại cảm thấy khá hơn.";
 					break;
 				
 				case PerkConstants.perkIds.staminaBonusPenalty:
-					msg = "Feeling better again.";
+					msg = "Lại cảm thấy khá hơn.";
 					break;
 					
 				case PerkConstants.perkIds.tired:

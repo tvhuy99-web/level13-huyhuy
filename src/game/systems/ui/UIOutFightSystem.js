@@ -1,6 +1,7 @@
 define([
 	'ash',
 	'text/Text',
+	'utils/ObjectUtils',
 	'utils/UIState',
 	'game/GameGlobals',
 	'game/GlobalSignals',
@@ -16,7 +17,7 @@ define([
 	'game/components/player/ItemsComponent',
 	'game/components/sector/FightEncounterComponent',
 	'game/components/sector/EnemiesComponent'
-], function (Ash, Text, UIState, GameGlobals, GlobalSignals, GameConstants, FightConstants, ExplorerConstants, ItemConstants, TextConstants, UIConstants, PlayerLocationNode, PlayerStatsNode, FightNode, ItemsComponent, FightEncounterComponent, EnemiesComponent) {
+], function (Ash, Text, ObjectUtils, UIState, GameGlobals, GlobalSignals, GameConstants, FightConstants, ExplorerConstants, ItemConstants, TextConstants, UIConstants, PlayerLocationNode, PlayerStatsNode, FightNode, ItemsComponent, FightEncounterComponent, EnemiesComponent) {
 	
 	var FightPopupStateEnum = {
 		CLOSED: 0,
@@ -148,15 +149,14 @@ define([
 			var playerSpeed = FightConstants.getPlayerSpeed(itemsComponent);
 			var playerHP = playerStamina.maxHP;
 			var playerShield = playerStamina.maxShield;
-			$("#fight-popup-self-name").text(this.numExplorers > 0 ? " Party " : " Wanderer ");
+			$("#fight-popup-self-name").text(this.numExplorers > 0 ? " Đội thám hiểm " : " Kẻ lang thang ");
 			$("#fight-popup-self-stats").text(this.getStatsText(playerAtt, playerDef, playerSpeed, playerHP, playerShield));
 			
 			// update action buttons
 			// TODO show fight effect of items in fight ui
 
 			let actionsToShow = this.visibleInFightActions;
-			let numActionsShown = $("#fight-buttons-infightactions button").length;
-			if (numActionsShown !== actionsToShow.length) {
+			if (!this.shownInFightActions || !ObjectUtils.keysMatch(this.shownInFightActions, actionsToShow, ["action"])) {
 				$("#fight-buttons-infightactions").empty();
 				for(let i = 0; i < actionsToShow.length; i++) {
 					let actionDef = actionsToShow[i];
@@ -165,6 +165,8 @@ define([
 				
 				GameGlobals.uiFunctions.createButtons("#fight-buttons-infightactions");
 				GlobalSignals.elementCreatedSignal.dispatch();
+
+				this.shownInFightActions = actionsToShow
 			}
 		},
 
@@ -191,7 +193,7 @@ define([
 
 			let hasFleeExplorer = GameGlobals.playerHelper.getPartyAbilityLevel(ExplorerConstants.abilityType.FLEE) > 0;
 			if (hasFleeExplorer) {
-				actionsToShow.push({ action: "use_explorer_fight_flee", actionLabel: "flee" });
+				actionsToShow.push({ action: "use_explorer_fight_flee", actionLabel: "chạy trốn" });
 			}
 
 			this.visibleInFightActions = actionsToShow;
@@ -212,12 +214,12 @@ define([
 		},
 		
 		updatePlayerDodge: function () {
-			$("#fight-status-indictor-self").text("dodge");
+			$("#fight-status-indictor-self").text("né tránh");
 			this.animateDamageIndicator($("#fight-status-indictor-self"));
 		},
 		
 		updateEnemyDodge: function () {
-			$("#fight-status-indictor-enemy").text("dodge");
+			$("#fight-status-indictor-enemy").text("né tránh");
 			this.animateDamageIndicator($("#fight-status-indictor-enemy"));
 		},
 		
@@ -402,7 +404,7 @@ define([
 			if (currentEnemy == null) return;
 			var statsText = this.getStatsText(currentEnemy.getAtt(), currentEnemy.getDef(), currentEnemy.getSpeed(), currentEnemy.maxHP, currentEnemy.maxShield);
 			
-			$("#fight-popup-enemy-name").html(" " + currentEnemy.name.toLowerCase() + " ");
+			$("#fight-popup-enemy-name").html(" " + this.getEnemyDisplayName(currentEnemy) + " ");
 			$("#fight-popup-enemy-stats").html(statsText);
 		},
 		
@@ -458,14 +460,21 @@ define([
 		getTitleByContext: function (encounterComponent) {
 			let baseActionID = GameGlobals.playerActionsHelper.getBaseActionID(encounterComponent.context);
 			if (baseActionID === "fight_gang") {
-				return "Fight " + (encounterComponent.totalEnemies - encounterComponent.pendingEnemies + 1) + " / " + encounterComponent.totalEnemies;
+				return "Trận chiến " + (encounterComponent.totalEnemies - encounterComponent.pendingEnemies + 1) + " / " + encounterComponent.totalEnemies;
 			}
 
 			if (GameGlobals.gameState.uiStatus.sequenceTitleKey) return Text.t(GameGlobals.gameState.uiStatus.sequenceTitleKey);
 
-			if (!baseActionID) return "Fight";
+			if (!baseActionID) return "Chiến đấu";
 
-			return baseActionID.replace(/_/g, " ");
+			let titleKey = "game.actions." + baseActionID + "_name";
+			return Text.hasKey(titleKey) ? Text.t(titleKey) : baseActionID.replace(/_/g, " ");
+		},
+
+		getEnemyDisplayName: function (enemy) {
+			if (!enemy) return "";
+			if (Text.currentLanguage != "VI_VN") return enemy.name;
+			return EnemyConstants.getEnemyDisplayName(enemy);
 		},
 		
 		getDescriptionByContext: function (context, enemy) {
@@ -473,43 +482,43 @@ define([
 			var baseActionID = GameGlobals.playerActionsHelper.getBaseActionID(context);
 			switch (baseActionID) {
 				case "scavenge":
-					return "surprised by " + Text.addArticle(enemyNoun) + " while scavenging";
+					return "Bị " + enemyNoun + " bất ngờ tấn công khi lục soát";
 				case "investigate":
-					return "surprised by " + Text.addArticle(enemyNoun) + " while investigating";
+					return "Bị " + enemyNoun + " bất ngờ tấn công khi điều tra";
 				case "scout_locale_u":
-					return "surprised by " + Text.addArticle(enemyNoun) + " while scouting";
+					return "Bị " + enemyNoun + " bất ngờ tấn công khi trinh sát";
 				case "scout_locale_i":
-					return "attacked while scouting";
+					return "Bị tấn công khi trinh sát";
 				case "clear_workshop":
 					 var enemyActiveV = TextConstants.getEnemyActiveVerb([ enemy ]);
-					return "workshop " + enemyActiveV + " " + Text.pluralify(enemyNoun);
+					return "Xưởng " + enemyActiveV + " " + Text.pluralify(enemyNoun);
 				case "fight_gang":
-					return Text.addArticle(enemyNoun) + " is blocking passage";
+					return enemyNoun + " đang chặn lối đi";
 				case "wait":
-					return "surprised by " + Text.addArticle(enemyNoun);
+					return "Bị " + enemyNoun + " bất ngờ tấn công";
 				default:
-					return Text.addArticle(enemyNoun) + " approaches";
+					return enemyNoun + " đang tiến đến";
 			}
 		},
 		
 		getStatsText: function (att, def, speed, hp, shield) {
 			let result = "";
 			result += " ";
-			result += "att: " + att;
+			result += "công: " + att;
 			result += " | ";
-			result += "def: " + def;
+			result += "thủ: " + def;
 			result += " | ";
-			result += "spd: " + Math.round(speed * 20)/20;
+			result += "tốc: " + Math.round(speed * 20)/20;
 			result += " | ";
 			
 			if (hp > 0) {
-				result += "hp: " + hp;
+				result += "HP: " + hp;
 			}
 			if  (hp > 0 && shield > 0) {
 				result += " | ";
 			}
 			if (shield > 0) {
-				result += "shield: " + shield;
+				result += "khiên: " + shield;
 			}
 			
 			result += " ";
@@ -523,16 +532,16 @@ define([
 				case "investigate":
 				case "scout":
 				case "use_spring":
-					return "Intruder defeated.";
+					return "Đã đánh bại kẻ xâm nhập.";
 					
 				case "scout_locale_u":
 				case "scout_locale_i":
-					return "Area clear.";
+					return "Khu vực đã an toàn.";
 
 				case "clear_workshop":
 				case "fight_gang":
 				default:
-					return "Fight won.";
+					return "Đã thắng trận.";
 			}
 		},
 		
@@ -545,7 +554,7 @@ define([
 				case "clear_workshop":
 				case "fight_gang":
 				default:
-					return "fight lost";
+					return "Đã thua trận.";
 			}
 		},
 		

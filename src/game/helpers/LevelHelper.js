@@ -121,13 +121,21 @@ define([
 				if (levelPosition.level === level) return node.entity;
 			}
 
+			debugger
+
 			log.w("getLevelEntityForPosition: could not find level entity for position: [" + level + "]")
 			return null;
 		},
 
+		getLevelComponentForPosition: function (level) {
+			return this.getLevelEntityForPosition(level).get(LevelComponent);
+		},
+
 		isVisited: function (entity) {
-			if (typeof(entity) == "number") 
+			if (typeof(entity) == "number") {
+				if (!GameGlobals.worldHelper.isLevelGenerated(entity)) return false;
 				entity = this.getLevelEntityForPosition(entity);
+			}
 			if (!entity) return false;
 			let levelStatus = entity.get(LevelStatusComponent);
 			return levelStatus.isVisited || entity.has(VisitedComponent) || false;
@@ -161,6 +169,13 @@ define([
 			level = parseInt(level);
 			sectorX = parseInt(sectorX);
 			sectorY = parseInt(sectorY);
+
+			let isGenerated = GameGlobals.worldHelper.isLevelGenerated(level);
+
+			if (!isGenerated) {
+				debugger
+				return null;
+			}
 
 			// TODO check if saving uses up too much memory / this is the neatest way, speeds up fps a lot (esp for map)
 			if (!this.sectorEntitiesByPosition[level]) this.sectorEntitiesByPosition[level] = {};
@@ -219,7 +234,7 @@ define([
 				let gangPosition = node.entity.get(PositionComponent);
 				
 				// wrong level
-				let gangCampOrdinal = GameGlobals.gameState.getCampOrdinal(gangPosition.level);
+				let gangCampOrdinal = GameGlobals.worldState.getCampOrdinal(gangPosition.level);
 				if (gangCampOrdinal != campOrdinal) {
 					continue;
 				}
@@ -493,8 +508,10 @@ define([
 			}
 		},
 
-		forEverySectorFromLocation: function (pos, func, limitToCurrentLevel) {
+		forEverySectorFromLocation: function (pos, func, limitToCurrentLevel, excludeStartPos) {
 			// TODO go by path distance, not distance in coordinates / make that an option
+
+			if (limitToCurrentLevel !== false) limitToCurrentLevel = true;
 
 			let startLevel = pos.level;
 
@@ -508,6 +525,7 @@ define([
 				});
 				for (let i = 0; i < sectors.length; i++) {
 					let sector = sectors[i];
+					if (excludeStartPos && sector.get(PositionComponent).equals(pos)) continue;
 					let done = func(sector);
 					if (done) {
 						return true;
@@ -580,8 +598,8 @@ define([
 			// sort by level ordinal
 			var gameState = GameGlobals.gameState;
 			result.sort(function (a, b) {
-				var levelOrdinalA = gameState.getLevelOrdinal(a.level);
-				var levelOrdinalB = gameState.getLevelOrdinal(b.level);
+				var levelOrdinalA = worldState.getLevelOrdinal(a.level);
+				var levelOrdinalB = worldState.getLevelOrdinal(b.level);
 				return levelOrdinalB - levelOrdinalA;
 			});
 
@@ -620,9 +638,14 @@ define([
 			return result;
 		},
 
+		getShortcutPair: function (sector) {
+			let pos = sector.get(PositionComponent);
+			return this.findNearestLocaleSector(pos, localeTypes.shortcut, true);
+		},
+
 		getLevelStatsGlobal: function () {
 			let result = {};
-			for (let level = GameGlobals.gameState.getGroundLevel(); level <= GameGlobals.gameState.getSurfaceLevel(); level++) {
+			for (let level = GameGlobals.worldState.getGroundLevel(); level <= GameGlobals.worldState.getSurfaceLevel(); level++) {
 				let levelStats = this.getLevelStats(level);
 				for (let key in levelStats) {
 					if (!result[key]) result[key] = 0;
@@ -750,7 +773,7 @@ define([
 			var featuresComponent = sectorEntity.get(SectorFeaturesComponent);
 			var improvementsComponent = sectorEntity.get(SectorImprovementsComponent);
 			let level = sectorPosition.level;
-			let levelOrdinal = GameGlobals.gameState.getLevelOrdinal(level);
+			let levelOrdinal = GameGlobals.worldState.getLevelOrdinal(level);
 
 			var scouted = statusComponent && statusComponent.scouted;
 			if (!scouted) return projects;
@@ -842,7 +865,7 @@ define([
 			}
 
 			// space ship and sundome
-			if (levelOrdinal === GameGlobals.gameState.getSurfaceLevelOrdinal()) {
+			if (levelOrdinal === GameGlobals.worldState.getSurfaceLevelOrdinal()) {
 				if (camp) {
 					var actions = [ "build_out_spaceship1", "build_out_spaceship2", "build_out_spaceship3", "build_out_sundome"];
 					for (let i = 0; i < actions.length; i++) {
@@ -898,9 +921,9 @@ define([
 
 		getClearBlockerProjectName: function (blockerType, isEarlyZone) {
 			switch (blockerType) {
-				case MovementConstants.BLOCKER_TYPE_GAP: return "Bridge";
-				case MovementConstants.BLOCKER_TYPE_DEBRIS: return "Debris";
-				case MovementConstants.BLOCKER_TYPE_EXPLOSIVES: return "Explosives";
+				case MovementConstants.BLOCKER_TYPE_GAP: return "Bắc cầu";
+				case MovementConstants.BLOCKER_TYPE_DEBRIS: return "Đống đổ nát";
+				case MovementConstants.BLOCKER_TYPE_EXPLOSIVES: return "Chất nổ";
 			}
 			
 		},
@@ -933,7 +956,7 @@ define([
 				case improvementNames.luxuryOutpost:
 					let luxuryResource = GameGlobals.sectorHelper.getLuxuryResourceOnSector(sector);
 					let resourceName = TribeConstants.getLuxuryDisplayName(luxuryResource);
-					return "Resource outpost (" + resourceName + ")";
+					return "Tiền đồn tài nguyên (" + resourceName + ")";
 			}
 			
 			let improvementID = ImprovementConstants.getImprovementID(improvementName);
@@ -957,7 +980,7 @@ define([
 		},
 		
 		getCampClearedWorkshopCount: function (campOrdinal, resourceName) {
-			var levels = GameGlobals.gameState.getLevelsForCamp(campOrdinal);
+			var levels = GameGlobals.worldState.getLevelsForCamp(campOrdinal);
 			let result = 0;
 			for (let i = 0; i < levels.length; i++) {
 				result += this.getLevelClearedWorkshopCount(levels[i], resourceName);
@@ -966,8 +989,10 @@ define([
 		},
 
 		getLevelClearedWorkshopCount: function (level, resourceName) {
-			let entity = this.getLevelEntityForPosition(level);
-			let levelStatus = entity.get(LevelStatusComponent);
+			if (!GameGlobals.worldHelper.isLevelGenerated(level)) return 0;
+			let levelEntity = this.getLevelEntityForPosition(level);
+			if (!levelEntity) return;
+			let levelStatus = levelEntity.get(LevelStatusComponent);
 			return levelStatus.clearedWorkshops[resourceName] || 0;
 		},
 
@@ -987,7 +1012,7 @@ define([
 		},
 
 		getCampBuiltOutImprovementsCount: function (campOrdinal, improvementName) {
-			var levels = GameGlobals.gameState.getLevelsForCamp(campOrdinal);
+			var levels = GameGlobals.worldState.getLevelsForCamp(campOrdinal);
 			let result = 0;
 			for (let i = 0; i < levels.length; i++) {
 				result += this.getLevelBuiltOutImprovementsCount(levels[i], improvementName);
@@ -996,7 +1021,9 @@ define([
 		},
 		
 		getLevelBuiltOutImprovementsCount: function (level, improvementName) {
+			if (!GameGlobals.worldHelper.isLevelGenerated(level)) return 0;
 			let levelEntity = this.getLevelEntityForPosition(level);
+			if (!levelEntity) return;
 			let levelStatus = levelEntity.get(LevelStatusComponent);
 			let improvementID = ImprovementConstants.getImprovementID(improvementName);
 			return levelStatus.improvementCounts[improvementID] || 0;
@@ -1041,7 +1068,7 @@ define([
 				let candidates = [];
 				let maxCandidates = num * 3;
 				
-				for (let level = GameGlobals.gameState.getSurfaceLevel(); level >= GameGlobals.gameState.getGroundLevel(); level--) {
+				for (let level = GameGlobals.worldState.getSurfaceLevel(); level >= GameGlobals.worldState.getGroundLevel(); level--) {
 					let sectors = GameGlobals.levelHelper.getSectorsByLevel(level);
 					for (let i in sectors) {
 						let sector = sectors[i];
@@ -1078,6 +1105,24 @@ define([
 			return result;
 		},
 
+		getDirectionToFeature: function (sector, featureType) {
+			let result = null;
+			let neighbours = GameGlobals.levelHelper.getSectorNeighboursMap(sector);
+			for (let direction in neighbours) {
+				let neighbour = neighbours[direction];
+				if (!neighbour) continue;
+				let featuresComponent = neighbour.get(SectorFeaturesComponent);				
+				if (!featuresComponent.hasFeature(featureType)) continue;
+
+				let isBetterDirection = PositionConstants.isDiagonal(result) && !PositionConstants.isDiagonal(direction);
+				
+				if (result == null || isBetterDirection) {
+					result = direction;
+				}
+			}
+			return result;
+		},
+
 		getFoundLuxuryResourceOnLevel: function (level) {
 			let resource = this.getLuxuryResourceOnLevel(level);
 			
@@ -1102,7 +1147,7 @@ define([
 		},
 		
 		getFoundLuxuryResourceOnCampOrdinal: function (campOrdinal) {
-			let levelsForCamp = GameGlobals.gameState.getLevelsForCamp(campOrdinal);
+			let levelsForCamp = GameGlobals.worldState.getLevelsForCamp(campOrdinal);
 			for (let i = 0; i < levelsForCamp.length; i++) {
 				let level = levelsForCamp[i];
 				let resourceOnLevel = this.getFoundLuxuryResourceOnLevel(level);
@@ -1115,8 +1160,8 @@ define([
 
 		isLevelUnlocked: function (level) {
 			if (level === 13) return true;
-			if (level > GameGlobals.gameState.getSurfaceLevel()) return false;
-			if (level < GameGlobals.gameState.getGroundLevel()) return false;
+			if (level > GameGlobals.worldState.getSurfaceLevel()) return false;
+			if (level < GameGlobals.worldState.getGroundLevel()) return false;
 			let levelEntity = this.getLevelEntityForPosition(level);
 			if (levelEntity) {
 				if (level < 13) {
@@ -1210,7 +1255,7 @@ define([
 		},
 
 		isNextPassageFound: function (level) {
-			if (level == GameGlobals.gameState.getGroundLevel()) {
+			if (level == GameGlobals.worldState.getGroundLevel()) {
 				return this.isPassageUpFound(13);
 			} else if (level >= 14) {
 				return this.isPassageUpFound(level);
@@ -1229,6 +1274,12 @@ define([
 			let levelEntity = GameGlobals.levelHelper.getLevelEntityForPosition(level);
 			let levelComponent = levelEntity.get(LevelComponent);
 			return levelComponent.isCampable;
+		},
+		
+		getLevelDistricts: function (level) {
+			let levelEntity = GameGlobals.levelHelper.getLevelEntityForPosition(level);
+			let levelComponent = levelEntity.get(LevelComponent);
+			return levelComponent.districts;
 		},
 		
 		isCampReachableByTribeTraders: function (sector) {
@@ -1299,7 +1350,10 @@ define([
 		},
 		
 		getLevelLocales: function (level, includeScouted, localeBracket, excludeLocaleVO, requireBlueprints) {
-			var locales = [];
+			let locales = [];
+			
+			this.saveSectorsForLevel(level);
+
 			for (let i = 0; i < this.sectorEntitiesByLevel[level].length; i++) {
 				var sectorEntity = this.sectorEntitiesByLevel[level][i];
 				locales = locales.concat(this.getSectorLocales(sectorEntity, includeScouted, localeBracket, excludeLocaleVO, requireBlueprints));
@@ -1372,6 +1426,19 @@ define([
 			}
 			return result;
 		},
+
+		findNearestSector: function (level, sectorX, sectorY, maxDist, filter) {
+			maxDist = maxDist || 100;
+			
+			let sectors = this.getSectorsByLevel(level).slice();
+			let position = { sectorX: sectorX, sectorY: sectorY };
+			let getDistance = (s) => PositionConstants.getDistanceTo(s.get(PositionComponent), position);
+			let candidates = sectors.filter(s => getDistance(s) <= maxDist);
+			if (filter) candidates = candidates.filter(filter);
+			let sortedSectors = candidates.sort((a, b) => getDistance(a) - getDistance(b));
+
+			return sortedSectors[0];
+		},
 		
 		findNearestKnownWaterSector: function (pos, limitToCurrentLevel) {
 			let result = null;
@@ -1397,7 +1464,7 @@ define([
 			return result;
 		},
 
-		findNearestLocaleSector: function (pos, localeType) {
+		findNearestLocaleSector: function (pos, localeType, excludeStartPos) {
 			let result = null;
 			this.forEverySectorFromLocation(pos, (sector) => {
 				let sectorLocalesComponent = sector.get(SectorLocalesComponent);
@@ -1408,7 +1475,7 @@ define([
 					}
 				}
 				return false;
-			}, true);
+			}, true, excludeStartPos);
 			return result;
 		},
 		

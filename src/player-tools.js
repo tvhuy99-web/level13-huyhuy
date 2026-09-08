@@ -68,7 +68,7 @@ define([
 		let upgradeName = UpgradeConstants.upgradeDefinitions[upgradeID].name;
 		let hasUpgrade = save.entitiesObject.tribe.Upgrades.boughtUpgrades.indexOf(upgradeID) >= 0;
 		result.ok = hasUpgrade == requiredValue;
-		result.reason = "Upgrade " + upgradeName + " " + (hasUpgrade ? "already unlocked" : "not unlocked");
+		result.reason = "Nâng cấp " + upgradeName + " " + (hasUpgrade ? "đã được mở khóa" : "chưa được mở khóa");
 		return result;
 	}
 	
@@ -127,20 +127,20 @@ define([
 		let save = loadSave();
 		let isSaveValid = validateSave(save);
 		if (!isSaveValid) {
-			showMessage("Input is not a valid save.");
+			showMessage("Dữ liệu nhập không phải là một bản lưu hợp lệ.");
 			return;
 		}
 		
 		let checkResult = checkSave(save, checkActions);
 		
 		if (!checkResult.ok) {
-			showMessage("This save is not valid for this fix. Reason: " + checkResult.reason);
+			showMessage("Bản lưu này không phù hợp với cách sửa này. Lý do: " + checkResult.reason);
 			return;
 		}
 		
 		let result = fixSave(save, fixActions);
 		exportSave(result);
-		showMessage("Fix applied. " + message + " Copy new save from the Output box.");
+		showMessage("Đã áp dụng sửa lỗi. " + message + " Hãy sao chép bản lưu mới từ ô Kết quả.");
 	}
 	
 	function applyFixEvidenceKnifeCompass() {
@@ -156,7 +156,7 @@ define([
 			function (save) { fixSaveGrantEvidence(save, evidenceCost) },
 			function (save) { fixSaveGrantRumours(save, 58) },
 		],
-			"Removed upgrade 'Knife' and reinbursed " + evidenceCost + " Evidence and " + rumourCost + " Rumours."
+			"Đã xóa nâng cấp 'Dao' và hoàn lại " + evidenceCost + " bằng chứng cùng " + rumourCost + " tin đồn."
 		);
 	}
 	
@@ -166,7 +166,7 @@ define([
 		],[
 			function (save) { fixSaveGrantBlueprints(save, "unlock_item_shoe1") },
 		],
-			"Added blueprint(s) for Crafting."
+			"Đã thêm bản thiết kế cho Chế tạo."
 		);
 	}
 	
@@ -181,7 +181,7 @@ define([
 			function (save) { fixSaveRemoveUpgrade(save, "unlock_building_passage_staircase") },
 			function (save) { fixSaveGrantEvidence(save, evidenceCost) },
 		],
-			"Removed upgrade 'Building Projects' and reimbursed " + evidenceCost + " Evidence."
+			"Đã xóa nâng cấp 'Dự án công trình' và hoàn lại " + evidenceCost + " bằng chứng."
 		);
 	}
 	
@@ -196,7 +196,7 @@ define([
 			function (save) { fixSaveRemoveUpgrade(save, "unlock_building_tradingpost") },
 			function (save) { fixSaveGrantEvidence(save, evidenceCost) },
 		],
-			"Removed upgrade 'Compass' and reimbursed " + evidenceCost + " Evidence."
+			"Đã xóa nâng cấp 'La bàn' và hoàn lại " + evidenceCost + " bằng chứng."
 		);
 	}
 	

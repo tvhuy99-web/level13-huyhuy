@@ -165,8 +165,9 @@ define([
 		},
 
 		createLevel: function (saveKey, pos, levelVO) {
-			var level = new Ash.Entity()
-				.add(new LevelComponent(pos, levelVO.isCampable, levelVO.isHard, levelVO.notCampableReason, levelVO.habitability, levelVO.raidDangerFactor, levelVO.minX, levelVO.maxX, levelVO.minY, levelVO.maxY))
+			let attributes = levelVO;
+			let level = new Ash.Entity()
+				.add(new LevelComponent(pos, levelVO.isCampable, levelVO.isHard, levelVO.notCampableReason, levelVO.districts, levelVO.features, levelVO.minX, levelVO.maxX, levelVO.minY, levelVO.maxY, attributes))
 				.add(new PositionComponent(pos))
 				.add(new LevelPassagesComponent())
 				.add(new LevelStatusComponent())
@@ -175,7 +176,7 @@ define([
 			return level;
 		},
 
-		createSector: function (saveKey, level, posX, posY, passageOptions, movementBlockers, sectorFeatures, locales, criticalPaths, enemies, hasRegularEnemies, localeEnemyNum) {
+		createSector: function (saveKey, level, posX, posY, passageOptions, movementBlockers, sectorFeatures, locales, enemies, hasRegularEnemies, localeEnemyNum) {
 			var sector = new Ash.Entity()
 				.add(new SectorComponent())
 				.add(new ResourcesComponent(0, true))

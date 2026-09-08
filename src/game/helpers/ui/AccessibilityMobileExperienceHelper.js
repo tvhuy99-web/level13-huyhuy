@@ -85,20 +85,20 @@ else host.appendChild(inventorySummary);
 }
 let playerParts = [];
 let player = this.firstStatText(".player-stats-container");
-if (player) playerParts.push("Player status. " + player);
+if (player) playerParts.push("Trạng thái người chơi. " + player);
 let statuses = this.statusText();
-if (statuses) playerParts.push("Status effects. " + statuses);
+if (statuses) playerParts.push("Hiệu ứng trạng thái. " + statuses);
 let equipment = this.firstText(".container-equipment-stats");
-if (equipment) playerParts.push("Equipment stats. " + equipment);
+if (equipment) playerParts.push("Chỉ số trang bị. " + equipment);
 let inventoryParts = [];
 let bag = this.inventoryText();
-if (bag) inventoryParts.push("Inventory. " + bag);
+if (bag) inventoryParts.push("Túi đồ. " + bag);
 let tribe = this.firstStatText(".statsbar-tribe-stats");
-if (tribe) inventoryParts.push("Tribe stats. " + tribe);
+if (tribe) inventoryParts.push("Chỉ số bộ lạc. " + tribe);
 let camp = this.campText();
-if (camp) inventoryParts.push("Camp. " + camp);
-summary.textContent = "Player overview. " + (playerParts.length ? playerParts.join(". ") : "No player status information available yet.");
-inventorySummary.textContent = "Inventory and camp overview. " + (inventoryParts.length ? inventoryParts.join(". ") : "No inventory or camp information available yet.");
+if (camp) inventoryParts.push("Trại. " + camp);
+summary.textContent = "Tổng quan người chơi. " + (playerParts.length ? playerParts.join(". ") : "Chưa có thông tin trạng thái người chơi.");
+inventorySummary.textContent = "Tổng quan túi đồ và trại. " + (inventoryParts.length ? inventoryParts.join(". ") : "Chưa có thông tin về túi đồ hoặc trại.");
 let summaries = [summary, inventorySummary];
 for (let i = 0; i < summaries.length; i++) {
 summaries[i].removeAttribute("tabindex");
@@ -165,7 +165,7 @@ let l = e.querySelector(".label");
 let v = e.querySelector(".value");
 let vt = e.querySelector(".value-total");
 let text = this.unique(this.norm(l && l.textContent), this.norm(v && v.textContent));
-if (vt && this.norm(vt.textContent)) text = this.unique(text, "total " + this.norm(vt.textContent));
+if (vt && this.norm(vt.textContent)) text = this.unique(text, "tổng " + this.norm(vt.textContent));
 if (!text) text = this.norm(e.innerText || e.textContent);
 if (text) return text;
 }
@@ -252,9 +252,9 @@ x.removeAttribute("tabindex");
 };
 H.prototype.compactClusters = function () {
 let cfg = [
-[".container-equipment-stats", "Equipment stats"],
-[".statsbar-resources", "Camp resources"],
-[".bag-resources", "Bag resources"]
+[".container-equipment-stats", "Chỉ số trang bị"],
+[".statsbar-resources", "Tài nguyên trong trại"],
+[".bag-resources", "Tài nguyên trong túi"]
 ];
 for (let i = 0; i < cfg.length; i++) {
 let els = document.querySelectorAll(cfg[i][0]);
@@ -287,7 +287,7 @@ let l = e.querySelector(".label");
 let v = e.querySelector(".value");
 let vt = e.querySelector(".value-total");
 let text = this.unique(this.norm(l && l.textContent), this.norm(v && v.textContent));
-if (vt && this.norm(vt.textContent)) text = this.unique(text, "total " + this.norm(vt.textContent));
+if (vt && this.norm(vt.textContent)) text = this.unique(text, "tổng " + this.norm(vt.textContent));
 if (!text) text = this.norm(e.innerText || e.textContent);
 if (text) this.setReadOnlySummary(e, text);
 else this.clearReadOnlySummary(e);
@@ -424,17 +424,17 @@ if (parts.length) return this.dedupeParts(parts).join(". ");
 return this.norm(e.innerText || e.textContent);
 };
 H.prototype.configureMovement = function () {
-let dirs = { nw:"northwest", north:"north", ne:"northeast", west:"west", east:"east", sw:"southwest", south:"south", se:"southeast" };
+let dirs = { nw:"tây bắc", north:"bắc", ne:"đông bắc", west:"tây", east:"đông", sw:"tây nam", south:"nam", se:"đông nam" };
 for (let k in dirs) {
 let b = document.getElementById("out-action-move-" + k);
 let g = document.getElementById("out-action-move-" + k + "-grit");
-if (b) b.setAttribute("aria-label", "Move " + dirs[k]);
-if (g) g.setAttribute("aria-label", "Move " + dirs[k] + " using emergency movement");
+if (b) b.setAttribute("aria-label", "Di chuyển " + dirs[k]);
+if (g) g.setAttribute("aria-label", "Di chuyển " + dirs[k] + " bằng lối khẩn cấp");
 }
 let compass = document.getElementById("out-container-compass-actions");
 if (compass) {
 compass.setAttribute("role", "group");
-compass.setAttribute("aria-label", "Movement and travel actions");
+compass.setAttribute("aria-label", "Hành động di chuyển và hành trình");
 }
 let region = this.movementRegion();
 if (!region) return;
@@ -442,7 +442,7 @@ let popup = this.anyPopup();
 let up = this.visible(document.getElementById("out-action-get-up"));
 let scout = this.visible(document.getElementById("out-action-scout"));
 let move = this.visible(compass);
-let msg = popup ? "Movement is not available during the introduction. Continue or close the current dialogue first." : up ? "Movement is not available yet. Choose Get up." : (!move && scout) ? "Movement is not available until this sector is scouted. Choose Scout." : !move ? "Movement controls are not unlocked yet. Complete the available exploration action to continue." : "Movement is available. Choose a direction: north, northeast, east, southeast, south, southwest, west, or northwest.";
+let msg = popup ? "Không thể di chuyển trong phần mở đầu. Hãy tiếp tục hoặc đóng hội thoại hiện tại trước." : up ? "Chưa thể di chuyển. Hãy chọn Đứng dậy." : (!move && scout) ? "Chưa thể di chuyển cho đến khi thám sát khu vực này. Hãy chọn Thám sát." : !move ? "Các nút di chuyển chưa được mở khóa. Hãy hoàn thành hành động thám hiểm khả dụng để tiếp tục." : "Có thể di chuyển. Hãy chọn một hướng: bắc, đông bắc, đông, đông nam, nam, tây nam, tây hoặc tây bắc.";
 if (msg !== this.lastMovementMessage) {
 this.lastMovementMessage = msg;
 region.textContent = msg;

@@ -1,5 +1,5 @@
-define(['ash', 'json!game/data/ItemData.json', 'text/Text', 'utils/MathUtils', 'game/constants/PlayerActionConstants', 'game/vos/ItemVO'],
-function (Ash, ItemData, Text, MathUtils, PlayerActionConstants, ItemVO) {
+define(['ash', 'json!game/data/ItemData.json', 'text/Text', 'utils/MathUtils', 'game/constants/PlayerActionConstants', 'game/constants/SectorConstants', 'game/vos/ItemVO'],
+function (Ash, ItemData, Text, MathUtils, PlayerActionConstants, SectorConstants, ItemVO) {
 
 	let ItemConstants = {
 		
@@ -105,12 +105,13 @@ function (Ash, ItemData, Text, MathUtils, PlayerActionConstants, ItemVO) {
 			book: "book", // books, found in residential areas and libraries, not in flooded sectors
 			clothing: "clothing", // clothing items, found in resdiential and industrial sectors, stores, factories etc
 			community: "community", // items related to news or propaganda or gossip, found in places where people lived and worked relatively recently
+			electric: "electric", // items that require electricity to function, found in high tech areas
 			equipment: "equipment", // equipment related to surviving in the City, found in industrial areas and areas inhabited since the Fall
 			history: "history", // from before the Government, found in public sectors, museums, libraries 
 			industrial: "industrial", // related to industry, found in industrial sectors and factories
 			keepsake: "keepsake", // something with sentimental value, found in residential sectors and locales
+			maintenance: "maintenance", // related to the maintenance and infrastructure of the City, found in maintenance areas
 			medical: "medical", // related to healthcare, found in labs and hospitals
-			maintenance: "maintenance", // related to the maintenance and infrastructure of the City, foundin maintenance areas
 			nature: "nature", // nature related, found on the ground, on sunlit sectors, greenhouses etc
 			new: "new", // manufactured after the Fall, found in places inhabited since
 			old: "old", // manufactured before the Fall, found in warehouses and depots and homes
@@ -204,6 +205,84 @@ function (Ash, ItemData, Text, MathUtils, PlayerActionConstants, ItemVO) {
 					return [ ItemConstants.itemTags.community ];
 				default: return [];
 			}
+		},
+
+		getCombinedItemTags: function (itemIDs) {
+			let result = [];
+			for (let i = 0; i < itemIDs.length; i++) {
+				let item = this.getItemDefinitionByID(itemIDs[i]);
+				if (!item) continue;
+				for (let j = 0; j < item.tags.length; j++) {
+					if (result.indexOf(item.tags[j]) < 0) result.push(item.tags[j]);
+				}
+			}
+			return result;
+		},
+
+		getSectorItemTags: function (sectorType, wear, hazards, isGround, isSunlit) {
+			let tags = [];
+
+			tags.push(ItemConstants.itemTags.old);
+			
+			switch (sectorType) {
+				case SectorConstants.SECTOR_TYPE_RESIDENTIAL:
+					tags.push(ItemConstants.itemTags.book);
+					tags.push(ItemConstants.itemTags.clothing);
+					tags.push(ItemConstants.itemTags.community);
+					tags.push(ItemConstants.itemTags.keepsake);
+					tags.push(ItemConstants.itemTags.perishable);
+					tags.push(ItemConstants.itemTags.valuable);
+					tags.push(ItemConstants.itemTags.weapon);
+					break;
+				case SectorConstants.SECTOR_TYPE_INDUSTRIAL:
+					tags.push(ItemConstants.itemTags.clothing);
+					tags.push(ItemConstants.itemTags.community);
+					tags.push(ItemConstants.itemTags.industrial);
+					tags.push(ItemConstants.itemTags.medical);
+					tags.push(ItemConstants.itemTags.science);
+					tags.push(ItemConstants.itemTags.equipment);
+					break;
+				case SectorConstants.SECTOR_TYPE_MAINTENANCE:
+					tags.push(ItemConstants.itemTags.equipment);
+					tags.push(ItemConstants.itemTags.maintenance);
+					tags.push(ItemConstants.itemTags.weapon);
+					if (wear < 5) tags.push(ItemConstants.itemTags.electric);
+					break;
+				case SectorConstants.SECTOR_TYPE_PUBLIC:
+					tags.push(ItemConstants.itemTags.book);
+					tags.push(ItemConstants.itemTags.community);
+					tags.push(ItemConstants.itemTags.history);
+					tags.push(ItemConstants.itemTags.science);
+					tags.push(ItemConstants.itemTags.medical);
+					break;
+				case SectorConstants.SECTOR_TYPE_COMMERCIAL:
+					tags.push(ItemConstants.itemTags.clothing);
+					tags.push(ItemConstants.itemTags.community);
+					tags.push(ItemConstants.itemTags.perishable);
+					tags.push(ItemConstants.itemTags.valuable);
+					break;
+			}
+
+			if (wear > 5) tags.push(ItemConstants.itemTags.history);
+			if (isGround) tags.push(ItemConstants.itemTags.nature);
+			if (isSunlit) tags.push(ItemConstants.itemTags.nature);
+			
+			if (hazards.territory > 0) tags.push(ItemConstants.itemTags.weapon);
+
+			if (hazards.flooded > 0) {
+				tags = tags.filter(t => t != ItemConstants.itemTags.book);
+				tags = tags.filter(t => t != ItemConstants.itemTags.perishable);
+			}
+			
+			if (hazards.radiation > 0) {
+				tags = tags.filter(t => t != ItemConstants.itemTags.perishable);
+			}
+			
+			if (hazards.poison > 0) {
+				tags = tags.filter(t => t != ItemConstants.itemTags.perishable);
+			}
+
+			return tags;
 		},
 		
 		getItemTypeDisplayName: function (type, short) {
@@ -370,15 +449,15 @@ function (Ash, ItemData, Text, MathUtils, PlayerActionConstants, ItemVO) {
 		},
 		
 		getUseItemVerb: function (item) {
-			if (item.id.startsWith("cache_metal")) return "Disassemble";
-			if (item.id.startsWith("cache_evidence")) return "Read";
-			if (item.id.startsWith("cache_rumours")) return "Read";
-			if (item.id.startsWith("cache_insight")) return "Read";
-			if (item.id.startsWith("cache_hope")) return "Donate";
-			if (item.id.startsWith("cache_robots")) return "Repair";
-			if (item.id.startsWith("robot")) return "Repair";
-			if (item.id.startsWith("document")) return "Read";
-			return "Use";
+			if (item.id.startsWith("cache_metal")) return "Tháo dỡ";
+			if (item.id.startsWith("cache_evidence")) return "Đọc";
+			if (item.id.startsWith("cache_rumours")) return "Đọc";
+			if (item.id.startsWith("cache_insight")) return "Đọc";
+			if (item.id.startsWith("cache_hope")) return "Dâng tặng";
+			if (item.id.startsWith("cache_robots")) return "Sửa chữa";
+			if (item.id.startsWith("robot")) return "Sửa chữa";
+			if (item.id.startsWith("document")) return "Đọc";
+			return "Sử dụng";
 		},
 			
 		getItemDisplayName: function (item, short) {
@@ -897,6 +976,30 @@ function (Ash, ItemData, Text, MathUtils, PlayerActionConstants, ItemVO) {
 			if (baseItemId == "cache_insight") return false;
 			if (baseItemId == "robot_1") return false;
 			return true;
+		},
+
+		isDisassemblable: function (itemVO) {
+			if (!this.isUnselectable(itemVO)) return false;
+			if (itemVO.equipped && itemVO.type == ItemConstants.itemTypes.bag) return false;
+			if (itemVO.craftable) return true;
+			if (itemVO.id.indexOf("potion") >= 0) return false;
+			
+			switch (itemVO.type) {
+				case ItemConstants.itemTypes.light:
+				case ItemConstants.itemTypes.weapon:
+				case ItemConstants.itemTypes.clothing_over:
+				case ItemConstants.itemTypes.clothing_upper:
+				case ItemConstants.itemTypes.clothing_lower:
+				case ItemConstants.itemTypes.clothing_hands:
+				case ItemConstants.itemTypes.clothing_head:
+				case ItemConstants.itemTypes.bag:
+				case ItemConstants.itemTypes.shoes:
+					return true;
+				case ItemConstants.itemTypes.exploration:
+					return true;
+				default: 
+					return false;
+			}
 		},
 	};
 	

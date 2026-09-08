@@ -138,10 +138,10 @@ define([
 				if (!node.position.inCamp && !hasRested) {
 					if (hasCamp) {
 						if (canMove) {
-							GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_STAMINA_WARNING, "Getting tired. Should head back to camp soon.");
+							GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_STAMINA_WARNING, "Đang mệt dần. Nên sớm quay về trại.");
 						}
 					} else {
-						GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_STAMINA_WARNING, "Getting tired. Should find a place to rest soon.");
+						GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_STAMINA_WARNING, "Đang mệt dần. Nên sớm tìm chỗ nghỉ.");
 					}
 				}
 			}

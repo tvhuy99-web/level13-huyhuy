@@ -47,7 +47,7 @@ define([
 	'game/systems/TutorialSystem',
 	'game/systems/LevelStatusSystem',
 	'game/systems/CharacterSystem',
-	'game/systems/CollectorSystem',
+	'game/systems/ImprovementsSystem',
 	'game/systems/FightSystem',
 	'game/systems/PopulationSystem',
 	'game/systems/PerkSystem',
@@ -119,7 +119,7 @@ define([
 	TutorialSystem,
 	LevelStatusSystem,
 	CharacterSystem,
-	CollectorSystem,
+	ImprovementsSystem,
 	FightSystem,
 	PopulationSystem,
 	PerkSystem,
@@ -143,7 +143,7 @@ define([
 	StringUtils,
 	TickProvider
 ) {
-	var Level13 = Ash.Class.extend({
+	let Level13 = Ash.Class.extend({
 
 		engine: null,
 		gameManager: null,
@@ -156,7 +156,7 @@ define([
 			this.tickProvider = new TickProvider(null, function (ex) { game.handleException(ex) });
 			this.gameManager = new GameManager(this.tickProvider, this.engine);
 
-			GameGlobalsInitializer.init(this.engine);
+			GameGlobalsInitializer.init(this.engine, this.gameManager);
 
 			this.setup(plugins);
 		},
@@ -205,11 +205,10 @@ define([
 		},
 
 		setupEngine: function () {
+			log.i("setting up engine (" + GameConstants.getTimeSinceStart() + ")", "start");
 			let game = this;
 			
 			return new Promise((resolve, reject) => {
-				log.i("START " + GameConstants.STARTTimeNow() + "\t setting up engine");
-				
 				ExceptionHandler.exceptionCallback = function (ex) { game.handleException(ex) };
 				GlobalSignals.exceptionCallback = function (ex) { game.handleException(ex) };
 				
@@ -220,7 +219,7 @@ define([
 
 		setupPage: function () {
 			return new Promise((resolve, reject) => {
-				log.i("START " + GameConstants.STARTTimeNow() + "\t setting up page");
+				log.i("setting up page (" + GameConstants.getTimeSinceStart() + ")", "start");
 				this.addUISystems();
 				GameGlobals.uiFunctions.init();
 				GameGlobals.uiFunctions.hideGame();
@@ -230,13 +229,13 @@ define([
 		},
 
 		loadTexts: function () {
-			log.i("START " + GameConstants.STARTTimeNow() + "\t loading texts");
+			log.i("loading texts (" + GameConstants.getTimeSinceStart() + ")", "start");
 			return GameGlobals.textLoader.loadTexts();
 		},
 
 		loadVersion: function () {
 			return new Promise((resolve, reject) => {
-				log.i("START " + GameConstants.STARTTimeNow() + "\t loading versions");
+				log.i("loading versions (" + GameConstants.getTimeSinceStart() + ")", "start");
 				GlobalSignals.changelogLoadedSignal.addOnce(function () {
 					ExceptionHandler.wrapCall(this, function () {
 						resolve();
@@ -275,6 +274,7 @@ define([
 		},
 
 		initializePlugins: function (plugins) {
+			log.i("initializing plugins (" + GameConstants.getTimeSinceStart() + ")", "start");
 			return new Promise((resolve, reject) => {
 				if (!plugins) resolve();
 				let game = this;
@@ -293,7 +293,7 @@ define([
 		},
 
 		addLogicSystems: function () {
-			log.i("START " + GameConstants.STARTTimeNow() + "\t initializing logic systems");
+			log.i("initializing logic systems (" + GameConstants.getTimeSinceStart() + ")", "start");
 
 			this.engine.addSystem(new SaveSystem(), SystemPriorities.preUpdate);
 			this.engine.addSystem(new LevelStatusSystem(), SystemPriorities.preUpdate);
@@ -304,7 +304,7 @@ define([
 			this.engine.addSystem(new StaminaSystem(), SystemPriorities.update);
 			this.engine.addSystem(new BagSystem(), SystemPriorities.update);
 			this.engine.addSystem(new CharacterSystem(), SystemPriorities.update);
-			this.engine.addSystem(new CollectorSystem(), SystemPriorities.update);
+			this.engine.addSystem(new ImprovementsSystem(), SystemPriorities.update);
 			this.engine.addSystem(new DialogueSystem(), SystemPriorities.update);
 			this.engine.addSystem(new FightSystem(true), SystemPriorities.update);
 			this.engine.addSystem(new PopulationSystem(), SystemPriorities.update);
@@ -337,7 +337,7 @@ define([
 		},
 
 		addUISystems: function () {
-			log.i("START " + GameConstants.STARTTimeNow() + "\t initializing ui systems");
+			log.i("initializing ui systems (" + GameConstants.getTimeSinceStart() + ")", "start");
 
 			this.engine.addSystem(new UIOutAudioSystem(), SystemPriorities.render);
 			this.engine.addSystem(new UIOutTextSystem(), SystemPriorities.render);
@@ -366,7 +366,6 @@ define([
 		},
 
 		start: function () {
-			log.i("START " + GameConstants.STARTTimeNow() + "\t start tick");
 			this.gameManager.startGame();
 		},
 
@@ -387,24 +386,36 @@ define([
 			let bugTitle = StringUtils.encodeURI("[JS Error] " + desc.title);
 			let bugBody = StringUtils.encodeURI(
 			   "Details:\n[Fill in any details here that you think will help tracking down this bug]" +
-			   "\n\nSeed: " + GameGlobals.gameState.worldSeed + "\nPosition: " + pos + "\nStacktrace:\n" + stackTrace);
+			   "\n\nSeed: " + GameGlobals.worldState.worldSeed + "\nPosition: " + pos + "\nStacktrace:\n" + stackTrace);
 			let url = "https://github.com/nroutasuo/level13/issues/new?title=" + bugTitle + "&body=" + bugBody + "&labels=exception";
+
+			let hasPlayedOnIncompatibleVersions = GameGlobals.changeLogHelper.hasPlayedOnUnsupportedVersion();
+			let hasCheated = GameGlobals.gameState.hasCheated;
+			let showReportBugNudge = !hasPlayedOnIncompatibleVersions && !hasCheated;
+
+			let text  = "Đã xảy ra lỗi! Hãy tải lại trang để tiếp tục chơi. ";
+			text += "Nếu tải lại không giúp ích, bạn có thể xóa dữ liệu và chơi lại, nhưng sẽ mất toàn bộ tiến trình.<br\><br\>";
+
+			if (showReportBugNudge) text += "Bạn cũng có thể giúp nhà phát triển bằng cách <a href='" + url + "' target='_blank'>báo cáo</a> vấn đề trên GitHub.";
+
+			if (hasPlayedOnIncompatibleVersions) text += "<span class='warning'>Trạng thái trò chơi chứa dữ liệu từ hai phiên bản không tương thích. ";
+			if (hasCheated) text += "<span class='warning'>Có vẻ bạn đã dùng gian lận. ";
+			if (hasPlayedOnIncompatibleVersions || hasCheated) text += "Điều này có thể đã gây ra lỗi.</span>"
 			
 			GameGlobals.uiFunctions.popupManager.closeAllPopups();
 			GameGlobals.uiFunctions.showQuestionPopup(
-				"Error",
-				"You've found a bug! Please reload the page to continue playing. " +
-				"If reloading doesn't help, you can clear your data and restart the game, but you will lose all your progress.<br\><br\>" +
-				"You can also help the developer by <a href='" +
-				url +
-				"' target='_blank'>reporting</a> the problem on Github.",
-				"reload",
-				"clear data",
+				"Lỗi",
+				text,
+				"Tải lại",
+				"Xóa dữ liệu",
 				() => { location.reload(); },
-				() => { GameGlobals.uiFunctions.onRestartButton(); },
+				() => { 
+					GameGlobals.uiFunctions.onRestartButton(true); 
+				},
 				true
 			);
 
+			GameGlobals.gameState.uiStatus.isBusyCounter -= 100;
 			this.numExceptionsInRow = 0;
 			
 			throw ex;

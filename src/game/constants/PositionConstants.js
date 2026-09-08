@@ -17,39 +17,110 @@ define(['ash', 'game/vos/PositionVO'], function (Ash, PositionVO) {
 		
 		DIRECTION_UP: 9,
 		DIRECTION_DOWN: 10,
+
+		areEqual: function (pos1, pos2) {
+			if (!pos1) return false;
+			if (!pos2) return false;
+			return pos1.level === pos2.level && pos1.sectorX === pos2.sectorX && pos1.sectorY === pos2.sectorY;
+		},
 		
 		getNeighbourPosition: function (sectorPos, direction) {
 			return this.getPositionOnPath(sectorPos, direction, 1);
 		},
 		
-		getPositionOnPath: function (pathStartPos, pathDirection, pathStep, round) {
-			var resultPos = pathStartPos.clone();
+		getPositionOnPath: function (pathStartPos, direction, pathStep, round, optimise) {
+			if (pathStep == 0) return pathStartPos;
+
+			// skip creating a proper PositionVO as a performance optimisation in performance sensitive contexts
+			let resultPos = optimise || !pathStartPos.clone ? { level: pathStartPos.level, sectorX: pathStartPos.sectorX, sectorY: pathStartPos.sectorY } : pathStartPos.clone();
+
+			switch (direction) {
+				case this.DIRECTION_WEST: 
+					resultPos.sectorX -= pathStep;
+					break;
+				case this.DIRECTION_EAST: 
+					resultPos.sectorX += pathStep;
+					break;
+				case this.DIRECTION_NORTH: 
+					resultPos.sectorY -= pathStep;
+					break;
+				case this.DIRECTION_SOUTH: 
+					resultPos.sectorY += pathStep;
+					break;
+				case this.DIRECTION_NE: 
+					resultPos.sectorX += pathStep;
+					resultPos.sectorY -= pathStep;
+					break;
+				case this.DIRECTION_SE: 
+					resultPos.sectorX += pathStep;
+					resultPos.sectorY += pathStep;
+					break;
+				case this.DIRECTION_SW: 
+					resultPos.sectorX -= pathStep;
+					resultPos.sectorY += pathStep;
+					break;
+				case this.DIRECTION_NW: 
+					resultPos.sectorX -= pathStep;
+					resultPos.sectorY -= pathStep;
+					break;
+				case this.DIRECTION_UP: 
+					resultPos.level += pathStep;
+					break;
+				case this.DIRECTION_DOWN: 
+					resultPos.level -= pathStep;
+					break;
+			}
 			
-			if (pathDirection === this.DIRECTION_NORTH || pathDirection === this.DIRECTION_NE || pathDirection === this.DIRECTION_NW)
-				resultPos.sectorY -= pathStep;
-			if (pathDirection === this.DIRECTION_EAST || pathDirection === this.DIRECTION_NE || pathDirection === this.DIRECTION_SE)
-				resultPos.sectorX += pathStep;
-			if (pathDirection === this.DIRECTION_SOUTH || pathDirection === this.DIRECTION_SE || pathDirection === this.DIRECTION_SW)
-				resultPos.sectorY += pathStep;
-			if (pathDirection === this.DIRECTION_WEST || pathDirection === this.DIRECTION_SW || pathDirection === this.DIRECTION_NW)
-				resultPos.sectorX -= pathStep;
-			
-			if (pathDirection === this.DIRECTION_UP) resultPos.level += pathStep;
-			if (pathDirection === this.DIRECTION_DOWN) resultPos.level -= pathStep;
-			
-			if (round) resultPos.normalize();
+			if (round) {
+				resultPos.level = Math.round(resultPos.level);
+				resultPos.sectorX = Math.round(resultPos.sectorX);
+				resultPos.sectorY = Math.round(resultPos.sectorY);
+			}
 			
 			return resultPos;
 		},
 		
 		isOnPath: function (pos, pathStartPos, pathDirection, len) {
+			if (this.getPositionAlignment(pos, pathStartPos) <= 0) return false;
+			
 			for (let i = 0; i < len; i++) {
-				var posOnPath = this.getPositionOnPath(pathStartPos, pathDirection, i);
-				if (pos.equals(posOnPath)) {
+				let posOnPath = this.getPositionOnPath(pathStartPos, pathDirection, i);
+				if (PositionConstants.areEqual(pos, posOnPath)) {
 					return true;
 				}
 			}
 			return false;
+		},
+
+		isOnExtendedPath: function (pos, pathStartPos, pathDirection, len, maxDistance) {
+			let alignment = PositionConstants.getPositionAlignment(pos, pathStartPos);
+			if (alignment <= 0) return false;
+
+			let direction = PositionConstants.getDirectionFrom(pathStartPos, pos);
+
+			let isInPathDirection = direction === pathDirection;
+			let isInOppositeDirection = direction === PositionConstants.getOppositeDirection(pathDirection);
+			if (!isInPathDirection && !isInOppositeDirection) return false;
+
+			let distance = PositionConstants.getDistanceTo(pathStartPos, pos);
+			let maxDistanceFromPathStartPos = isInPathDirection ? len + maxDistance : maxDistance;
+
+			return distance <= maxDistanceFromPathStartPos;
+		},
+
+		getIndexOnPath: function (pos, pathStartPos, pathDirection, len, maxDistance) {
+			let searchOffset = maxDistance || 30;
+			for (let i = -searchOffset; i < len + searchOffset; i++) {
+				let posOnPath = this.getPositionOnPath(pathStartPos, pathDirection, i);
+				if (posOnPath.equals(pos)) {
+					return i;
+				}
+			}
+			return undefined;
+		},
+
+		getPositionOnGrid: function (pos, gridSize) {
+			return new PositionVO(pos.level, Math.round(pos.sectorX / gridSize) * gridSize, Math.round(pos.sectorY / gridSize) * gridSize);
 		},
 		
 		isBetween: function (pos1, pos2, testPos) {
@@ -78,6 +149,21 @@ define(['ash', 'game/vos/PositionVO'], function (Ash, PositionVO) {
 			}
 			return result;
 		},
+
+		getPositionAlignment: function (pos1, pos2) {
+			let diffX = Math.abs(pos1.sectorX - pos2.sectorX);
+			let diffY = Math.abs(pos1.sectorY - pos2.sectorY);
+
+			if (diffX === 0 && diffY === 0) return 1;
+
+			let isPathableStraight = (diffX === 0 && diffY > 1) || (diffY === 0 && diffX > 1);
+			if (isPathableStraight) return 1;
+
+			let isPathableDiagonal = diffX === diffY && diffY > 2;
+			if (isPathableDiagonal) return 0.5;
+
+			return 0;
+		},
 		
 		getYDirectionFrom: function (sectorPosFrom, sectorPosTo) {
 			if (sectorPosFrom.sectorY < sectorPosTo.sectorY) return this.DIRECTION_SOUTH;
@@ -92,6 +178,10 @@ define(['ash', 'game/vos/PositionVO'], function (Ash, PositionVO) {
 		},
 		
 		getDirectionFrom: function (sectorPosFrom, sectorPosTo) {
+			if (!sectorPosFrom || !sectorPosTo) {
+				return this.DIRECTION_NONE;
+			}
+			
 			let dx = sectorPosFrom.sectorX - sectorPosTo.sectorX;
 			let dy = sectorPosFrom.sectorY - sectorPosTo.sectorY;
 			let dl = sectorPosFrom.level - sectorPosTo.level;
@@ -128,6 +218,65 @@ define(['ash', 'game/vos/PositionVO'], function (Ash, PositionVO) {
 			}
 			return result;
 		},
+
+		getAngleBetweenDirections: function (d1, d2) {
+			if (d1 == d2) return 0;
+			if (this.getOppositeDirection(d1) == d2) return 180;
+			if (this.getNextClockWise(d1) == d2) return 90;
+			if (this.getNextCounterClockWise(d1) == d2) return 90;
+			if (this.getNextClockWise(d1, true) == d2) return 45;
+			if (this.getNextCounterClockWise(d1, true) == d2) return 45;
+			return 270;
+		},
+
+		getAngleBetweenPositions: function (p1, p2) {
+			let dy = p2.sectorY - p1.sectorY;
+			let dx = p2.sectorX - p1.sectorX;
+			let angleRad = Math.atan2(dy, dx);
+			let angleDeg = angleRad * 180 / Math.PI;
+			return (angleDeg + 360) % 360;
+		},
+
+		getPositionsBetweenPositions: function (p1, p2) {
+			let level = p1.level;
+
+			let x1 = p1.sectorX;
+			let y1 = p1.sectorY;
+			let x2 = p2.sectorX;
+			let y2 = p2.sectorY;
+
+  			let result = [];
+
+			let dx = Math.abs(x2 - x1);
+			let dy = Math.abs(y2 - y1);
+
+			let sx = x1 < x2 ? 1 : -1;
+			let sy = y1 < y2 ? 1 : -1;
+
+			let err = dx - dy;
+
+			let x = x1;
+			let y = y1;
+
+  			while (true) {
+				if (x === x2 && y === y2) break;	
+				if (!(x === x1 && y === y1)) result.push(new PositionVO(level, x, y));
+
+				let e2 = 2 * err;
+
+				if (e2 > -dy) {
+					err -= dy;
+					x += sx;
+				}
+
+				if (e2 < dx) {
+					err += dx;
+					y += sy;
+				}
+			}
+
+  			return result;
+		},
 		
 		getDistanceTo: function (sectorPosFrom, sectorPosTo) {
 			var xs = sectorPosFrom.sectorX - sectorPosTo.sectorX;
@@ -135,6 +284,26 @@ define(['ash', 'game/vos/PositionVO'], function (Ash, PositionVO) {
 			var ys = sectorPosFrom.sectorY - sectorPosTo.sectorY;
 			ys = ys * ys;
 			return Math.sqrt(xs + ys);
+		},
+		
+		getMinDistanceTo: function (sectorPosFrom, sectorPosTos) {
+			let min = 9999;
+			for (let i = 0; i < sectorPosTos.length; i++) min = Math.min(min, this.getDistanceTo(sectorPosFrom, sectorPosTos[i]));
+			return min;
+		},
+
+		getMaxDistanceBetween: function (positions) {
+			if (positions.length <= 1) return 0;
+			let max = -1;
+			for (let i = 0; i < positions.length; i++) {
+				for (let j = i + 1; j < positions.length; j++) {
+					let p1 = positions[i];
+					let p2 = positions[j];
+					let d = this.getDistanceTo(p1, p2);
+					if (max < 0 || d > max) max = d;
+				}
+			}
+			return max;
 		},
 		
 		getMagnitude: function (pos) {
@@ -171,21 +340,41 @@ define(['ash', 'game/vos/PositionVO'], function (Ash, PositionVO) {
 			}
 			return 0;
 		},
+
+		getOffsetByDirection: function (direction) {
+			switch (direction) {
+				case this.DIRECTION_WEST: return { l: 0, x: -1, y: 0 };
+				case this.DIRECTION_EAST: return { l: 0, x: 1, y: 0 };
+				case this.DIRECTION_NORTH: return { l: 0, x: 0, y: -1 };
+				case this.DIRECTION_SOUTH: return { l: 0, x: 0, y: 1 };
+				case this.DIRECTION_NE: return { l: 0, x: 1, y: -1 };
+				case this.DIRECTION_SE: return { l: 0, x: 1, y: 1 };
+				case this.DIRECTION_SW: return { l: 0, x: -1, y: 1 };
+				case this.DIRECTION_NW: return { l: 0, x: -1, y: -1 };
+				case this.DIRECTION_UP: return { l: 1, x: 0, y: 0 };
+				case this.DIRECTION_DOWN: return { l: -1, x: 0, y: 0 };
+			}
+
+			return { l: 0, x: 0, y: 0 };
+		},
 		
 		getMiddlePoint: function (positions, rounded) {
 			let result = new PositionVO(0, 0, 0);
+			let num = 0;
 			if (positions && positions.length > 0) {
 				for (let i = 0; i < positions.length; i++) {
 					if (positions[i]) {
 						result.level += positions[i].level;
 						result.sectorX += positions[i].sectorX;
 						result.sectorY += positions[i].sectorY;
+						num++;
 					}
 				}
-				result.level /= positions.length;
-				result.sectorX /= positions.length;
-				result.sectorY /= positions.length;
+				result.level /= num;
+				result.sectorX /= num;
+				result.sectorY /= num;
 			}
+
 			if (rounded) {
 				result.level = Math.round(result.level);
 				result.sectorX = Math.round(result.sectorX);
@@ -279,20 +468,20 @@ define(['ash', 'game/vos/PositionVO'], function (Ash, PositionVO) {
 		
 		getDirectionName: function (direction, short) {
 			switch (direction) {
-				case this.DIRECTION_WEST: return short ? "W" : "west";
-				case this.DIRECTION_NORTH: return short ? "N" : "north";
-				case this.DIRECTION_SOUTH: return short ? "S" : "south";
-				case this.DIRECTION_EAST: return short ? "E" : "east";
-				case this.DIRECTION_NE: return short ? "NE" : "north-east";
-				case this.DIRECTION_SE: return short ? "SE" : "south-east";
-				case this.DIRECTION_SW: return short ? "SW" : "south-west";
-				case this.DIRECTION_NW: return short ? "NW" : "north-west";
-				case this.DIRECTION_UP: return short ? "U" : "up";
-				case this.DIRECTION_DOWN: return short ? "D" : "down";
-				case this.DIRECTION_CAMP: return short ? "C" : "camp";
-				case this.DIRECTION_NONE: return "none";
+				case this.DIRECTION_WEST: return short ? "W" : "tây";
+				case this.DIRECTION_NORTH: return short ? "N" : "bắc";
+				case this.DIRECTION_SOUTH: return short ? "S" : "nam";
+				case this.DIRECTION_EAST: return short ? "E" : "đông";
+				case this.DIRECTION_NE: return short ? "NE" : "đông-bắc";
+				case this.DIRECTION_SE: return short ? "SE" : "đông-nam";
+				case this.DIRECTION_SW: return short ? "SW" : "tây-nam";
+				case this.DIRECTION_NW: return short ? "NW" : "tây-bắc";
+				case this.DIRECTION_UP: return short ? "U" : "lên";
+				case this.DIRECTION_DOWN: return short ? "D" : "xuống";
+				case this.DIRECTION_CAMP: return short ? "C" : "trại";
+				case this.DIRECTION_NONE: return "không có";
 			}
-			return "unknown";
+			return "không rõ";
 		},
 		
 		getDirectionTextKey: function (direction, short) {
@@ -318,8 +507,7 @@ define(['ash', 'game/vos/PositionVO'], function (Ash, PositionVO) {
 		
 		getLevelDirections: function (excludeDiagonals) {
 			if (!excludeDiagonals)
-				return [this.DIRECTION_NORTH, this.DIRECTION_EAST, this.DIRECTION_SOUTH, this.DIRECTION_WEST,
-					this.DIRECTION_NE, this.DIRECTION_SE, this.DIRECTION_SW, this.DIRECTION_NW];
+				return [this.DIRECTION_NORTH, this.DIRECTION_NE, this.DIRECTION_EAST, this.DIRECTION_SE, this.DIRECTION_SOUTH, this.DIRECTION_SW, this.DIRECTION_WEST, this.DIRECTION_NW ];
 			else
 				return [this.DIRECTION_NORTH, this.DIRECTION_EAST, this.DIRECTION_SOUTH, this.DIRECTION_WEST];
 		},
@@ -365,6 +553,18 @@ define(['ash', 'game/vos/PositionVO'], function (Ash, PositionVO) {
 				default:
 					return false;
 			}
+		},
+
+		isPositiveDirection: function (direction) {
+			switch (direction) {
+				case this.DIRECTION_SOUTH:
+				case this.DIRECTION_EAST:
+				case this.DIRECTION_SE:
+				case this.DIRECTION_SW:
+					return true;
+			}
+
+			return false;
 		},
 
 		isWorldPillarPosition: function (pos) {

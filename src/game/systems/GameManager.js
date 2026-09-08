@@ -1,26 +1,39 @@
 define([
 	'ash',
+	'text/Text',
 	'core/ExceptionHandler',
 	'game/GameGlobals',
 	'game/GlobalSignals',
 	'game/constants/GameConstants',
+	'game/constants/TextConstants',
 	'game/EntityCreator',
-	'worldcreator/WorldCreator',
-	'worldcreator/WorldValidator',
-	'worldcreator/WorldCreatorRandom',
 	'game/nodes/sector/SectorNode',
 	'game/nodes/player/PlayerStatsNode',
 	'game/nodes/level/LevelNode',
 	'game/nodes/GangNode',
 	'game/components/common/PositionComponent',
-	'game/components/type/GangComponent',
 	'game/systems/ui/UIOutLevelSystem',
 	'game/systems/SaveSystem',
-	'utils/StringUtils',
-], function (Ash, ExceptionHandler, GameGlobals, GlobalSignals, GameConstants, EntityCreator, WorldCreator, WorldValidator, WorldCreatorRandom, SectorNode, PlayerStatsNode, LevelNode, GangNode, PositionComponent, GangComponent, UIOutLevelSystem, SaveSystem, StringUtils) {
-
-	var GameManager = Ash.Class.extend({
-
+], function (
+	Ash,
+	Text,
+	ExceptionHandler,
+	GameGlobals,
+	GlobalSignals,
+	GameConstants,
+	TextConstants,
+	EntityCreator,
+	SectorNode, 
+	PlayerStatsNode, 
+	LevelNode, 
+	GangNode, 
+	PositionComponent, 
+	UIOutLevelSystem, 
+	SaveSystem, 
+) {
+	
+	let GameManager = Ash.Class.extend({
+		
 		tickProvider: null,
 		engine: null,
 		creator: null,
@@ -29,13 +42,16 @@ define([
 		
 		maxGameTickDiff: 43200,
 		maxGameTickTime: 30,
-
+		
 		constructor: function (tickProvider, engine) {
 			this.tickProvider = tickProvider;
 			this.engine = engine;
 			this.creator = new EntityCreator(this.engine);
+
 			GlobalSignals.add(this, GlobalSignals.restartGameSignal, this.onRestart);
 			GlobalSignals.add(this, GlobalSignals.gameEndedSignal, this.onGameEnd);
+			GlobalSignals.add(this, GlobalSignals.gameStateReadySignal, this.updateTrackingTags);
+			GlobalSignals.add(this, GlobalSignals.campBuiltSignal, this.updateTrackingTags);
 		},
 		
 		update: function (time) {
@@ -106,85 +122,92 @@ define([
 			
 			GameGlobals.gameState.gameTime += tickTime;
 			GameGlobals.gameState.playTime += playTime;
-
+			
 			let playerPosition = GameGlobals.playerHelper.getPosition();
 			if (playerPosition && !playerPosition.inCamp) {
 				GameGlobals.gameState.increaseGameStatKeyed("timeOutsidePerLevel", playerPosition.level, playTime);
 			}
 		},
-
-		// Called on page load
+		
+		// Called on page load or on restart
 		setupGame: function () {
-			log.i("START " + GameConstants.STARTTimeNow() + "\t loading and setting up game");
+			log.i("loading and setting up game (" + GameConstants.getTimeSinceStart() + ")", "start");
 			GameGlobals.gameState.uiStatus.isInitialized = false;
 			GameConstants.gameSpeedCamp = 1;
 			GameConstants.gameSpeedExploration = 1;
-			this.createStaticEntities();
+
+			// create entities that are there regardless of world structure (player, tribe)
+			this.createUniversalEntities();
 			
 			let save;
 			let worldVO;
 			
 			this.loadGameState()
-				.then(s => {
-					save = s;
-					log.i("START " + GameConstants.STARTTimeNow() + "\t game state loaded " + (save == null ? "(empty)" : "") + "");
-					GlobalSignals.gameStateLoadedSignal.dispatch(s != null);
-					return s;
-				})
-				.then(s => this.loadWorld(save))
-				.then(w => {
-					worldVO = w;
-					log.i("START " + GameConstants.STARTTimeNow() + "\t world loaded");
-					return w;
-				 })
-				.then(w => this.createDynamicEntities(worldVO))
-				.then(() => this.loadEntityState(save))
-				.then(() => {
-					if (save) {
-						this.syncLoadedGameState();
-					} else {
-						 this.setupNewGame();
-					}
-		
-					log.i("START " + GameConstants.STARTTimeNow() + "\t game state ready");
-					GlobalSignals.gameStateReadySignal.dispatch();
-					setTimeout(function () {
-						WorldCreator.discardWorld();
-					}, 1);
-				})
-				.catch(ex => {
-					ExceptionHandler.handleException(ex);
-				});
+			.then(s => {
+				save = s;
+				log.i("game state loaded " + (save == null ? "(empty)" : "") + " (" + GameConstants.getTimeSinceStart() + ")", "start");
+				GlobalSignals.gameStateLoadedSignal.dispatch(s != null);
+				return s;
+			})
+			// load or generate world and necessary levels from seed 
+			.then(s => this.prepareWorld(save))
+			.then(w => {
+				worldVO = w;
+				log.i("world loaded (" + GameConstants.getTimeSinceStart() + ")", "start");
+				return w;
+			})
+			// create entities that depend on world structure (levels, sectors, gangs)
+			.then(w => this.createWorldEntities(worldVO, GameGlobals.worldHelper.getGeneratedLevels()))
+			// set entity state from save (if there is one) (also triggers version warning pop-ups)
+			.then(() => this.loadEntityState(save))
+			.then(() => this.checkWorldChanges())
+			.then(() => {
+				if (save) {
+					this.syncLoadedGameState();
+				} else {
+					this.setupNewGame();
+				}
+				
+				log.i("game state ready (" + GameConstants.getTimeSinceStart() + ")", "start");
+				GlobalSignals.gameStateReadySignal.dispatch();
+			})
+			.catch(ex => {
+				ExceptionHandler.handleException(ex);
+			});
 		},
-
-		// Called after all other systems are ready
+		
+		// Called after all other systems are ready (have ahad time to react to gameStateReadySignal)
 		startGame: function () {
-			log.i("START " + GameConstants.STARTTimeNow() + "\t starting game");
+			log.i("starting tick (" + GameConstants.getTimeSinceStart() + ")", "start");
 			
-			log.i("start tick")
 			this.tickProvider.start();
 			this.tickProvider.add(this.update, this);
-
+			
 			// for restart:
 			this.engine.getSystem(UIOutLevelSystem).pendingUpdateDescription = true;
 			this.engine.getSystem(UIOutLevelSystem).pendingUpdateMap = true;
-
+			
 			GameGlobals.uiFunctions.startGame();
-
+			
 			let sys = this;
 			setTimeout(function () {
 				GlobalSignals.gameStartedSignal.dispatch();
 				setTimeout(function () {
 					GameGlobals.gameState.uiStatus.isInitialized = true;
 					GameGlobals.uiFunctions.showGame();
+					log.i("game shown (" + GameConstants.getTimeSinceStart() + ")", "start");
 					setTimeout(function () {
 						// updates to game state that should be done at start but can wait until the player is unblocked
 						GlobalSignals.gameStateRefreshSignal.dispatch();
+
+						let version = GameGlobals.changeLogHelper.getCurrentVersionNumber();
+						GameGlobals.gameState.savePlayedVersion(version);
+						GameGlobals.metaState.savePlayedVersion(version);
 					}, 1);
 				}, 1);
 			}, 250);
 		},
-
+		
 		restartGame: function () {
 			log.i("Restarting game..");
 			this.pauseGame();
@@ -195,6 +218,7 @@ define([
 				GameGlobals.metaState.maxCampOrdinalReached = Math.max(GameGlobals.metaState.maxCampOrdinalReached, GameGlobals.gameState.numCamps);
 				sys.engine.removeAllEntities();
 				GameGlobals.levelHelper.reset();
+				GameGlobals.worldState.reset();
 				GameGlobals.gameState.reset();
 				log.i("game state reset");
 				GlobalSignals.gameResetSignal.dispatch();
@@ -204,30 +228,30 @@ define([
 				});
 			}, 250);
 		},
-
+		
 		pauseGame: function () {
 			log.i("pause tick")
 			this.tickProvider.stop();
 		},
-
-		createStaticEntities: function () {
+		
+		createUniversalEntities: function () {
 			this.player = this.creator.createPlayer(GameGlobals.saveHelper.saveKeys.player);
 			this.tribe = this.creator.createTribe(GameGlobals.saveHelper.saveKeys.tribe);
 		},
-
+		
 		// Called if there is no save to load
 		setupNewGame: function () {
 			GameGlobals.gameState.gameStartTimeStamp = new Date().getTime();
 			this.creator.initPlayer(this.player, GameGlobals.metaState);
 		},
-
+		
 		loadMetaState: function () {
 			return new Promise((resolve, reject) => {
 				let data = this.getMetaStateObject();
 				let hasData = data != null;
-
-				log.i("START " + GameConstants.STARTTimeNow() + "\t meta state loaded (hasData: " + hasData + ")");
-	
+				
+				log.i("meta state loaded (hasData: " + hasData + ") (" + GameConstants.getTimeSinceStart() + ")", "start");
+				
 				if (hasData) {
 					let loadedMetaState = data;
 					for (let key in loadedMetaState) {
@@ -237,12 +261,12 @@ define([
 				resolve();
 			});
 		},
-
+		
 		loadGameState: function () {
 			return new Promise((resolve, reject) => {
 				var save = this.getSaveObject();
 				var hasSave = save != null;
-	
+				
 				if (hasSave) {
 					var loadedGameState = save.gameState;
 					for (let key in loadedGameState) {
@@ -250,53 +274,32 @@ define([
 					}
 				}
 				GameGlobals.gameState.pendingUpdateTime = 0;
-				GameGlobals.gameState.savePlayedVersion(GameGlobals.changeLogHelper.getCurrentVersionNumber());
 				GameGlobals.gameState.isPaused = false;
 				resolve(save);
 			});
 		},
 		
-		loadWorld: function (save) {
-			return new Promise((resolve, reject) => {
-				log.i("START " + GameConstants.STARTTimeNow() + "\t loading world");
-				var hasSave = save != null;
-				var worldSeed;
-				if (hasSave) {
-					var loadedGameState = save.gameState;
-					worldSeed = parseInt(loadedGameState.worldSeed);
-				} else {
-					worldSeed = WorldCreatorRandom.getNewSeed();
-				}
-					
-				this.getWorldVO(worldSeed, hasSave)
-					.then(worldVO => {
-						log.i("START " + GameConstants.STARTTimeNow() + "\t world created (seed: " + worldVO.seed + ")");
-						GameGlobals.gameState.worldSeed = worldVO.seed;
-						resolve(worldVO);
-					})
-					.catch(error => {
-						this.showWorldGenerationFailedWarning();
-						reject(error);
-					});
-			});
+		prepareWorld: function (save) {
+			return GameGlobals.worldHelper.prepareWorld(save);
 		},
 		
-		createDynamicEntities: function (worldVO) {
+		createWorldEntities: function (worldVO, levels) {
+			log.i("create world entities: levels: " + levels.join(","), this);
+
 			return new Promise((resolve, reject) => {
-				var seed = worldVO.seed;
-				var levelVO;
-				var sectorVO;
+				let seed = worldVO.seed;
 				for (let i = worldVO.bottomLevel; i <= worldVO.topLevel; i++) {
-					levelVO = worldVO.getLevel(i);
+					if (levels.indexOf(i) < 0) continue;
+					let levelVO = worldVO.getLevel(i);
 					this.creator.createLevel(GameGlobals.saveHelper.saveKeys.level + i, i, levelVO);
-					for (var y = levelVO.minY; y <= levelVO.maxY; y++) {
-						for (var x = levelVO.minX; x <= levelVO.maxX; x++) {
-							sectorVO = levelVO.getSector(x, y);
+					for (let y = levelVO.minY; y <= levelVO.maxY; y++) {
+						for (let x = levelVO.minX; x <= levelVO.maxX; x++) {
+							let sectorVO = levelVO.getSector(x, y);
 							if (!sectorVO) continue;
-							var up = WorldCreator.getPassageUp(i, x, y);
-							var down = WorldCreator.getPassageDown(i, x, y);
-							var passageOptions = { passageUpType: up, passageDownType: down };
-							var blockers = sectorVO.movementBlockers;
+							let up = worldVO.getPassageUp(i, x, y);
+							let down = worldVO.getPassageDown(i, x, y);
+							let passageOptions = { passageUpType: up, passageDownType: down };
+							let blockers = sectorVO.movementBlockers;
 							this.creator.createSector(
 								GameGlobals.saveHelper.saveKeys.sector + i + "." + x + "." + y,
 								i,
@@ -304,12 +307,11 @@ define([
 								y,
 								passageOptions,
 								blockers,
-								WorldCreator.getSectorFeatures(i, x, y),
-								WorldCreator.getLocales(i, x, y),
-								WorldCreator.getCriticalPaths(i, x, y),
-								WorldCreator.getSectorEnemies(i, x, y),
-								WorldCreator.getHasSectorRegularEnemies(i, x, y),
-								WorldCreator.getSectorLocaleEnemyCount(i, x, y)
+								GameGlobals.worldHelper.getSectorFeatures(worldVO, i, x, y),
+								GameGlobals.worldHelper.getLocales(worldVO, i, x, y),
+								GameGlobals.worldHelper.getSectorEnemies(worldVO, i, x, y),
+								GameGlobals.worldHelper.getHasSectorRegularEnemies(worldVO, i, x, y),
+								GameGlobals.worldHelper.getSectorLocaleEnemyCount(worldVO, i, x, y)
 							);
 						}
 					}
@@ -327,6 +329,7 @@ define([
 						);
 					}
 				}
+				worldVO.resetCaches();
 				resolve();
 			});
 		},
@@ -341,15 +344,15 @@ define([
 					var entitiesObject = save.entitiesObject;
 					var failedComponents = 0;
 					var saveWarningShown = false;
-
+					
 					failedComponents += GameGlobals.saveHelper.loadEntity(entitiesObject, GameGlobals.saveHelper.saveKeys.player, this.player);
 					failedComponents += GameGlobals.saveHelper.loadEntity(entitiesObject, GameGlobals.saveHelper.saveKeys.tribe, this.tribe);
-
+					
 					if (!saveWarningShown && failedComponents > 0) {
 						saveWarningShown = true;
 						this.showSaveWarning(save.version);
 					}
-
+					
 					var sectorNodes = this.engine.getNodeList(SectorNode);
 					let positionComponent;
 					var saveKey;
@@ -357,19 +360,19 @@ define([
 						positionComponent = sectorNode.entity.get(PositionComponent);
 						saveKey = GameGlobals.saveHelper.saveKeys.sector + positionComponent.level + "." + positionComponent.sectorX + "." + positionComponent.sectorY;
 						failedComponents += GameGlobals.saveHelper.loadEntity(entitiesObject, saveKey, sectorNode.entity);
-
+						
 						if (!saveWarningShown && failedComponents > 0) {
 							saveWarningShown = true;
 							this.showSaveWarning(save.version);
 						}
 					}
-
+					
 					var levelNodes = this.engine.getNodeList(LevelNode);
 					for (var levelNode = levelNodes.head; levelNode; levelNode = levelNode.next) {
 						positionComponent = levelNode.entity.get(PositionComponent);
 						saveKey = GameGlobals.saveHelper.saveKeys.level + positionComponent.level;
 						failedComponents += GameGlobals.saveHelper.loadEntity(entitiesObject, saveKey, levelNode.entity);
-
+						
 						if (!saveWarningShown && failedComponents > 0) {
 							saveWarningShown = true;
 							this.showSaveWarning(save.version);
@@ -386,78 +389,61 @@ define([
 							this.showSaveWarning(save.version);
 						}
 					}
-
+					
 					log.i("Loaded from " + save.timeStamp + ", save version: " + save.version);
-
+					
 					if (failedComponents > 0) {
 						log.w(failedComponents + " components failed to load.");
 					}
 					
-					log.i("START " + GameConstants.STARTTimeNow() + "\t entity state loaded");
+					log.i("entity state loaded (" + GameConstants.getTimeSinceStart() + ")", "start");
 					
-					if (!saveWarningShown && GameGlobals.changeLogHelper.isOldVersion(save.version)) {
+					if (!saveWarningShown && GameGlobals.changeLogHelper.isUnsupportedVersion(save.version)) {
 						this.showVersionWarning(save.version, () => { resolve(); });
+					} else if (!saveWarningShown && GameGlobals.changeLogHelper.isOldVersion(save.version)) {
+						this.showUpdateNote(save.version, () => { resolve(); });
 					} else {
 						resolve();
 					}
 				}
+			});
+		},
+
+		checkWorldChanges: function () {
+			return new Promise((resolve, reject) => {
+				let changes = GameGlobals.worldHelper.worldChangesVO;
+
+				if (!changes) {
+					resolve();
+				}
+
+				this.showWorldChangesPopup(changes, () => {
+					resolve();
+				});
+			});
+		},
+
+		generateLevel: function (level) {
+			return new Promise((resolve, reject) => {
+				if (GameGlobals.worldHelper.isLevelGenerated(level)) {
+					resolve();
+				} else {
+					log.i("world: generate level: " + level, this);
+
+					GameGlobals.worldHelper.generateLevel(level)
+					.then((worldVO) => this.createWorldEntities(worldVO, [ level ]))
+					.then(() => { 
+						GlobalSignals.levelGeneratedSignal.dispatch(level);
+					})
+					.then(() => { 
+						GlobalSignals.levelStateReadySignal.dispatch(level);
+					})
+					.then(() => resolve())
+					.catch(ex => { ExceptionHandler.handleException(ex); });
+				}
 			})
 		},
 		
-		getWorldVO: function (seed, hasSave, tryNumber) {
-			return new Promise(function(resolve, reject) {
-				let maxTries = GameConstants.isDebugVersion ? 1 : 10;
-				tryNumber = tryNumber || 1;
-				
-				setTimeout(() => {
-					this.tryGenerateWorldVO(seed, tryNumber, maxTries).then(result => {
-						if (!result.validationResult.isValid) {
-							this.logFailedWorldSeed(seed, result.validationResult.reason);
-						}
-						
-						if (result.validationResult.isValid) {
-							resolve(result.worldVO);
-							return;
-						}
-						
-						if (hasSave && result.worldVO != null) {
-							log.i("using broken world because old save exists");
-							resolve(result.worldVO);
-							return;
-						}
-						
-						if (tryNumber >= maxTries) {
-							log.e("ran out of tries to generate world");
-							reject(new Error("ran out of tries to generate world"));
-							return;
-						}
-						
-						log.i("trying another seed");
-						resolve(this.getWorldVO(seed, hasSave, tryNumber + 1));
-					});
-				}, 1);
-			}.bind(this));
-		},
-		
-		tryGenerateWorldVO: function (seed, tryNumber, maxTries) {
-			return new Promise(function(resolve, reject) {
-				log.i("START " + GameConstants.STARTTimeNow() + "\t generating world, try " + tryNumber + "/" + maxTries);
-				let s = seed + (tryNumber - 1) * 111;
-				
-				WorldCreator.prepareWorld(s, GameGlobals.itemsHelper).then(worldVO => {
-					log.i("START " + GameConstants.STARTTimeNow() + "\t validating world");
-					let validationResult = WorldValidator.validateWorld(worldVO);
-					resolve({ worldVO: worldVO, validationResult: validationResult });
-				}).catch(ex => {
-					if (GameConstants.isDebugVersion) {
-						throw ex;
-					}
-					let exceptionDescription = "exception: " + StringUtils.getExceptionDescription(ex).title;
-					resolve({ worldVO: null, validationResult: exceptionDescription });
-				});
-			}.bind(this));
-		},
-
 		getSaveObject: function () {
 			let saveSystem = this.engine.getSystem(SaveSystem);
 			try {
@@ -472,7 +458,7 @@ define([
 			}
 			return null;
 		},
-
+		
 		getMetaStateObject: function () {
 			let saveSystem = this.engine.getSystem(SaveSystem);
 			try {
@@ -486,7 +472,7 @@ define([
 			}
 			return null;
 		},
-
+		
 		// Clean up a loaded game state, mostly used to ensure backwards compatibility
 		syncLoadedGameState: function () {
 			GameGlobals.gameState.syncData();
@@ -497,22 +483,77 @@ define([
 			}
 		},
 
-		showWorldGenerationFailedWarning: function () {
-			GameGlobals.uiFunctions.setGameOverlay(false, false);
-			GameGlobals.uiFunctions.showInfoPopup(
-				"Warning",
-				"World generation failed.",
-				"Continue"
-			);
-		},
+		showWorldChangesPopup: function (worldChangesVO, cb) {
+			if (!worldChangesVO || !worldChangesVO.changes || worldChangesVO.changes.length == 0) {
+				cb();
+				return;
+			}
+			
+			// - summarize changes
+			let NO_LEVEL = "N"
+			let changesSummary = {};
+			let changesLevels = [];
+			let significantChangesLevels = [];
+			let changesTypes = [];
+			for (let i = 0; i < worldChangesVO.changes.length; i++) {
+				let change = worldChangesVO.changes[i];
+				let type = change.type;
+				let level = change.level;
+				if (!level && level !== 0) level = NO_LEVEL;
+				let key = level + "-" + type;
+				
+				let isSignificant = type.seen === false;
 
+				if (changesLevels.indexOf(level) < 0) changesLevels.push(level);
+				if (isSignificant && significantChangesLevels.indexOf(level) < 0) significantChangesLevels.push(level);
+				if (changesTypes.indexOf(type) < 0) changesTypes.push(type);
+				if (!changesSummary[key]) {
+					changesSummary[key] = { num: 0, type: type, level: level };
+				}
+				changesSummary[key].num++;
+			}
+
+			let msg = "";
+
+			// - intro
+			msg += "<p>" + Text.t("ui.meta.world_change_intro") + "</p>";
+
+			// - changes list
+			msg += "<div class='scrollable-container'>";
+			for (let key in changesSummary) {
+				let change = changesSummary[key];
+				let num = change.num;
+
+				let changeTextKey = "ui.meta.world_change_entry_" + change.type + "_label";
+				if (change.level === NO_LEVEL) {
+					changeTextKey = "ui.meta.world_change_entry_global_label";
+				}
+
+				let amount = TextConstants.getAmountLabel(num, 10);
+
+				msg += "<span class='text-list-entry'>" + Text.t(changeTextKey, { amount: amount, level: change.level }) + "</span>";
+			}
+			msg += "</div>";
+
+			// - outro
+			let maxLevelOrdinal = GameGlobals.gameState.level;
+			let hasOldLevelChanges = significantChangesLevels.length > 1 || (significantChangesLevels.length == 1 && GameGlobals.worldState.getLevelOrdinal(significantChangesLevels[0]) < maxLevelOrdinal);
+			if (hasOldLevelChanges) {
+				msg += "<p>" + Text.t("ui.meta.world_change_outro_old_levels") + "</p>";
+			} else {
+				msg += "<p>" + Text.t("ui.meta.world_change_outro_default") + "</p>";
+			}
+
+			GameGlobals.uiFunctions.showInfoPopup("Cập nhật Thành phố", msg, null, null, cb, true, false);
+		},
+		
 		showSaveWarning: function (saveVersion) {
-			var currentVersion = GameGlobals.changeLogHelper.getCurrentVersionNumber();
+			let currentVersion = GameGlobals.changeLogHelper.getCurrentVersionNumber();
 			GameGlobals.uiFunctions.showQuestionPopup(
-				"Warning",
-				"Part of the save could not be loaded. Most likely your save is old and incompatible with the current version. Restart the game or continue at your own risk.<br><br/>Save version: " + saveVersion + "<br/>Current version: " + currentVersion,
-				"Restart",
-				"Continue",
+				"Cảnh báo",
+				"Không thể tải một phần dữ liệu lưu. Có thể dữ liệu lưu đã cũ và không tương thích với phiên bản hiện tại. Hãy chơi lại hoặc tiếp tục và tự chịu rủi ro.<br><br/>Phiên bản dữ liệu lưu: " + saveVersion + "<br/>Phiên bản hiện tại: " + currentVersion,
+				"Chơi lại",
+				"Tiếp tục",
 				function () {
 					GameGlobals.uiFunctions.showGame();
 					GameGlobals.uiFunctions.restart();
@@ -523,22 +564,48 @@ define([
 				true
 			);
 		},
+
+		showUpdateNote: function (saveVersion, continueCallback) {
+			let currentVersion = GameGlobals.changeLogHelper.getCurrentVersionNumber();
+
+			// skip if player has seen this version already, just loading an old save
+			if (GameGlobals.metaState.playedVersions.indexOf(currentVersion) >= 0) {
+				continueCallback();
+				return;
+			}
+
+			let changelogLink = "<a href='changelog.html' target='changelog'>nhật ký thay đổi</a>";
+			let message = "";
+			message += "<p>Trò chơi đã được cập nhật.</p>";
+			message += "<span class='text-list-entry p-meta'>Phiên bản dữ liệu lưu: " + saveVersion + "</span>";
+			message += "<span class='text-list-entry p-meta'>Phiên bản hiện tại: " + currentVersion + "</span>";
+			message += "<p>Xem " + changelogLink + " để biết chi tiết.</p>";
+			GameGlobals.uiFunctions.showInfoPopup(
+				"Cập nhật",
+				message,
+				null,
+				null,
+				continueCallback,
+				true,
+				false
+			);
+		},
 		
 		showVersionWarning: function (saveVersion, continueCallback) {
 			GameGlobals.uiFunctions.hideGame();
 			var currentVersion = GameGlobals.changeLogHelper.getCurrentVersionNumber();
-			var changelogLink = "<a href='changelog.html' target='changelog'>changelog</a>";
+			var changelogLink = "<a href='changelog.html' target='changelog'>nhật ký thay đổi</a>";
 			var message = "";
-			message += "Your save version is incompatible than the current version. Most likely the game has been updated since you last played. See the " + changelogLink + " for details."
+			message += "Phiên bản dữ liệu lưu không tương thích với phiên bản hiện tại. Có thể trò chơi đã được cập nhật từ lần cuối bạn chơi. Xem " + changelogLink + " để biết chi tiết."
 			message += "<br><br/>";
-			message += "Save version: " + saveVersion + "<br/>Current version: " + currentVersion;
+			message += "Phiên bản dữ liệu lưu: " + saveVersion + "<br/>Phiên bản hiện tại: " + currentVersion;
 			message += "<br><br/>";
-			message += " It is recommended to restart the game. Continue at your own risk.";
+			message += "<span class='warning'>Bạn nên chơi lại. Nếu tiếp tục, bạn sẽ tự chịu rủi ro.</span>";
 			GameGlobals.uiFunctions.showQuestionPopup(
-				"Update",
+				"Cập nhật",
 				message,
-				"Restart",
-				"Continue",
+				"Chơi lại",
+				"Tiếp tục",
 				function () {
 					GameGlobals.uiFunctions.showGame();
 					GameGlobals.uiFunctions.restart();
@@ -550,11 +617,14 @@ define([
 				true
 			);
 		},
-
-		logFailedWorldSeed: function (seed, reason) {
-			log.e("geneating world failed! seed: " + seed + ", reason: " + reason);
+		
+		updateTrackingTags: function () {
+			try {
+				Sentry.setTag("numCamps", GameGlobals.gameState.numCamps);
+				Sentry.setTag("worldSeed", GameGlobals.worldState.worldSeed);
+			} catch (e) {}
 		},
-
+		
 		onRestart: function (resetSave) {
 			console.clear();
 			this.restartGame();
@@ -564,6 +634,6 @@ define([
 			this.pauseGame();
 		},
 	});
-
+	
 	return GameManager;
 });

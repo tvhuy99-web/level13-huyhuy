@@ -56,6 +56,7 @@ function (Ash, UpgradeData, PlayerActionConstants, WorldConstants, UpgradeVO) {
 			};
 			
 			UpgradeConstants.upgradeDefinitions[def.id] = new UpgradeVO(def.id);
+			UpgradeConstants.upgradeDefinitions[def.id].name = def.name;
 			UpgradeConstants.upgradeDefinitions[def.id].campOrdinal = def.campOrdinal;
 			
 			if (def.blueprintPieces) {
@@ -90,6 +91,10 @@ function (Ash, UpgradeData, PlayerActionConstants, WorldConstants, UpgradeVO) {
 					addUpgradeEffectToList(UpgradeConstants.improvingUpgradesByEvent, occurrence, def.id);
 				}
 			}
+		},
+
+		getUpgrade: function (id) {
+			return this.upgradeDefinitions[id];
 		},
 
 		hasUpgrade: function (id) {
@@ -179,6 +184,17 @@ function (Ash, UpgradeData, PlayerActionConstants, WorldConstants, UpgradeVO) {
 				pieceCount += this.getMaxPiecesForBlueprint(blueprints[i]);
 			}
 			return pieceCount;
+		},
+
+		getAllBlueprintPiecesByCampOrdinal: function () {
+			let result = {};
+			for (let campOrdinal in this.blueprintsByCampOrdinal) {
+				result[campOrdinal] = {};
+				result[campOrdinal][0] = this.getPiecesByCampOrdinal(campOrdinal, this.BLUEPRINT_BRACKET_EARLY, 0, 2);
+				result[campOrdinal][1] = this.getPiecesByCampOrdinal(campOrdinal, this.BLUEPRINT_BRACKET_LATE, 0, 2);
+				result[campOrdinal][2] = this.getPiecesByCampOrdinal(campOrdinal, this.BLUEPRINT_BRACKET_LATE, 1, 2);
+			}
+			return result;
 		},
 		
 		getRequiredTech: function (upgradeID) {

@@ -14,13 +14,13 @@ define(['ash', 'game/constants/MovementConstants'], function (Ash, MovementConst
 		
 		getName: function () {
 			switch (this.type) {
-				case MovementConstants.BLOCKER_TYPE_GAP: return "Gap";
-				case MovementConstants.BLOCKER_TYPE_WASTE_TOXIC: return "Toxic waste";
-				case MovementConstants.BLOCKER_TYPE_WASTE_RADIOACTIVE: return "Radioactive waste";
-				case MovementConstants.BLOCKER_TYPE_GANG: return "Gang";
-				case MovementConstants.BLOCKER_TYPE_DEBRIS: return "Debris";
-				case MovementConstants.BLOCKER_TYPE_EXPLOSIVES: return "Explosives";
-				case MovementConstants.BLOCKER_TYPE_TOLL_GATE: return "Toll gate";
+				case MovementConstants.BLOCKER_TYPE_GAP: return "Khoảng trống";
+				case MovementConstants.BLOCKER_TYPE_WASTE_TOXIC: return "Chất thải độc hại";
+				case MovementConstants.BLOCKER_TYPE_WASTE_RADIOACTIVE: return "Chất thải phóng xạ";
+				case MovementConstants.BLOCKER_TYPE_GANG: return "Băng nhóm";
+				case MovementConstants.BLOCKER_TYPE_DEBRIS: return "Đống đổ nát";
+				case MovementConstants.BLOCKER_TYPE_EXPLOSIVES: return "Chất nổ";
+				case MovementConstants.BLOCKER_TYPE_TOLL_GATE: return "Trạm thu phí";
 			}
 		},
 		

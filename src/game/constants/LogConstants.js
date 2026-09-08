@@ -146,79 +146,79 @@ define(['ash', 'text/Text', 'game/constants/TextConstants', 'game/constants/Item
 				triggers: [ "locale_scouted" ],
 				conditions: { sector: { sectorType: "residential" }, deity: false, numCamps: 2 },
 				chance: 0.02,
-				message: "Suddenly, the weight of all the people who have lived and died in the City presses down upon you like a heavy blanket"
+				message: "Đột nhiên, sức nặng của tất cả những người từng sống và chết trong Thành phố đè lên bạn như một tấm chăn nặng nề"
 			},
 			"darkness_madness_01": {
 				triggers: [ "action_any" ],
 				conditions: { inCamp: false, sunlit: false, vision: [ -1, 50 ] },
 				chance: 0.01,
-				message: "The darkness shifts and twists and presses closer."
+				message: "Bóng tối xô lệch, vặn xoắn và áp sát hơn."
 			},
 			"ground_wonder_01": {
 				triggers: [ "change_position" ],
 				conditions: { sector: { ground: true }, sunlit: false },
 				chance: 0.03,
-				message: "There is an almost constant rustle all around you, even though you can't see anything."
+				message: "Xung quanh bạn gần như luôn có tiếng sột soạt, dù bạn chẳng nhìn thấy gì."
 			},
 			"ground_wonder_02": {
 				triggers: [ "change_position" ],
 				conditions: { sector: { ground: true }, sunlit: true },
 				chance: 0.03,
-				message: "Somewhere not far away, several birds are chirping."
+				message: "Không xa đây, vài con chim đang hót."
 			},
 			"story_rescue_prospector_missing_01": {
 				triggers: [ "change_position" ],
 				conditions: { inCamp: false, storyFlags: {  "RESCUE_EXPLORER_LEFT": true } },
 				chance: 0.01,
-				message: "You wonder if Sunita made it through Level 14 somehow."
+				message: "Bạn tự hỏi liệu Sunita có cách nào vượt qua tầng 14 hay không."
 			},
 			"story_escape_need_to_find_passage_01": {
 				triggers: [ "change_position" ],
 				conditions: { inCamp: false, distanceToCamp: [ 2, -1 ], level: { nextPassageFound: false }, storyFlags: {  "ESCAPE_SEARCHING_FOR_GROUND": true } },
 				chance: 0.01,
-				message: "You need to find a passage down from this level."
+				message: "Bạn cần tìm lối đi xuống khỏi tầng này."
 			},
 			"story_apocalypse_need_tp_find_cause_01": {
 				triggers: [ "change_position" ],
 				conditions: { inCamp: false, distanceToCamp: [ 3, -1 ], storyFlags: {  "APOCALYPSE_KNOWN": false, "FALL_SEEN_STOREHOUSE": true } },
 				chance: 0.01,
-				message: "You need to find out what the Government was preparing emergency supplies for."
+				message: "Bạn cần tìm hiểu Chính phủ đã chuẩn bị số vật tư khẩn cấp đó cho việc gì."
 			},
 			"story_apocalypse_need_tp_find_cause_01": {
 				triggers: [ "change_position" ],
 				conditions: { inCamp: false, distanceToCamp: [ 3, -1 ], storyFlags: {  "FALL_SEEN_SPACEFACTORY": true, "FALL_SEEN_EVACUATION": false } },
 				chance: 0.01,
-				message: "You need to find out what that space ship was being built for."
+				message: "Bạn cần tìm hiểu con tàu vũ trụ kia được chế tạo để làm gì."
 			},
 			"story_apocalypse_need_to_find_solution_01": {
 				triggers: [ "change_position" ],
 				conditions: { inCamp: false, distanceToCamp: [ 3, -1 ], storyFlags: {  "APOCALYPSE_KNOWN": true, "APOCALYPSE_PLAN_READY": false } },
 				chance: 0.01,
-				message: "You need to find some way to stop the earthquakes."
+				message: "Bạn cần tìm cách ngăn những trận động đất."
 			},
 			"story_greenhouse_need_to_find_seeds_01": {
 				triggers: [ "change_position" ],
 				conditions: { inCamp: false, distanceToCamp: [ 2, -1 ], storyFlags: {  "GREENHOUSE_FOUND": true, "GREENHOUSE_RESTORED": false } },
 				chance: 0.01,
-				message: "You need to find a way to restore the Greenhouses."
+				message: "Bạn cần tìm cách khôi phục các nhà kính."
 			},
 			"story_spirits_suspicion_01": {
 				triggers: [ "change_position" ],
 				conditions: { inCamp: false, distanceToCamp: [ 3, -1 ], deity: false, storyFlags: { numCamps: 2, "SPIRITS_MAGIC_SEEN": false } },
 				chance: 0.01,
-				message: "You wonder if there really are ghosts in the City."
+				message: "Bạn tự hỏi liệu Thành phố có thực sự tồn tại ma quỷ hay không."
 			},
 			"story_tribe_double_guess_escape_01": {
 				triggers: [ "change_position" ],
 				conditions: { inCamp: false, storyFlags: {  "ESCAPE_SEARCHING_FOR_GROUND": true } },
 				chance: 0.01,
-				message: "You wonder if you can convince someone to leave the City with you."
+				message: "Bạn tự hỏi liệu mình có thể thuyết phục ai đó rời Thành phố cùng mình không."
 			},
 			"story_tribe_double_guess_escape_01": {
 				triggers: [ "change_position" ],
 				conditions: { inCamp: false, numCamps: 3, storyFlags: {  "ESCAPE_SEARCHING_FOR_GROUND": true } },
 				chance: 0.005,
-				message: "You wonder how the camps will develop after you've left the City."
+				message: "Bạn tự hỏi các trại sẽ phát triển thế nào sau khi bạn rời Thành phố."
 			},
 			"action_despair": {
 				triggers: [ "action_any" ],
@@ -226,25 +226,25 @@ define(['ash', 'text/Text', 'game/constants/TextConstants', 'game/constants/Item
 				chance: 0.5,
 				visibility: "MSG_VISIBILITY_CAMP",
 				messages: [ 
-					"Your dreams were filled with vague worries.",
-					"You dreamed of a snapping rope and falling.",
-					"You dreamed of rising water.",
-					"Your dreams were plagued by visions of explosions.",
-					"Your dreams were full of senseless violence.",
-					"In your dreams the City shook and collapsed like a house of cards.",
-					"In your dreams the City was full of regretful ghosts.",
-					"You dreamed of rivers of refugees.",
-					"You dreamed of melting into a mass of people, all hungry and desperate.",
-					"You dreamed of ancient spirits, choking under the weight of the City.",
-					"You dreamed of being alone and exposed on the Surface, the last person left alive in the City.",
-					"You dreamed of being stuck in a network, unable to come back to the physical world.",
+					"Giấc mơ của bạn đầy những nỗi lo mơ hồ.",
+					"Bạn mơ thấy một sợi dây bật đứt và mình rơi xuống.",
+					"Bạn mơ thấy nước dâng lên.",
+					"Giấc mơ của bạn bị ám bởi những vụ nổ.",
+					"Giấc mơ của bạn đầy bạo lực vô nghĩa.",
+					"Trong mơ, Thành phố rung chuyển và sụp đổ như một ngôi nhà bằng lá.",
+					"Trong mơ, Thành phố đầy những hồn ma tiếc nuối.",
+					"Bạn mơ thấy những dòng người tị nạn.",
+					"Bạn mơ thấy mình tan vào một đám đông đói khát và tuyệt vọng.",
+					"Bạn mơ thấy những linh hồn cổ xưa nghẹn thở dưới sức nặng của Thành phố.",
+					"Bạn mơ thấy mình cô độc, phơi bày trên Bề mặt, là người cuối cùng còn sống trong Thành phố.",
+					"Bạn mơ thấy mình mắc kẹt trong mạng lưới, không thể trở về thế giới vật chất.",
 				 ]
 			},
 			"action_move_sunlight": {
 				triggers: [ "change_position" ],
 				conditions: { inCamp: false, sunlit: true, vision: [ -1, 30 ] },
 				chance: 0.1,
-				message: "As your eyes begin to tolerate the sunlight, you see the City sprawl in front of you, and feel small."
+				message: "Khi mắt dần quen với ánh nắng, bạn thấy Thành phố trải dài trước mặt và cảm nhận sự nhỏ bé của mình."
 			},
 		},
 		
@@ -307,12 +307,12 @@ define(['ash', 'text/Text', 'game/constants/TextConstants', 'game/constants/Item
 			let intros = [];
 			switch (resultVO.action) {
 				default:
-					intros.push("Nearly fell into an unexpected crack in the street");
-					intros.push("Fell through a rotten floor");
-					intros.push("Dropped an item while climbing a fence");
-					intros.push("Stumbled on some wrecked pipes");
-					intros.push("Left a bag pocket open and some items fell out");
-					intros.push("Got spooked of the shadows and ran, leaving some items behind");
+					intros.push("Suýt rơi vào một khe nứt bất ngờ trên đường");
+					intros.push("Rơi xuyên qua một sàn nhà mục nát");
+					intros.push("Làm rơi vật phẩm khi trèo qua hàng rào");
+					intros.push("Vấp phải những đường ống hư hỏng");
+					intros.push("Để hở túi và vài vật phẩm rơi ra");
+					intros.push("Hoảng sợ vì bóng tối rồi bỏ chạy, để lại vài vật phẩm");
 					break;
 			}
 
@@ -320,9 +320,9 @@ define(['ash', 'text/Text', 'game/constants/TextConstants', 'game/constants/Item
 
 			let fragments = [];
 
-			fragments.push({ textKey: intro });
-			fragments.push({ textKey: ". " });
-			fragments.push({ textKey: "Lost " });
+			fragments.push({ rawText: intro });
+			fragments.push({ rawText: ". " });
+			fragments.push({ rawText: "Đã mất " });
 			fragments = fragments.concat(itemsTextVO.textFragments);
 			
 			return { textFragments: fragments };
@@ -334,11 +334,11 @@ define(['ash', 'text/Text', 'game/constants/TextConstants', 'game/constants/Item
 			let intros = [];
 			switch (resultVO.action) {
 				default:
-					intros.push("Nearly fell into an unexpected crack in the street");
-					intros.push("Fell through a rotten floor");
-					intros.push("Dropped an item while climbing a fence");
-					intros.push("Stumbled on some wrecked pipes");
-					intros.push("Fell while climbing");
+					intros.push("Suýt rơi vào một khe nứt bất ngờ trên đường");
+					intros.push("Rơi xuyên qua một sàn nhà mục nát");
+					intros.push("Làm rơi vật phẩm khi trèo qua hàng rào");
+					intros.push("Vấp phải những đường ống hư hỏng");
+					intros.push("Ngã khi đang trèo");
 					break;
 			}
 
@@ -346,16 +346,16 @@ define(['ash', 'text/Text', 'game/constants/TextConstants', 'game/constants/Item
 
 			let fragments = [];
 
-			fragments.push({ textKey: intro });
-			fragments.push({ textKey: ". " });
-			fragments.push({ textKey: "Broke " });
+			fragments.push({ rawText: intro });
+			fragments.push({ rawText: ". " });
+			fragments.push({ rawText: "Đã làm hỏng " });
 			fragments = fragments.concat(itemsTextVO.textFragments);
 			
 			return { textFragments: fragments };
 		},
 
 		getLostPerksMessage: function (resultVO) {
-			return "Lost an augmentation.";
+			return "Đã mất một bộ phận cấy ghép.";
 		},
 
 		getDespairMessage: function (despairType) {
@@ -372,7 +372,7 @@ define(['ash', 'text/Text', 'game/constants/TextConstants', 'game/constants/Item
 				return null;
 			}
 			if (despairType == MovementConstants.DESPAIR_TYPE_MOVEMENT) {
-				return "There is nowhere to go.";
+				return "Không còn nơi nào để đi.";
 			}
 
 			return null;
@@ -380,14 +380,14 @@ define(['ash', 'text/Text', 'game/constants/TextConstants', 'game/constants/Item
 
 		getCantMoveMessage: function (despairType) {
 			if (despairType == MovementConstants.DESPAIR_TYPE_STAMINA) {
-				return "Too tired to go on.";
+				return "Quá mệt để tiếp tục.";
 			}
 
 			if (despairType == MovementConstants.DESPAIR_TYPE_THIRST) {
-				return "Can't go any further without water.";
+				return "Không thể đi xa hơn nếu thiếu nước.";
 			}
 			if (despairType == MovementConstants.DESPAIR_TYPE_HUNGRER) {
-				return "Can't go any further without food.";
+				return "Không thể đi xa hơn nếu thiếu thức ăn.";
 			}
 
 			return null;
@@ -397,11 +397,11 @@ define(['ash', 'text/Text', 'game/constants/TextConstants', 'game/constants/Item
 			var itemDetails = "";
 			switch (itemVO.id) {
 				case ItemConstants.itemDefinitions.light[0].id:
-					itemDetails = " Light will make scavenging safer.";
+					itemDetails = " Ánh sáng sẽ giúp việc lục lọi an toàn hơn.";
 					break;
 			}
 			let itemName = ItemConstants.getItemDisplayName(itemVO);
-			return "Made " + Text.addArticle(itemName).toLowerCase() + "." + itemDetails;
+			return "Đã chế tạo " + itemName.toLowerCase() + "." + itemDetails;
 		},
 
 	}

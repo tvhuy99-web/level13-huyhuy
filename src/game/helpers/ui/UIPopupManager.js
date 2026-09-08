@@ -10,6 +10,8 @@ function (Ash, Text, ExceptionHandler, GameGlobals, GlobalSignals, UIConstants) 
 		elements: {},
 
 		showOverlayCounter: 0,
+
+		context: "popup",
 		
 		constructor: function () {
 			this.popupQueue = [];
@@ -96,7 +98,7 @@ function (Ash, Text, ExceptionHandler, GameGlobals, GlobalSignals, UIConstants) 
 			
 			let showTakeAll = hasResult && resultVO.hasSelectable();
 			if (showTakeAll) {
-				$("#common-popup .buttonbox").append("<button id='confirmation-takeall' class='action' action='take_all'>Take all</button>");
+				$("#common-popup .buttonbox").append("<button id='confirmation-takeall' class='action' action='take_all'>Lấy tất cả</button>");
 				$("#confirmation-takeall").click(ExceptionHandler.wrapClick(function (e) {
 					popUpManager.handleOkButton(true, okCallback);
 				}));
@@ -169,6 +171,8 @@ function (Ash, Text, ExceptionHandler, GameGlobals, GlobalSignals, UIConstants) 
 				cb();
 				return;
 			}
+
+			log.i("show overlay", this);
 			
 			GlobalSignals.triggerSoundSignal.dispatch(UIConstants.soundTriggerIDs.openPopup, 100);
 
@@ -180,6 +184,8 @@ function (Ash, Text, ExceptionHandler, GameGlobals, GlobalSignals, UIConstants) 
 
 			if (this.showOverlayCounter > 0) return;
 			if (this.showOverlayCounter < 0) this.showOverlayCounter = 0;
+
+			log.i("hide overlay", this);
 			
 			GlobalSignals.triggerSoundSignal.dispatch(UIConstants.soundTriggerIDs.closePopup, 100);
 

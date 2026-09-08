@@ -6,11 +6,12 @@ define([
 	'game/GameGlobals',
 	'game/GlobalSignals',
 	'game/constants/ColorConstants',
+	'game/constants/ImprovementConstants',
 	'game/nodes/PlayerLocationNode',
 	'game/components/sector/improvements/SectorImprovementsComponent',
 	'game/components/type/LevelComponent',
 ], function (
-	Ash, MathUtils, CanvasUtils, UIState, GameGlobals, GlobalSignals, ColorConstants, PlayerLocationNode, SectorImprovementsComponent, LevelComponent
+	Ash, MathUtils, CanvasUtils, UIState, GameGlobals, GlobalSignals, ColorConstants, ImprovementConstants, PlayerLocationNode, SectorImprovementsComponent, LevelComponent
 ) {
 
 	var UIOutCampVisSystem = Ash.System.extend({
@@ -78,7 +79,7 @@ define([
 		
 		refreshSettings: function () {
 			var level = this.playerLocationNodes.head.position.level;
-			var campOrdinal = GameGlobals.gameState.getCampOrdinal(level);
+			var campOrdinal = GameGlobals.worldState.getCampOrdinal(level);
 			var levelEntity = GameGlobals.levelHelper.getLevelEntityForPosition(level);
 			var levelComponent = levelEntity.get(LevelComponent);
 			// TODO add more detail depending on world structure (what kind of sector/level the camp is actually located on)
@@ -111,7 +112,7 @@ define([
 		refreshBuildings: function () {
 			if (!this.playerLocationNodes.head) return;
 			var level = this.playerLocationNodes.head.position.level;
-			var campOrdinal = GameGlobals.gameState.getCampOrdinal(level);
+			var campOrdinal = GameGlobals.worldState.getCampOrdinal(level);
 			var reset = this.buildingsLevel !== level;
 			
 			// update divs
@@ -455,7 +456,7 @@ define([
 			if (this.hoveredBuilding) {
 				var improvements = this.playerLocationNodes.head.entity.get(SectorImprovementsComponent);
 				var buildingLevel = improvements.getLevel(this.hoveredBuilding);
-				this.elements.infoText.text(this.hoveredBuilding + " (Level " + buildingLevel + ")");
+				this.elements.infoText.text(ImprovementConstants.getImprovementDisplayName(this.hoveredBuilding, buildingLevel) + " (Cấp " + buildingLevel + ")");
 				this.elements.infoOverlay.show();
 			} else {
 				this.elements.infoOverlay.hide();

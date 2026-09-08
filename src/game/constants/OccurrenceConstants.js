@@ -51,13 +51,13 @@ define(['ash', 'utils/MathUtils', 'game/constants/CampConstants', 'game/constant
 			raid: 3,
 			recruit: 3,
 			refugees: 3,
-			trader: 1.5,
+			trader: 2,
 			visitor: 3,
 		},
 
 		RAID_RANGER_FACTOR: 1 / 25,
 		
-		getTimeToNext: function (occurrenceType, isNew, upgradeLevel, reputation, numCamps) {
+		getTimeToNext: function (occurrenceType, isNew, upgradeLevel, campFactor, reputation, numCamps) {
 			let minimumTime = this.getMinimumTimeToNext(occurrenceType, isNew, numCamps);
 			let maximumTime = this.getMaximumTimeToNext(occurrenceType, isNew, numCamps);
 			
@@ -65,7 +65,7 @@ define(['ash', 'utils/MathUtils', 'game/constants/CampConstants', 'game/constant
             let upgradeFactor = 1 - (upgradeLevel - 1) * 0.075;
 			let reputationFactor = 1 - MathUtils.map(reputation, 1, CampConstants.MAX_REPUTATION, 0, 1);
 			
-			let variationFactor = MathUtils.clamp(randomFactor * upgradeFactor * reputationFactor, 0, 1);
+			let variationFactor = MathUtils.clamp(randomFactor * upgradeFactor * reputationFactor * campFactor, 0, 1);
 			let diff = maximumTime - minimumTime;
 			let result = Math.floor(minimumTime + diff * variationFactor);
 			
@@ -171,19 +171,19 @@ define(['ash', 'utils/MathUtils', 'game/constants/CampConstants', 'game/constant
 		},
 		
 		getRaidDefenceString: function (improvements, soldiers, soldierLevel) {
-			let result = "Base: " + CampConstants.CAMP_BASE_DEFENCE;
+			let result = "Cơ bản: " + CampConstants.CAMP_BASE_DEFENCE;
 			
 			let fortificationsPoints = this.getFortificationsDefencePoints(improvements);
 			let fortificationsPointsWithoutDamaged = this.getFortificationsDefencePoints(improvements, true);
 			let fortificationsPointsDiff = fortificationsPoints - fortificationsPointsWithoutDamaged;
 			if (fortificationsPointsWithoutDamaged > 0) {
-				result += "<br/>Fortifications: " + fortificationsPointsWithoutDamaged;
+				result += "<br/>Công sự: " + fortificationsPointsWithoutDamaged;
 				if (fortificationsPoints != fortificationsPointsWithoutDamaged) {
-					result += "<br/>Damage: -" + fortificationsPointsDiff;
+					result += "<br/>Hư hại: -" + fortificationsPointsDiff;
 				}
 			}
 			let soldierPoints = this.getSoldierDefencePoints(soldiers, soldierLevel, improvements.getLevel(improvementNames.barracks));
-			if (soldierPoints > 0) result += "<br/>Soldiers: " + soldierPoints;
+			if (soldierPoints > 0) result += "<br/>Lính: " + soldierPoints;
 			
 			return result;
 		},

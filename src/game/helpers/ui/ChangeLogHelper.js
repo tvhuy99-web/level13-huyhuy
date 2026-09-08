@@ -39,9 +39,9 @@ function (Ash, GameGlobals, GlobalSignals, GameConstants) {
 			var currentVersion = this.getCurrentVersion();
 			if (!currentVersion || !currentVersion.final) {
 				GameGlobals.uiFunctions.showInfoPopup(
-					"Warning",
-					"Looks like you are playing an unsupported version of Level 13.</br>Continue at your own risk or play the latest official version <a href='" + GameConstants.gameURL + "'>here</a>.",
-					"Continue"
+					"Cảnh báo",
+					"Có vẻ bạn đang chơi một phiên bản Level 13 không được hỗ trợ.</br>Bạn có thể tiếp tục và tự chịu rủi ro, hoặc chơi phiên bản chính thức mới nhất <a href='" + GameConstants.gameURL + "'>tại đây</a>.",
+					"Tiếp tục"
 				);
 			}
 		},
@@ -93,19 +93,43 @@ function (Ash, GameGlobals, GlobalSignals, GameConstants) {
 			return { major: parts2[0], minor: parts2[1], patch: parts2[2] };
 		},
 		
-		isOldVersion: function (version) {
+		isUnsupportedVersion: function (version) {
 			if (!version) return true;
 			
-			var currentVersionNumber = this.getCurrentVersionNumber();
-			var currentVersionDetails = this.getCurrentVersion();
-			var requiredVersion = currentVersionDetails && currentVersionDetails.requiredVersion || currentVersionNumber;
-			var requiredVersionDigits = this.getVersionDigits(requiredVersion);
-			var compareVersionDigits = this.getVersionDigits(version);
+			let currentVersionNumber = this.getCurrentVersionNumber();
+			let currentVersionDetails = this.getCurrentVersion();
+			let requiredVersion = currentVersionDetails && currentVersionDetails.requiredVersion || currentVersionNumber;
+			let requiredVersionDigits = this.getVersionDigits(requiredVersion);
+			let compareVersionDigits = this.getVersionDigits(version);
 			
-			log.i("isOldVersion? " + version + ", current: " + currentVersionNumber + ", required: " + requiredVersion);
+			log.i("isUnsupportedVersion? " + version + ", current: " + currentVersionNumber + ", required: " + requiredVersion);
 			if (!requiredVersionDigits) return false;
 			if (!compareVersionDigits) return false;
 			return compareVersionDigits.major < requiredVersionDigits.major || compareVersionDigits.minor < requiredVersionDigits.minor || compareVersionDigits.patch < requiredVersionDigits.patch;
+		},
+
+		isOldVersion: function (version) {
+			if (!version) return true;
+			
+			let currentVersion = this.getCurrentVersionNumber();
+			let currentVersionDigits = this.getVersionDigits(currentVersion);
+			let compareVersionDigits = this.getVersionDigits(version);
+			
+			if (!currentVersionDigits) return false;
+			if (!compareVersionDigits) return false;
+			return compareVersionDigits.major < currentVersionDigits.major || compareVersionDigits.minor < currentVersionDigits.minor || compareVersionDigits.patch < currentVersionDigits.patch;
+		},
+
+		hasPlayedOnUnsupportedVersion: function () {
+			let playedVersions = GameGlobals.gameState.playedVersions;
+			if (!playedVersions) return false;
+
+			for (let i = 0; i < playedVersions.length; i++) {
+				let version = playedVersions[i];
+				if (this.isUnsupportedVersion(version)) return true;
+			}
+
+			return false;
 		},
 	
 	});

@@ -1,5 +1,5 @@
-define(['ash', 'text/Text', 'game/GameGlobals', 'game/GlobalSignals', 'game/constants/GameConstants'],
-    function (Ash, Text, GameGlobals, GlobalSignals, GameConstants) {
+define(['ash', 'text/Text', 'text/TextBuilder', 'text/lang/LangEnglish', 'text/lang/LangVietnamese', 'game/GameGlobals', 'game/GlobalSignals', 'game/constants/GameConstants'],
+    function (Ash, Text, TextBuilder, LangEnglish, LangVietnamese, GameGlobals, GlobalSignals, GameConstants) {
     
         let TextLoader = Ash.Class.extend({
             
@@ -9,6 +9,7 @@ define(['ash', 'text/Text', 'game/GameGlobals', 'game/GlobalSignals', 'game/cons
                 default: { language: "default", source: "strings/strings.json", name: "Default" },
                 EN_GB: { language: "EN_GB", source: "strings/strings.json", name: "English" },
                 FI_FI: { language: "FI_FI", source: "strings/strings-fi.json", name: "suomi" },
+                VI_VN: { language: "VI_VN", source: "strings/strings-vi.json", name: "Tiếng Việt" },
             },
     
             isSupportedLanguage: function (language) {
@@ -41,10 +42,7 @@ define(['ash', 'text/Text', 'game/GameGlobals', 'game/GlobalSignals', 'game/cons
                         language = GameGlobals.metaState.settings.language;
                     }
 
-                    if (!language) {
-                        resolve();
-                        return;
-                    }
+                    if (!language) language = "VI_VN";
 
                     if (Text.hasCurrentLanguage(language)) {
                         resolve();
@@ -63,10 +61,13 @@ define(['ash', 'text/Text', 'game/GameGlobals', 'game/GlobalSignals', 'game/cons
             loadTextsFile: function (source) {
                 return new Promise((resolve, reject) => {
                     var url = source.source;
-                    log.i("Loading texts: " + url);
+                    log.i("Loading texts: " + url, "text");
                     if (GameConstants.isDebugVersion) $.ajaxSetup({ cache: false });
                     $.getJSON(url, function (json) {
                         Text.setTexts(source.language, json);
+                        let language = source.language == "VI_VN" ? LangVietnamese : LangEnglish;
+                        Text.language = language;
+                        TextBuilder.language = language;
                         resolve();
                     })
                     .fail(function (jqxhr, textStatus, error) {
@@ -75,9 +76,8 @@ define(['ash', 'text/Text', 'game/GameGlobals', 'game/GlobalSignals', 'game/cons
                     });
                 });
             },
-        
+
         });
-        
+
         return TextLoader;
     });
-    

@@ -1,18 +1,29 @@
 define(['ash'], function (Ash) {
 	
-	var WorldConstants = {
+	let WorldConstants = {
+
+		version: "0.7.1", // current world gen version
 	
 		LEVEL_NUMBER_MIN: 25,
 		LEVEL_NUMBER_MAX: 27,
+
+		MAX_WIDTH: 55,
+		MAX_HEIGHT: 45,
+
+		WORLD_ZONE_GRID_SIZE: 50,
 		
 		CAMPS_TOTAL: 15,
 		CAMPS_BEFORE_GROUND: 8,
+
+		MAX_PATH_NO_CROSSINGS_LENGTH: 14,
+		MAX_DISTANCE_TO_MAP_CENTER: 40,
 		
 		CAMP_ORDINAL_FUEL: 3,
 		CAMP_ORDINAL_GREENHOUSE_1: 5,
 		CAMP_ORDINAL_GREENHOUSE_2: 7,
 		CAMP_ORDINAL_GROUND: 8,
 		CAMP_ORDINAL_FUEL_2: 12,
+		CAMP_ORDINAL_RUBBER_1: 8,
 		CAMP_ORDINAL_RUBBER_2: 14,
 		
 		CAMP_STAGE_EARLY: "e",
@@ -36,9 +47,25 @@ define(['ash'], function (Ash) {
 		LEVEL_NUMBER_STASH_ADVANCED_MAP: 11,
 		LEVEL_NUMBER_STASH_ROBOT_1: 18,
 		LEVEL_NUMBER_STASH_ROBOT_2: 24,
+
+		LEVEL_NUMBER_GIGA_CENTER_1: 16,
+		LEVEL_NUMBER_GIGA_CENTER_2: 16,
 		
 		NUM_INVESTIGATE_SECTORS_TOTAL: 15,
 		NUM_INVESTIGATE_SECTORS_SURFACE: 10,
+		
+		// world features
+		FEATURE_HOLE_COLLAPSE: "collapse",
+		FEATURE_HOLE_COLLAPSE_EDGE: "collapse-edge",
+		FEATURE_HOLE_WELL: "well",
+		FEATURE_HOLE_WELL_EDGE: "well-edge",
+		FEATURE_HOLE_MOUNTAIN: "mountain", 
+		FEATURE_HOLE_MOUNTAIN_EDGE: "mountain-edge", 
+		FEATURE_STRUCTURE_GIGA_CENTER: "giga",
+		FEATURE_STRUCTURE_PILLAR: "pillar",
+		FEATURE_TRAIN_TRACKS_NEW: "tracks-new",
+		FEATURE_TRAIN_TRACKS_OLD: "tracks-old",
+		FEATURE_TRAIN_STATION: "station",
 		
 		resourcePrevalence: {
 			RARE: 1,		// only for rare resources
@@ -115,6 +142,17 @@ define(['ash'], function (Ash) {
 			}
 			return false;
 		},
+
+		getWorkshopResourceForCampOrdinal: function (seed, campOrdinal) {			
+			if (campOrdinal === WorldConstants.CAMP_ORDINAL_FUEL || campOrdinal == WorldConstants.CAMP_ORDINAL_FUEL_2)
+				return "fuel";
+			if (campOrdinal === WorldConstants.CAMP_ORDINAL_GREENHOUSE_1 || campOrdinal == WorldConstants.CAMP_ORDINAL_GREENHOUSE_2)
+				return "herbs";
+			if (campOrdinal == WorldConstants.CAMP_ORDINAL_RUBBER_1 || campOrdinal == WorldConstants.CAMP_ORDINAL_RUBBER_2)
+				return "rubber";
+
+			return null;
+		},
 		
 		getNumInvestigateSectors: function (level, topLevel) {
 			if (level == topLevel) return WorldConstants.NUM_INVESTIGATE_SECTORS_SURFACE;
@@ -169,6 +207,17 @@ define(['ash'], function (Ash) {
 				return true;
 			if (campOrdinal == campOrdinal2 && campStep >= campStep2)
 				return true;
+			return false;
+		},
+
+		isFeatureHole: function (featureType) {
+			switch (featureType) {
+				case WorldConstants.FEATURE_HOLE_COLLAPSE:
+				case WorldConstants.FEATURE_HOLE_MOUNTAIN:
+				case WorldConstants.FEATURE_HOLE_WELL:
+					return 1;
+			}
+
 			return false;
 		}
 		

@@ -17,6 +17,7 @@ define([
 	'game/constants/ItemConstants',
 	'game/constants/PerkConstants',
 	'game/constants/UpgradeConstants',
+	'game/constants/TradeConstants',
 	'game/constants/UIConstants',
 	'game/constants/WorldConstants',
 	'game/nodes/player/PlayerStatsNode',
@@ -58,6 +59,7 @@ define([
 	ItemConstants,
 	PerkConstants,
 	UpgradeConstants,
+	TradeConstants,
 	UIConstants,
 	WorldConstants,
 	PlayerStatsNode,
@@ -90,7 +92,7 @@ define([
 		tribeUpgradesNodes: null,
 
 		RESULT_MGS_FORMAT_LOG: "RESULT_MGS_FORMAT_LOG",
-		RESULT_MSG_FORMAT_PREVIW: "RESULT_MSG_FORMAT_PREVIW",
+		RESULT_MSG_FORMAT_PREVIEW: "RESULT_MSG_FORMAT_PREVIEW",
 
 		fixedRewards: {
 			"scavenge": [
@@ -135,10 +137,7 @@ define([
 					break;
 				case "scout_locale_i":
 				case "scout_locale_u":
-					// TODO global helper to get locale vo from action?
-					var localei = parseInt(action.split("_")[3]) || 0;
-					var sectorLocalesComponent = this.playerLocationNodes.head.entity.get(SectorLocalesComponent);
-					var localeVO = sectorLocalesComponent.locales[localei];
+					var localeVO = GameGlobals.playerActionsHelper.getLocaleForScoutAction(this.playerLocationNodes.head.entity, action);
 					resultVO = this.getScoutLocaleRewards(localeVO);
 					break;
 				case "investigate":
@@ -203,6 +202,74 @@ define([
 					// robots wear out so if we gave just 1 it would instantly become 0.999
 					rewards.gainedResources.addResource(resourceNames.robots, 1.25);
 					break;
+			}
+
+			return rewards;
+		},
+
+		getDisassembleItemRewards: function (itemID) {
+			let rewards = new ResultVO("dissassemble_item");
+
+			debugger
+
+			let craftAction = "craft_" + itemID;
+			let craftCosts = GameGlobals.playerActionsHelper.getCosts(craftAction);
+
+			if (!craftCosts || Object.keys(craftCosts).length == 0) {
+				let itemDef = ItemConstants.getItemDefinitionByID(itemID);
+				let value = MathUtils.map(TradeConstants.getItemValue(itemDef), 0, 5, 1, 10);
+
+				switch (itemDef.type) {
+					case ItemConstants.itemTypes.weapon:
+						craftCosts["item_res_bands"] = value;
+						craftCosts["resource_metal"] = value * 3;
+						break;
+					case ItemConstants.itemTypes.light:
+						craftCosts["item_res_hairpin"] = value / 2;
+						break;
+					case ItemConstants.itemTypes.bag:
+						craftCosts["item_res_leather"] = value * 2;
+						break;
+					case ItemConstants.itemTypes.shoes:
+						craftCosts["item_res_leather"] = value / 2;
+						break;
+					case ItemConstants.itemTypes.clothing_over:
+					case ItemConstants.itemTypes.clothing_upper:
+					case ItemConstants.itemTypes.clothing_lower:
+					case ItemConstants.itemTypes.clothing_hands:
+					case ItemConstants.itemTypes.clothing_head:
+						craftCosts["resource_rope"] = value * 3;
+						break;
+					default:
+						craftCosts["item_res_silk"] = value;
+				}
+
+				let tags = itemDef.tags;
+				let addCostBasedOnTag = function (tag, cost, v) {
+					if (tags.indexOf(tag) < 0) return;
+					let oldValue = craftCosts[cost] || 0;
+					craftCosts[cost] = Math.max(oldValue, v);
+				}
+
+				addCostBasedOnTag("industrial", "item_res_hairpin", value / 2);
+				addCostBasedOnTag("old", "item_res_silk", value / 2);
+				addCostBasedOnTag("medical", "item_res_bands", value / 2);
+			}
+
+			for (let key in craftCosts) {
+				let value = craftCosts[key];
+
+				if (key.indexOf("resource_") >= 0) {
+					let rewardValue = Math.ceil(value * 0.5);
+					let resourceName = key.split("_")[1];
+					rewards.gainedResources.addResource(resourceName, rewardValue);
+				}
+
+				if (key.indexOf("item_res") >= 0) {
+					let rewardValue = Math.ceil(value * 0.75);
+					let itemID = key.replace("item_", "");
+					rewards.gainedItems.push(ItemConstants.getNewItemInstanceByID(itemID));
+				}
 			}
 
 			return rewards;
@@ -283,7 +350,7 @@ define([
 			let isCompletion = investigatePercentAfter >= 100;
 			
 			let playerPos = this.playerLocationNodes.head.position;
-			let campOrdinal = GameGlobals.gameState.getCampOrdinal(playerPos.level);
+			let campOrdinal = GameGlobals.worldState.getCampOrdinal(playerPos.level);
 			
 			log.i("getInvestigateRewards | isCompletion: " + isCompletion, this);
 			
@@ -338,7 +405,7 @@ define([
 			let localeCategory = localeVO.getCategory();
 			let sector = this.playerLocationNodes.head.entity;
 			let playerPos = this.playerLocationNodes.head.position;
-			let campOrdinal = GameGlobals.gameState.getCampOrdinal(playerPos.level);
+			let campOrdinal = GameGlobals.worldState.getCampOrdinal(playerPos.level);
 
 			let sectorStatus = this.playerLocationNodes.head.entity.get(SectorStatusComponent);
 			let sectorFeatures = this.playerLocationNodes.head.entity.get(SectorFeaturesComponent);
@@ -350,15 +417,16 @@ define([
 			let localeDifficulty = (localeVO.requirements.vision[0] + localeVO.costs.stamina / 10) / 100;
 			let itemTags = this.getSectorItemTags().concat(localeVO.getItemTags());
 
+			// tribe stats (almost always)
 			let evidenceAmount = ExplorationConstants.getScoutLocaleEvidenceReward(localeVO.type, campOrdinal);
-
-			// tribe stats (always)
 			if (localeVO.type == localeTypes.grove) {
 				rewards.gainedHope = 2;
 			} else if (localeVO.type == localeTypes.tradingpartner) {
 				rewards.gainedHope = 1;
 			} else if (localeVO.type == localeTypes.depot || localeVO.type == localeTypes.spacefactory) {
 				rewards.gainedEvidence = evidenceAmount;
+			} else if (localeVO.type == localeTypes.shortcut) {
+				// (none)
 			} else {
 				this.addCovertibleTribeStatRewards(rewards, "evidence", evidenceAmount);
 			}
@@ -381,6 +449,8 @@ define([
 					hasMaterialRewards = false;
 					hasMiscRewards = false;
 					break;
+				case localeTypes.shortcut:
+					hasMaterialRewards = false;
 				case localeTypes.depot:
 				case localeTypes.spacefactory:
 					hasMiscRewards = false;
@@ -496,7 +566,9 @@ define([
 			
 			let finalInjuryProbability = resultVO.lostPerks.length > 0 ? injuryProbability / 2 : injuryProbability;
 			resultVO.gainedPerks = this.getResultInjuries(finalInjuryProbability, sourceAction, enemyVO);
-			resultVO.gainedExplorerInjuries = this.getResultInjuriesExplorer(finalInjuryProbability, sourceAction, enemyVO, resultVO.lostExplorers);
+
+			let explorerInjuryProbability = (injuryProbability + loseExplorerProbability) / 2;
+			resultVO.gainedExplorerInjuries = this.getResultInjuriesExplorer(injuryProbability, sourceAction, enemyVO, resultVO.lostExplorers);
 
 			return resultVO;
 		},
@@ -594,6 +666,7 @@ define([
 			return result;
 		},
 		
+		// translates dynamic / template rewards into final values
 		preCollectRewards: function (rewards) {
 			if (!rewards) return;
 
@@ -752,7 +825,7 @@ define([
 			
 			if (rewards.foundStashVO) {
 				let sectorStatus = sourceSector.get(SectorStatusComponent);
-				sectorStatus.stashesFound.push(rewards.foundStashVO.stashIndex);
+				sectorStatus.stashesFound.push(rewards.foundStashVO.getStashID());
 			}
 			
 			let defaultRewardCampNode = this.getDefaultRewardCampNode();
@@ -989,8 +1062,8 @@ define([
 			let foundSomething = rewards.gainedResources.getTotal() > 0;
 
 			if (rewards.gainedResources.getTotal() > 0) {
-				if (format == this.RESULT_MGS_FORMAT_LOG) fragments.push({ textKey: "Gained " });
-				if (format == this.RESULT_MGS_FORMAT_LOG) fragments.push({ textKey: "+" });
+				if (format == this.RESULT_MGS_FORMAT_LOG) fragments.push({ rawText: "Đã nhận " });
+				if (format == this.RESULT_MSG_FORMAT_PREVIEW) fragments.push({ textKey: "+" });
 
 				let resourcesTextVO = TextConstants.getResourcesTextVO(rewards.gainedResources);
 				fragments = fragments.concat(resourcesTextVO.textFragments);
@@ -1053,15 +1126,15 @@ define([
 					div += UIConstants.getExplorerDivSimple(explorerVO, false, false, true);
 					div += "<br/>";
 					if (isAnimal) {
-						div += "Found a stray <span class='hl-functionality'>" + Text.addArticle(explorerVO.name) + "</span>. ";
+						div += "Phát hiện <span class='hl-functionality'>" + explorerVO.name + "</span> đi lạc. ";
 					} else {
-						div += "Met <span class='hl-functionality'>" + Text.addArticle(explorerTypeName) + "</span> called " + explorerVO.name + ". ";
+						div += "Gặp một <span class='hl-functionality'>" + explorerTypeName + "</span> tên là " + explorerVO.name + ". ";
 					}
 					
 					if (willJoin) {
-						div += Text.capitalize(pronoun) + " joined the party.";
+						div += "Đã gia nhập đội.";
 					} else if (explorerCamp) {
-						div += Text.capitalize(pronoun) +" will meet you at " + explorerCamp.camp.getName() + " on level " + explorerCamp.position.level + ".";
+						div += "Sẽ gặp bạn tại " + explorerCamp.camp.getName() + " ở tầng " + explorerCamp.position.level + ".";
 					}
 					div += "</div>";
 				}
@@ -1070,19 +1143,19 @@ define([
 			let gainedhtml = "";
 			gainedhtml += "<ul class='resultlist resultlist-positive'>";
 			if (resultVO.gainedEvidence) {
-				gainedhtml += "<li>" + resultVO.gainedEvidence + " evidence</li>";
+				gainedhtml += "<li>" + resultVO.gainedEvidence + " bằng chứng</li>";
 			}
 			if (resultVO.gainedRumours) {
-				gainedhtml += "<li>" + resultVO.gainedRumours + " rumours</li>";
+				gainedhtml += "<li>" + resultVO.gainedRumours + " tin đồn</li>";
 			}
 			if (resultVO.gainedHope) {
-				gainedhtml += "<li>" + resultVO.gainedHope + " hope</li>";
+				gainedhtml += "<li>" + resultVO.gainedHope + " hy vọng</li>";
 			}
 			if (resultVO.gainedInsight) {
-				gainedhtml += "<li>" + resultVO.gainedInsight + " insight</li>";
+				gainedhtml += "<li>" + resultVO.gainedInsight + " hiểu biết</li>";
 			}
 			if (resultVO.gainedPopulation) {
-				gainedhtml += "<li>" + resultVO.gainedPopulation + " population</li>";
+				gainedhtml += "<li>" + resultVO.gainedPopulation + " dân số</li>";
 			}
 			if (resultVO.gainedBlueprintPiece) {
 				gainedhtml += UIConstants.getBlueprintPieceLI(resultVO.gainedBlueprintPiece);
@@ -1090,11 +1163,11 @@ define([
 			if (resultVO.gainedItemUpgrades) {
 				for (let i = 0; i < resultVO.gainedItemUpgrades.length; i++) {
 					let itemID = resultVO.gainedItemUpgrades[i];
-					gainedhtml += "<li>Upgraded " + ItemConstants.getItemDisplayNameFromID(itemID) + "</li>";
+					gainedhtml += "<li>Đã nâng cấp " + ItemConstants.getItemDisplayNameFromID(itemID) + "</li>";
 				}
 			}
 			if (resultVO.gainedCurrency) {
-				gainedhtml += "<li>" + resultVO.gainedCurrency + " silver</li>";
+				gainedhtml += "<li>" + resultVO.gainedCurrency + " bạc</li>";
 			}
 
 			gainedhtml += "</ul>";
@@ -1113,7 +1186,7 @@ define([
 				resultVO.lostPerks.length > 0;
 
 			if (hasLostInventoryStuff) {
-				var lostMsg = resultVO.lostItems.length > 1 ? "Lost some items." : resultVO.lostItems.length > 0 ? "Lost an item." : ""
+				var lostMsg = resultVO.lostItems.length > 1 ? "Mất một số vật phẩm." : resultVO.lostItems.length > 0 ? "Mất một vật phẩm." : ""
 				var losthtml = "<div id='resultlist-loststuff' class='infobox'>";
 				var losthtml = "<div class='warning'>" + lostMsg + "</span>";
 				losthtml += "<div id='resultlist-loststuff-lost' class='infobox inventorybox inventorybox-negative'>";
@@ -1125,32 +1198,14 @@ define([
 			
 			if (resultVO.brokenItems.length > 0) {
 				if (resultVO.brokenItems.length == 1) {
-					div += "<p class='warning'>Broke an item (" + ItemConstants.getItemDisplayName(resultVO.brokenItems[0]) + ").</p>";
+					div += "<p class='warning'>Đã làm hỏng một vật phẩm (" + ItemConstants.getItemDisplayName(resultVO.brokenItems[0]) + ").</p>";
 				} else {
-					div += "<p class='warning'>Broke some items.</p>";
+					div += "<p class='warning'>Đã làm hỏng một số vật phẩm.</p>";
 				}
 			}
 
 			if (showInventoryManagement) {
-				var baghtml = "<div id='resultlist-inventorymanagement' class='unselectable'>";
-
-				baghtml += "<h3 class='hide-from-visual-layout'>Inventory management</h3>";
-
-				baghtml += "<div id='resultlist-inventorymanagement-found' class='infobox inventorybox'>";
-				baghtml += "<h4 class='hide-from-visual-layout'>Found</h4>";
-				baghtml += "<ul></ul>";
-				baghtml += "<p class='msg-empty p-meta'></p>";
-				baghtml += "</div>"
-
-				baghtml += "<div id='resultlist-inventorymanagement-kept' class='infobox inventorybox'>";
-				baghtml += "<h4 class='hide-from-visual-layout'>Bag</h4>";
-				baghtml += "<ul></ul>";
-				baghtml += "<p class='msg-empty p-meta'></p>";
-				baghtml += "</div>"
-
-				baghtml += "<div id='inventory-popup-bar' class='progress-wrap progress centered' style='margin-top: 10px'><div class='progress-bar progress'></div><span class='progress-label progress'>?/?</span></div>";
-				baghtml += "</div>"
-				div += baghtml;
+				div += this.getInventoryManagementDiv();
 			} else if (hasGainedBagStuff) {
 				var baghtml = "<div id='resultlist-static-inventory' class='unselectable'>";
 				baghtml += "<ul class='resultlist'>"
@@ -1177,7 +1232,7 @@ define([
 			hasGainedStuff = hasGainedStuff || resultVO.gainedResources.getTotal() > 0 || resultVO.gainedItems.length > 0 || resultVO.gainedExplorers.length > 0;
 			
 			if (!hasGainedStuff && !hasLostSomething && !showInventoryManagement) {
-				if (isFight) div += "<p class='p-meta'>Nothing left behind.</p>"
+				if (isFight) div += "<p class='p-meta'>Không còn gì bỏ lại.</p>"
 				else if (resultVO.action === "despair") div += "";
 				else if (resultVO.action === "clear_workshop") div += "";
 				else if (resultVO.action === "clear_waste_r") div += "";
@@ -1188,7 +1243,7 @@ define([
 			
 			if (resultVO.lostExplorers && resultVO.lostExplorers.length > 0) {
 				for (let i = 0; i < resultVO.lostExplorers.length; i++) {
-					div += "<p class='warning'><span class='hl-functionality'>" + resultVO.lostExplorers[i].name + "</span> left.</p>";
+					div += "<p class='warning'><span class='hl-functionality'>" + resultVO.lostExplorers[i].name + "</span> đã rời đi.</p>";
 				}
 			}
 
@@ -1196,7 +1251,7 @@ define([
 				for (let i = 0; i < resultVO.gainedExplorerInjuries.length; i++) {
 					let explorerID = resultVO.gainedExplorerInjuries[i];
 					let explorerVO = GameGlobals.playerHelper.getExplorerByID(explorerID);
-					div += "<p class='warning'>" + explorerVO.name + " got injured.</p>";
+					div += "<p class='warning'>" + explorerVO.name + " bị thương.</p>";
 				}
 			}
 
@@ -1205,7 +1260,7 @@ define([
 					let explorerID = resultVO.lostExplorerInjuries[i];
 					let explorerVO = GameGlobals.playerHelper.getExplorerByID(explorerID);
 					if (explorerVO) {
-						div += "<p>" + explorerVO.name + " got healed.</p>";
+						div += "<p>" + explorerVO.name + " đã lành vết thương.</p>";
 					}
 				}
 			}
@@ -1214,40 +1269,63 @@ define([
 				let perkVO = resultVO.gainedPerks[i];
 
 				if (perkVO.type == PerkConstants.perkTypes.injury) {
-					div += "<p class='warning'>You got injured.</p>";
+					div += "<p class='warning'>" + Text.t("ui.exploration.action_result_perk_injured_message") + "</p>";
 				}
 
 				if (perkVO.id == PerkConstants.perkIds.cursed) {
-					div += "<p class='warning'>You got cursed.</p>";
+					div += "<p class='warning'>" + Text.t("ui.exploration.action_result_perk_cursed_message") + "</p>";
 				}
 
 				if (perkVO.id == PerkConstants.perkIds.stressed) {
-					div += "<p class='warning'>You got stressed.</p>";
+					div += "<p class='warning'>" + Text.t("ui.exploration.action_result_perk_stressed_message") + "</p>";
 				}
 
 				if (perkVO.id == PerkConstants.perkIds.accomplished) {
-					div += "<p>You feel accomplished.</p>";
+					div += "<p>" + Text.t("ui.exploration.action_result_perk_accomplished_message") + "</p>";
 				}
 			}
 
 			if (resultVO.lostPerks.length > 0) {
 				let lostNegativePerks = resultVO.lostPerks.filter(p => p && PerkConstants.isNegative(p));
 				if (lostNegativePerks.length > 0) {
-					div += "<p>Got rid of " + TextConstants.getListText(lostNegativePerks.map(perkVO => perkVO.name)) + ".</p>";
+					div += "<p>Đã loại bỏ " + TextConstants.getListText(lostNegativePerks.map(perkVO => perkVO.name)) + ".</p>";
 				}
 
 				let lostPositivePerks = resultVO.lostPerks.filter(p => p && !PerkConstants.isNegative(p));
 				if (lostPositivePerks.length > 0) {
-					div += "<p class='warning'>You lost " + TextConstants.getListText(lostPositivePerks.map(perkVO => perkVO.name)) + ".</p>";
+					div += "<p class='warning'>Bạn mất " + TextConstants.getListText(lostPositivePerks.map(perkVO => perkVO.name)) + ".</p>";
 				}
 			}
 
 			if (resultVO.lostCurrency > 0) {
-				div += "<p class='warning'>You lost " + resultVO.lostCurrency + " silver.</p>";
+				div += "<p class='warning'>Bạn mất " + resultVO.lostCurrency + " bạc.</p>";
 			}
 
 			div += "</div>";
 			return div;
+		},
+
+		getInventoryManagementDiv: function () {			
+			let html = "<div id='resultlist-inventorymanagement' class='unselectable'>";
+
+			html += "<h3 class='hide-from-visual-layout'>Quản lý túi đồ</h3>";
+
+			html += "<div id='resultlist-inventorymanagement-found' class='infobox inventorybox'>";
+			html += "<h4 class='hide-from-visual-layout'>Đã tìm thấy</h4>";
+			html += "<ul></ul>";
+			html += "<p class='msg-empty p-meta'></p>";
+			html += "</div>"
+
+			html += "<div id='resultlist-inventorymanagement-kept' class='infobox inventorybox'>";
+			html += "<h4 class='hide-from-visual-layout'>Túi</h4>";
+			html += "<ul></ul>";
+			html += "<p class='msg-empty p-meta'></p>";
+			html += "</div>"
+
+			html += "<div id='inventory-popup-bar' class='progress-wrap progress centered' style='margin-top: 10px'><div class='progress-bar progress'></div><span class='progress-label progress'>?/?</span></div>";
+			html += "</div>"
+
+			return html;
 		},
 
 		addExplorerBonusesToRewardDiv: function (resultVO) {
@@ -1264,18 +1342,18 @@ define([
 					explorer = explorersComponent.getExplorerInPartyByType(ExplorerConstants.explorerType.SCOUT);
 				}
 
-				let displayName = explorer ? "<span class='hl-functionality'>" + explorer.name + "</span>" : "Explorers";
+				let displayName = explorer ? "<span class='hl-functionality'>" + explorer.name + "</span>" : "Các nhà thám hiểm";
 				
 				let displayFinds = "";
 				let totalResources = resultVO.gainedResourcesFromExplorers.getTotal();
 				let totalItems = resultVO.gainedItemsFromExplorers.length;
 				if (totalResources > 0 && totalItems == 0) {
 					if (resultVO.gainedResourcesFromExplorers.isOnlySupplies()) {
-						displayFinds = "some supplies";
+						displayFinds = "một ít nhu yếu phẩm";
 					} else if (resultVO.gainedResourcesFromExplorers.isOneResource()) {
-						displayFinds = "some " + resultVO.gainedResourcesFromExplorers.getNames()[0];
+						displayFinds = "một ít " + resultVO.gainedResourcesFromExplorers.getNames()[0];
 					} else {
-						displayFinds = "some resources";
+						displayFinds = "một ít tài nguyên";
 					}
 				} else if (totalItems == 1 && totalResources == 0) {
 					let itemName = ItemConstants.getItemDisplayName(resultVO.gainedItemsFromExplorers[0]);
@@ -1292,28 +1370,28 @@ define([
 					if (uniqueNames.length == 1) {
 						displayFinds = totalItems + " " + Text.pluralify(uniqueNames[0]);
 					} else if (uniqueTypes.length == 1) {
-						displayFinds = "some " + ItemConstants.getItemTypeDisplayName(uniqueTypes[0]);
+						displayFinds = "một ít " + ItemConstants.getItemTypeDisplayName(uniqueTypes[0]);
 					} else {
-						displayFinds = "some items";
+						displayFinds = "một số vật phẩm";
 					}
 				} else {
-					displayFinds = "some things";
+					displayFinds = "một vài thứ";
 				}
 				
 				div += "<div>";
-				div += displayName + " found " + displayFinds;
+				div += displayName + " tìm thấy " + displayFinds;
 				div += "</div>";
 			}
 			
 			if (GameGlobals.playerHelper.getPartyAbilityLevel(ExplorerConstants.abilityType.SCAVENGE_BLUEPRINTS) > 0) {
 				let explorer = explorersComponent.getExplorerInPartyByType(ExplorerConstants.explorerType.SCAVENGER);
 
-				let displayName = explorer ? "<span class='hl-functionality'>" + explorer.name + "</span>" : "Explorers";
-				let displayFinds = " a blueprint";
+				let displayName = explorer ? "<span class='hl-functionality'>" + explorer.name + "</span>" : "Các nhà thám hiểm";
+				let displayFinds = " một bản thiết kế";
 
 				if (resultVO.gainedBlueprintPiece && Math.random() < 0.75) {
 					div += "<div>";
-					div += displayName + " found " + displayFinds;
+					div += displayName + " tìm thấy " + displayFinds;
 					div += "</div>";
 				}
 			}
@@ -1359,15 +1437,19 @@ define([
 	
 			if (resultVO.selectedItems) {
 				for (let i = 0; i < resultVO.selectedItems.length; i++) {
-					var item = resultVO.selectedItems[i];
-					var isInteresting = 
+					let item = resultVO.selectedItems[i];
+					if (!item) {
+						log.e("null item in resultVO.selectedItems (action:" + resultVO.action + ")");
+						continue;
+					}
+					let isInteresting = 
 						itemsComponent.getCountById(item.id, true) === 1 &&
 						!(item.equippable && !item.equipped) &&
 						item.type !== ItemConstants.itemTypes.artefact &&
 						item.type !== ItemConstants.itemTypes.trade;
 					if (isInteresting) {
 						let itemName = ItemConstants.getItemDisplayName(item);
-						messages.push({ id: LogConstants.MSG_ID_FOUND_ITEM_FIRST, text: "Found " + Text.addArticle(itemName) + ".", addToPopup: true, addToLog: true });
+						messages.push({ id: LogConstants.MSG_ID_FOUND_ITEM_FIRST, text: "Tìm thấy " + itemName + ".", addToPopup: true, addToLog: true });
 					}
 				}
 			}
@@ -1387,26 +1469,26 @@ define([
 			}
 				
 			if (resultVO.lostExplorers && resultVO.lostExplorers.length > 0) {
-				messages.push({ id: LogConstants.MSG_ID_LOST_EXPLORER, text: "Lost " + resultVO.lostExplorers.length + " explorers.", addToPopup: true, addToLog: true });
+				messages.push({ id: LogConstants.MSG_ID_LOST_EXPLORER, text: "Mất " + resultVO.lostExplorers.length + " nhà thám hiểm.", addToPopup: true, addToLog: true });
 			}
 
 			for (let i = 0; i < resultVO.gainedPerks.length; i++) {
 				let perkVO = resultVO.gainedPerks[i];
 
 				if (perkVO.type == PerkConstants.perkTypes.injury) {
-					messages.push({ id: LogConstants.MSG_ID_GOT_INJURED, text: "Got injured.", addToPopup: true, addToLog: true });
+					messages.push({ id: LogConstants.MSG_ID_GOT_INJURED, text: "Bị thương.", addToPopup: true, addToLog: true });
 				}
 
 				if (perkVO.id == PerkConstants.perkIds.cursed) {
-					messages.push({ id: LogConstants.getUniqueID(), text: "Got cursed.", addToPopup: true, addToLog: true });
+					messages.push({ id: LogConstants.getUniqueID(), text: "Bị nguyền rủa.", addToPopup: true, addToLog: true });
 				}
 
 				if (perkVO.id == PerkConstants.perkIds.stressed) {
-					messages.push({ id: LogConstants.getUniqueID(), text: "Got stressed.", addToPopup: true, addToLog: true });
+					messages.push({ id: LogConstants.getUniqueID(), text: "Bị căng thẳng.", addToPopup: true, addToLog: true });
 				}
 
 				if (perkVO.id == PerkConstants.perkIds.accomplished) {
-					messages.push({ id: LogConstants.getUniqueID(), text: "Feeling accomplished.", addToPopup: true, addToLog: true });
+					messages.push({ id: LogConstants.getUniqueID(), text: "Cảm thấy mãn nguyện.", addToPopup: true, addToLog: true });
 				}
 			}
 
@@ -1414,7 +1496,7 @@ define([
 				for (let i = 0; i < resultVO.gainedExplorerInjuries.length; i++) {
 					let explorerID = resultVO.gainedExplorerInjuries[i];
 					let explorerVO = GameGlobals.playerHelper.getExplorerByID(explorerID);
-					messages.push({ id: LogConstants.getUniqueID(), text: explorerVO.name + " got injured.", addToPopup: true, addToLog: true });
+					messages.push({ id: LogConstants.getUniqueID(), text: explorerVO.name + " bị thương.", addToPopup: true, addToLog: true });
 				}
 			}
 
@@ -1422,7 +1504,7 @@ define([
 				for (let i = 0; i < resultVO.lostExplorerInjuries.length; i++) {
 					let explorerID = resultVO.lostExplorerInjuries[i];
 					let explorerVO = GameGlobals.playerHelper.getExplorerByID(explorerID);
-					messages.push({ id: LogConstants.getUniqueID(), text: explorerVO.name + " got healed.", addToPopup: true, addToLog: true });
+					messages.push({ id: LogConstants.getUniqueID(), text: explorerVO.name + " đã được chữa trị.", addToPopup: true, addToLog: true });
 				}
 			}
 
@@ -1551,7 +1633,7 @@ define([
 			let efficiency = this.getCurrentScavengeEfficiency();
 			
 			var playerPos = this.playerLocationNodes.head.position;
-			var campOrdinal = GameGlobals.gameState.getCampOrdinal(playerPos.level);
+			var campOrdinal = GameGlobals.worldState.getCampOrdinal(playerPos.level);
 			var step = GameGlobals.levelHelper.getCampStep(playerPos);
 			
 			let hasDecentEfficiency = efficiency > 0.25;
@@ -1618,7 +1700,7 @@ define([
 			let result = [];
 			
 			let playerPos = this.playerLocationNodes.head.position;
-			let campOrdinal = GameGlobals.gameState.getCampOrdinal(playerPos.level);
+			let campOrdinal = GameGlobals.worldState.getCampOrdinal(playerPos.level);
 			if (campOrdinal <= ExplorerConstants.FIRST_EXPLORER_CAMP_ORDINAL) return result;
 
 			let fallback = this.getFallbackExplorer();
@@ -1776,73 +1858,8 @@ define([
 		},
 
 		getSectorItemTags: function () {
-			let tags = [];
 			let sectorFeatures = this.playerLocationNodes.head.entity.get(SectorFeaturesComponent);
-
-			tags.push(ItemConstants.itemTags.old);
-			
-			switch (sectorFeatures.sectorType) {
-				case SectorConstants.SECTOR_TYPE_RESIDENTIAL:
-					tags.push(ItemConstants.itemTags.book);
-					tags.push(ItemConstants.itemTags.clothing);
-					tags.push(ItemConstants.itemTags.community);
-					tags.push(ItemConstants.itemTags.keepsake);
-					tags.push(ItemConstants.itemTags.perishable);
-					tags.push(ItemConstants.itemTags.valuable);
-					break;
-				case SectorConstants.SECTOR_TYPE_INDUSTRIAL:
-					tags.push(ItemConstants.itemTags.clothing);
-					tags.push(ItemConstants.itemTags.community);
-					tags.push(ItemConstants.itemTags.industrial);
-					tags.push(ItemConstants.itemTags.medical);
-					tags.push(ItemConstants.itemTags.science);
-					break;
-				case SectorConstants.SECTOR_TYPE_MAINTENANCE:
-					tags.push(ItemConstants.itemTags.equipment);
-					tags.push(ItemConstants.itemTags.maintenance);
-					tags.push(ItemConstants.itemTags.weapon);
-					break;
-				case SectorConstants.SECTOR_TYPE_PUBLIC:
-					tags.push(ItemConstants.itemTags.book);
-					tags.push(ItemConstants.itemTags.community);
-					tags.push(ItemConstants.itemTags.history);
-					tags.push(ItemConstants.itemTags.science);
-					tags.push(ItemConstants.itemTags.medical);
-					break;
-				case SectorConstants.SECTOR_TYPE_COMMERCIAL:
-					tags.push(ItemConstants.itemTags.clothing);
-					tags.push(ItemConstants.itemTags.community);
-					tags.push(ItemConstants.itemTags.perishable);
-					tags.push(ItemConstants.itemTags.valuable);
-					break;
-				case SectorConstants.SECTOR_TYPE_SLUM:
-					tags.push(ItemConstants.itemTags.community);
-					tags.push(ItemConstants.itemTags.equipment);
-					tags.push(ItemConstants.itemTags.keepsake);
-					tags.push(ItemConstants.itemTags.weapon);
-					break;
-			}
-
-			if (sectorFeatures.wear > 5) tags.push(ItemConstants.itemTags.history);
-			if (sectorFeatures.ground) tags.push(ItemConstants.itemTags.nature);
-			if (sectorFeatures.sunlit) tags.push(ItemConstants.itemTags.nature);
-			
-			if (sectorFeatures.hazards.territory > 0) tags.push(ItemConstants.itemTags.weapon);
-
-			if (sectorFeatures.hazards.flooded > 0) {
-				tags = tags.filter(t => t != ItemConstants.itemTags.book);
-				tags = tags.filter(t => t != ItemConstants.itemTags.perishable);
-			}
-			
-			if (sectorFeatures.hazards.radiation > 0) {
-				tags = tags.filter(t => t != ItemConstants.itemTags.perishable);
-			}
-			
-			if (sectorFeatures.hazards.poison > 0) {
-				tags = tags.filter(t => t != ItemConstants.itemTags.perishable);
-			}
-
-			return tags;
+			return ItemConstants.getSectorItemTags(sectorFeatures.sectorType, sectorFeatures.wear, sectorFeatures.hazards, sectorFeatures.ground, sectorFeatures.sunlit);
 		},
 
 		getSpecificRewardItem: function (itemProbability, possibleItemIds) {
@@ -1904,7 +1921,7 @@ define([
 		
 		getNecessityIngredient: function (ingredientProbability) {			
 			var playerPos = this.playerLocationNodes.head.position;
-			var campOrdinal = GameGlobals.gameState.getCampOrdinal(playerPos.level);
+			var campOrdinal = GameGlobals.worldState.getCampOrdinal(playerPos.level);
 			var step = GameGlobals.levelHelper.getCampStep(playerPos);
 			var levelComponent = GameGlobals.levelHelper.getLevelEntityForPosition(playerPos.level).get(LevelComponent);
 			var isHardLevel = levelComponent.isHard;
@@ -1997,18 +2014,21 @@ define([
 
 			let stashVO = null;
 			for (let i = 0; i < stashes.length; i++) {
-				if (stashesFound && stashesFound.indexOf(i) >= 0) continue;
 				let possibleStashVO = stashes[i];
+				let stashID = possibleStashVO.getStashID();
+				if (stashesFound && stashesFound.indexOf(stashID) >= 0) continue;
 				if (possibleStashVO.localeType != localeType) continue;
 
 				if (possibleStashVO.stashType == ItemConstants.STASH_TYPE_ITEM) {
 					let itemID = possibleStashVO.itemID;
 					let numOwned = itemsComponent.getCountByBaseId(ItemConstants.getBaseItemID(itemID), true);
-					if (numOwned >= 5) continue;
+					let maxOwned = 5;
+					let itemVO = ItemConstants.getItemDefinitionByID(itemID);
+					if (itemVO.type == ItemConstants.itemTypes.uniqueEquipment) maxOwned = 1;
+					if (numOwned >= maxOwned) continue;
 				}
 				
 				stashVO = possibleStashVO;
-				stashVO.stashIndex = i;
 				break;
 			}
 
@@ -2364,7 +2384,7 @@ define([
 				let allowedTypes = this.getAllowedInjuryTypes(action, enemyVO, sectorFeatures);
 				
 				let injury = PerkConstants.getRandomInjury(allowedTypes);
-				result.push(injury.clone());
+				if (injury) result.push(injury.clone());
 			}
 			
 			return result;
@@ -2465,9 +2485,9 @@ define([
 			if (!localeVO.hasBlueprints) return null;
 			
 			let playerPos = this.playerLocationNodes.head.position;
-			let campOrdinal = GameGlobals.gameState.getCampOrdinal(playerPos.level);
-			let levelIndex = GameGlobals.gameState.getLevelIndex(playerPos.level);
-			let maxLevelIndex = GameGlobals.gameState.getMaxLevelIndex(playerPos.level);
+			let campOrdinal = GameGlobals.worldState.getCampOrdinal(playerPos.level);
+			let levelIndex = GameGlobals.worldState.getLevelIndex(playerPos.level);
+			let maxLevelIndex = GameGlobals.worldState.getMaxLevelIndex(playerPos.level);
 
 			let blueprintType = localeVO.isEarly ? UpgradeConstants.BLUEPRINT_BRACKET_EARLY : UpgradeConstants.BLUEPRINT_BRACKET_LATE;
 			let levelBlueprints = UpgradeConstants.getBlueprintsByCampOrdinal(campOrdinal, blueprintType, levelIndex, maxLevelIndex);
@@ -2573,8 +2593,6 @@ define([
 					return UpgradeConstants.UPGRADE_TYPE_HOPE;
 				case SectorConstants.SECTOR_TYPE_COMMERCIAL:
 					return UpgradeConstants.UPGRADE_TYPE_HOPE;
-				case SectorConstants.SECTOR_TYPE_SLUM:
-					return UpgradeConstants.UPGRADE_TYPE_RUMOURS;
 			}
 
 			return null;
@@ -2587,16 +2605,20 @@ define([
 				case localeTypes.clinic: return UpgradeConstants.UPGRADE_TYPE_EVIDENCE;
 				case localeTypes.factory: return UpgradeConstants.UPGRADE_TYPE_EVIDENCE;
 				case localeTypes.farm: return UpgradeConstants.UPGRADE_TYPE_HOPE;
+				case localeTypes.garden: return UpgradeConstants.UPGRADE_TYPE_HOPE;
 				case localeTypes.grocery: return UpgradeConstants.UPGRADE_TYPE_HOPE;
+				case localeTypes.hospital: return UpgradeConstants.UPGRADE_TYPE_EVIDENCE;
 				case localeTypes.house: return UpgradeConstants.UPGRADE_TYPE_RUMOURS;
+				case localeTypes.junkyard: return UpgradeConstants.UPGRADE_TYPE_RUMOURS;
 				case localeTypes.lab: return UpgradeConstants.UPGRADE_TYPE_EVIDENCE;
+				case localeTypes.library: return UpgradeConstants.UPGRADE_TYPE_EVIDENCE;
 				case localeTypes.market: return UpgradeConstants.UPGRADE_TYPE_RUMOURS;
 				case localeTypes.office: return UpgradeConstants.UPGRADE_TYPE_EVIDENCE;
+				case localeTypes.pharmacy: return UpgradeConstants.UPGRADE_TYPE_EVIDENCE;
 				case localeTypes.restaurant: return UpgradeConstants.UPGRADE_TYPE_HOPE;
-				case localeTypes.hospital: return UpgradeConstants.UPGRADE_TYPE_EVIDENCE;
-				case localeTypes.junkyard: return UpgradeConstants.UPGRADE_TYPE_RUMOURS;
 				case localeTypes.store: return UpgradeConstants.UPGRADE_TYPE_HOPE;
 				case localeTypes.tradingpartner: return UpgradeConstants.UPGRADE_TYPE_RUMOURS;
+				case localeTypes.train: return UpgradeConstants.UPGRADE_TYPE_RUMOURS;
 			}
 
 			return null;
@@ -2606,7 +2628,7 @@ define([
 			// TODO extend to all predefined explorers (now first one only)
 			
 			let playerPos = this.playerLocationNodes.head.position;
-			let campOrdinal = GameGlobals.gameState.getCampOrdinal(playerPos.level);
+			let campOrdinal = GameGlobals.worldState.getCampOrdinal(playerPos.level);
 			if (campOrdinal < ExplorerConstants.FIRST_EXPLORER_CAMP_ORDINAL) return null;
 			
 			let upgradeID = GameGlobals.upgradeEffectsHelper.getUpgradeToUnlockBuilding(improvementNames.inn);
@@ -2619,7 +2641,7 @@ define([
 			if (nearestCampNode == null) return null;
 			if (nearestCampNode.camp.pendingRecruits.length > 0) return null;
 			
-			let level = GameGlobals.gameState.getLevelForCamp(ExplorerConstants.FIRST_EXPLORER_CAMP_ORDINAL);
+			let level = GameGlobals.worldState.getLevelForCamp(ExplorerConstants.FIRST_EXPLORER_CAMP_ORDINAL);
 			let unscoutedLocales = GameGlobals.levelHelper.getLevelLocales(level, false, LocaleConstants.LOCALE_BRACKET_EARLY, null, false).length;
 			if (unscoutedLocales > 0) return null;
 			
@@ -2633,16 +2655,16 @@ define([
 			let missedBlueprints = [];
 			let playerPos = this.playerLocationNodes.head.position;
 			let upgradesComponent = this.tribeUpgradesNodes.head.upgrades;
-			let levelOrdinal = GameGlobals.gameState.getLevelOrdinal(playerPos.level);
+			let levelOrdinal = GameGlobals.worldState.getLevelOrdinal(playerPos.level);
 
 			for (let i = 1; i <= levelOrdinal; i++) {
-				let level = GameGlobals.gameState.getLevelForOrdinal(i);
+				let level = GameGlobals.worldState.getLevelForOrdinal(i);
 				let allLocales = GameGlobals.levelHelper.getLevelLocales(level, true, null, true).length;
 				let unscoutedLocales = GameGlobals.levelHelper.getLevelLocales(level, false, null, true).length;
 				if (allLocales > 0 && unscoutedLocales === 0) {
-					let c = GameGlobals.gameState.getCampOrdinal(level);
-					let levelIndex = GameGlobals.gameState.getLevelIndex(level);
-					let maxLevelIndex = GameGlobals.gameState.getMaxLevelIndex(level);
+					let c = GameGlobals.worldState.getCampOrdinal(level);
+					let levelIndex = GameGlobals.worldState.getLevelIndex(level);
+					let maxLevelIndex = GameGlobals.worldState.getMaxLevelIndex(level);
 					let levelBlueprints = UpgradeConstants.getBlueprintsByCampOrdinal(c, null, levelIndex, maxLevelIndex);
 					for (let j = 0; j < levelBlueprints.length; j++) {
 						var blueprintID = levelBlueprints[j];

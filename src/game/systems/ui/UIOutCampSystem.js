@@ -113,6 +113,7 @@
 			GlobalSignals.add(this, GlobalSignals.playerLocationChangedSignal, this.onPlayerPositionChanged);
 			GlobalSignals.add(this, GlobalSignals.campRenamedSignal, this.onCampRenamed);
 			GlobalSignals.add(this, GlobalSignals.populationChangedSignal, this.onPopulationChanged);
+			GlobalSignals.add(this, GlobalSignals.playerEnteredCampSignal, this.onCampEntered);
 			GlobalSignals.add(this, GlobalSignals.campEventStartedSignal, this.onCampEventStarted);
 			GlobalSignals.add(this, GlobalSignals.campEventEndedSignal, this.onCampEventEnded);
 			GlobalSignals.add(this, GlobalSignals.workersAssignedSignal, this.onWorkersAssigned);
@@ -151,7 +152,7 @@
 
 			this.updateImprovements();
 			this.updateBubble();
-			this.updateStats();
+			this.updateCampStatus();
 			this.updatePopulationDisplaySlow();
 		},
 
@@ -166,7 +167,7 @@
 			this.updateLayout();
 
 			let position = this.playerPosNodes.head.position.getPosition();
-			let campOrdinal = GameGlobals.gameState.getCampOrdinal(position.level);
+			let campOrdinal = GameGlobals.worldState.getCampOrdinal(position.level);
 
 			// Header
 			let isOutpost = GameGlobals.campBalancingHelper.isOutpost(campOrdinal);
@@ -177,7 +178,8 @@
 			this.updateAssignedWorkers();
 			this.updateWorkerMaxDescriptions();
 			this.updateImprovements();
-			this.updateStats();
+			this.updateCampStatus();
+			this.updateCampDemographics();
 			this.updateNews();
 			this.updateBubble();
 			this.updateCharactersDisplay();
@@ -215,9 +217,9 @@
 		updateWorkerStepper: function (campComponent, id, workerType, maxWorkers, showMax, isAutoAssigned) {
 			GameGlobals.uiFunctions.toggle($(id).closest("tr"), maxWorkers > 0);
 
-			var freePopulation = Math.max(0, campComponent.getFreePopulation()) || 0;
-			var assignedWorkers = Math.max(0, campComponent.assignedWorkers[workerType]) || 0;
-			var maxAssigned = Math.min(assignedWorkers + freePopulation, maxWorkers);
+			let freePopulation = Math.max(0, campComponent.getFreePopulation()) || 0;
+			let assignedWorkers = Math.max(0, campComponent.assignedWorkers[workerType]) || 0;
+			let maxAssigned = Math.min(assignedWorkers + freePopulation, maxWorkers);
 			GameGlobals.uiFunctions.updateStepper(id, assignedWorkers, 0, maxAssigned);
 			
 			let $checkbox = $("#in-assing-worker-auto-" + workerType);
@@ -303,16 +305,16 @@
 
 				let hint = this.getPopulationDecreaseHint();
 				if (hint) {
-					this.elements.populationDecreaseHint.text("People are leaving because of: " + hint);
+					this.elements.populationDecreaseHint.text("Người rời đi vì: " + hint);
 				} else {
-					this.elements.populationDecreaseHint.text("People are leaving because of: low reputation");
+					this.elements.populationDecreaseHint.text("Người rời đi vì: danh tiếng thấp");
 				}
 			}
 
 			let progressLabel = UIConstants.getTimeToNum(secondsToChange);
 			
-			if (populationChangePerSec === 0) progressLabel = "no change";
-			if (isOnPopulationDecreaseCooldown) progressLabel = "cooldown";
+			if (populationChangePerSec === 0) progressLabel = "không thay đổi";
+			if (isOnPopulationDecreaseCooldown) progressLabel = "thời gian chờ";
 
 			this.elements.populationProgressBar.toggleClass("warning", populationChangePerSec < 0);
 			this.elements.populationProgressBar.data("progress-percent", progress * 100);
@@ -357,7 +359,7 @@
 			}
 			
 			if (robots >= 1) {
-				robotCalloutContent += "<br/>worker resource production: +" + UIConstants.roundValue(robotBonus * 100, true, false) + "%";
+				robotCalloutContent += "<br/>sản lượng tài nguyên do lao động: +" + UIConstants.roundValue(robotBonus * 100, true, false) + "%";
 			}
 			
 			UIConstants.updateCalloutContent(this.elements.populationRobotsContainer, robotCalloutContent);
@@ -373,14 +375,16 @@
 			indicator.toggleClass("indicator-decrease", accumulation < 0);
 		},
 
-		updateAssignedWorkers: function (campComponent) {
-			var campComponent = this.playerLocationNodes.head.entity.get(CampComponent);
+		updateAssignedWorkers: function () {
+			let campComponent = this.playerLocationNodes.head.entity.get(CampComponent);
 			if (!campComponent) return;
 				
 			for (let key in CampConstants.workerTypes) {
 				var def = CampConstants.workerTypes[key];
 				UIConstants.updateCalloutContent("#in-assign-" + key + " .in-assign-worker-desc .info-callout-target", this.getWorkerDescription(def), true);
 			}
+
+			let workerFactors = GameGlobals.campHelper.getWorkerFactors(this.playerLocationNodes.head.position.level);
 			
 			for (let key in CampConstants.workerTypes) {
 				let def = CampConstants.workerTypes[key];
@@ -388,6 +392,11 @@
 				let showMax = maxWorkers >= 0;
 				let isAutoAssigned = campComponent.autoAssignedWorkers[key] || false;
 				if (maxWorkers < 0) maxWorkers = GameGlobals.campHelper.getCampMaxPopulation(this.playerLocationNodes.head.entity);
+				let workerFactor = workerFactors[def.id] || 1;
+
+				let hasBonus = workerFactor > 1;
+				GameGlobals.uiFunctions.toggle($("#in-assign-" + key + " .in-assign-worker-bonus-icon"), hasBonus);
+
 				this.updateWorkerStepper(campComponent, "#stepper-" + def.id, def.id, maxWorkers, showMax, isAutoAssigned);
 			}
 		},
@@ -395,7 +404,7 @@
 		updateWorkerMaxDescriptions: function () {
 			var improvements = this.playerLocationNodes.head.entity.get(SectorImprovementsComponent);
 			var posComponent = this.playerPosNodes.head.position;
-			var campOrdinal = GameGlobals.gameState.getCampOrdinal(posComponent.level);
+			var campOrdinal = GameGlobals.worldState.getCampOrdinal(posComponent.level);
 			var workshops = GameGlobals.levelHelper.getWorkshopsByResourceForCamp(campOrdinal);
 			
 			for (var key in CampConstants.workerTypes) {
@@ -422,7 +431,7 @@
 			let population = campComponent.population;
 			let hasCampfire = improvements.getCount(improvementNames.campfire);
 
-			let validCharacterTypes = GameGlobals.campHelper.getValidCampCharacters(campComponent);
+			let validCharacterTypes = GameGlobals.campHelper.getValidCampCharacters(campComponent, false);
 
 			if (!hasCampfire || population < 1 || validCharacterTypes.length < 1) {
 				campComponent.displayedCharacters = [];
@@ -503,6 +512,8 @@
 			GameGlobals.uiFunctions.toggle("#in-characters", characterData.length > 0);
 			UIList.update(this.characterList, characterData);
 			GameGlobals.uiFunctions.createButtons("#in-characters");
+			GameGlobals.uiFunctions.generateInfoCallouts("#in-characters");
+			GameGlobals.uiFunctions.updateInfoCallouts("#in-characters");
 		},
 
 		createCharacterListItem: function () {
@@ -605,15 +616,18 @@
 				let hasUseActionExtra = PlayerActionConstants.hasAction(useActionExtra);
 				let dismantleAction = "dismantle_in_" + key;
 				let canBeDismantled = def.canBeDismantled || false;
+
 				
 				let buildButton = "<button class='action action-build action-location' data-tab='switch-in' action='" + buildAction +"'>" + "" + "</button>";
 				var useButton = "";
 				if (hasUseAction) {
-					useButton = "<button class='action action-use action-location btn-narrow' data-tab='switch-in' action='" + useAction + "'>" + def.useActionName + "</button>";
+					let useActionLabel = Text.t(def.useActionNameKey);
+					useButton = "<button class='action action-use action-location btn-narrow' data-tab='switch-in' action='" + useAction + "'>" + useActionLabel + "</button>";
 				}
 				let useButton2 = "";
 				if (hasUseActionExtra) {
-					useButton2 = "<button class='action action-use2 action-location btn-narrow' data-tab='switch-in' action='" + useActionExtra + "'>" + def.useActionName2 + "</button>";
+					let useActionLabel2 = Text.t(def.useActionName2Key);
+					useButton2 = "<button class='action action-use2 action-location btn-narrow' data-tab='switch-in' action='" + useActionExtra + "'>" + useActionLabel2 + "</button>";
 				}
 				let improveButton = "";
 				if (hasImproveAction) {
@@ -623,8 +637,8 @@
 				if (canBeDismantled) {
 					dismantleButton = "<button class='action action-dismantle btn-glyph-big' data-tab='switch-in' action='" + dismantleAction + "'>×</button>";
 				}
-				let repairButton = "<button class='action action-repair btn-narrow' data-tab='switch-in' action='repair_in_" + key + "'>Repair</button>";
-				let damagedIcon = "<img src='img/eldorado/icon-gear-warning.png' class='icon-damaged icon-ui-generic icon-centered' alt='Building damaged' title='Building damaged' />"
+				let repairButton = "<button class='action action-repair btn-narrow' data-tab='switch-in' action='repair_in_" + key + "'>Sửa chữa</button>";
+				let damagedIcon = "<img src='img/eldorado/icon-gear-warning.png' class='icon-damaged icon-ui-generic icon-centered' alt='Công trình bị hư hại' title='Công trình bị hư hại' />"
 				
 				tds += "<td>" + buildButton + "</td>";
 				tds += "<td><span class='improvement-badge improvement-count'>0</span></td>";
@@ -635,7 +649,10 @@
 				tds += "<td>" + useButton + "" + useButton2 + "" + repairButton + "</td>";
 				trs += "<tr id='in-improvements-" + key + "'>" + tds + "</tr>";
 			}
-			let ths = "<tr class='header-mini'><th></th><th>count</th><th>lvl</th><th></th><th></th><th></th></tr>"
+
+			let countText = Text.t("ui.camp.improvement_count_header");
+			let levelText = Text.t("ui.camp.improvement_level_header");
+			let ths = "<tr class='header-mini'><th></th><th>" + countText + "</th><th>" + levelText + "</th><th></th><th></th><th></th></tr>"
 			$table.append(ths);
 			$table.append(trs);
 			
@@ -675,10 +692,11 @@
 				let def = CampConstants.workerTypes[key];
 				let tds = "";
 				let displayName = CampConstants.getWorkerDisplayName(key);
-				tds += "<td class='in-assign-worker-desc'><div class='info-callout-target info-callout-target-small'>" + displayName + "</div></td>";
+				let campBonusIcon = UIConstants.getThemedIcon("img/eldorado/icon-star.png", "thưởng", null, [ "in-assign-worker-bonus-icon", "inline-icon" ]);
+				tds += "<td class='in-assign-worker-desc'><div class='info-callout-target info-callout-target-small'>" + displayName + "</div>" + campBonusIcon +  "</td>";
 				tds += "<td><div class='stepper' id='stepper-" + def.id + "'></div></td>";
 				tds += "<td class='in-assign-worker-limit'><div class='info-callout-target info-callout-target-small'></div></td>"
-				tds += "<td class='in-assign-worker-auto'><input type='checkbox' id='in-assing-worker-auto-" + def.id + "' class='in-assign-workers-auto-toggle' title='Auto-assign worker' /></td>"
+				tds += "<td class='in-assign-worker-auto'><input type='checkbox' id='in-assing-worker-auto-" + def.id + "' class='in-assign-workers-auto-toggle' title='Tự động phân công lao động' /></td>"
 				
 				trs += "<tr id='in-assign-" + key + "'>" + tds + "</tr>";
 			}
@@ -771,7 +789,7 @@
 					let numBuilt = improvements.getCount(improvementName);
 					let numDamaged = improvements.getNumDamaged(improvementName);
 					let damagedSource = improvements.getVO(improvementName).damagedSource;
-					let damageDescription = "Building damaged";
+					let damageDescription = "Công trình bị hư hại";
 					if (damagedSource) {
 						damageDescription += " by " + damagedSource;
 					}
@@ -831,7 +849,7 @@
 						var bar = '';
 						bar += '<div id="in-occurrences-outgoing-caravans-' + i + '" class="progress-wrap progress">';
 						bar += '<div class="progress-bar progress"></div>';
-						bar += '<span class="progress progress-label">Outgoing caravan</span>';
+						bar += '<span class="progress progress-label">Đoàn xe đang đi</span>';
 						bar += '</div>';
 						$("#in-occurrences-outgoing-caravans-container").append(bar);
 					}
@@ -912,8 +930,8 @@
 				let pop = campComponent.disabledPopulation[i];
 				if (pop.num > 0) {
 					let percent = Math.round((pop.initialTimer - pop.timer) / pop.initialTimer * 100);
-					let label = "disabled workers (" + pop.num + ")";
-					if (pop.reason == CampConstants.DISABLED_POPULATION_REASON_DISEASE) label = "disease (" + pop.num + ")";
+					let label = "lao động bị vô hiệu hóa (" + pop.num + ")";
+					if (pop.reason == CampConstants.DISABLED_POPULATION_REASON_DISEASE) label = "dịch bệnh (" + pop.num + ")";
 					let isNegative = true;
 					let hasTimer = pop.initialTimer != null;
 					result.push({ id: "disabled-worker-" + i, label: label, percent: percent, isNegative: isNegative, hasTimer: hasTimer });
@@ -922,30 +940,37 @@
 			return result;
 		},
 
-		updateStats: function () {
-			var campComponent = this.playerLocationNodes.head.entity.get(CampComponent);
+		updateCampStatus: function () {
+			let campComponent = this.playerLocationNodes.head.entity.get(CampComponent);
 			if (!campComponent) return;
 			
-			var levelComponent = this.playerLevelNodes.head.level;
+			let levelComponent = this.playerLevelNodes.head.level;
 			let sector = this.playerLocationNodes.head.entity;
 
-			var improvements = sector.get(SectorImprovementsComponent);
-			var soldiers = sector.get(CampComponent).assignedWorkers.soldier || 0;
-			var soldierLevel = GameGlobals.upgradeEffectsHelper.getWorkerLevel("soldier", this.tribeUpgradesNodes.head.upgrades);
-			var raidDanger = GameGlobals.campHelper.getCampRaidDanger(sector);
-			var raidDefence = OccurrenceConstants.getRaidDefencePoints(improvements, soldiers, soldierLevel);
+			let improvements = sector.get(SectorImprovementsComponent);
+			let soldiers = sector.get(CampComponent).assignedWorkers.soldier || 0;
+			let soldierLevel = GameGlobals.upgradeEffectsHelper.getWorkerLevel("soldier", this.tribeUpgradesNodes.head.upgrades);
+			let raidDanger = GameGlobals.campHelper.getCampRaidDanger(sector);
+			let raidDefence = OccurrenceConstants.getRaidDefencePoints(improvements, soldiers, soldierLevel);
 
-			let inGameFoundingDate = UIConstants.getInGameDate(campComponent.foundedTimeStampGameTime);
-			let showCalendar = this.tribeUpgradesNodes.head.upgrades.hasUpgrade(GameGlobals.upgradeEffectsHelper.getUpgradeIdForUIEffect(UpgradeConstants.upgradeUIEffects.calendar));
-			$("#in-demographics-general-age .value").text(inGameFoundingDate);
-			GameGlobals.uiFunctions.toggle("#in-demographics-general-age", showCalendar);
+			// trade network
+			let hasUnlockedTrade = this.hasUpgrade(GameGlobals.upgradeEffectsHelper.getUpgradeToUnlockBuilding(improvementNames.tradepost));
+			$("#in-demographics-trade-network").toggle(hasUnlockedTrade);
+			if (hasUnlockedTrade) {
+				var hasAccessToTradeNetwork = GameGlobals.resourcesHelper.hasAccessToTradeNetwork(this.playerLocationNodes.head.entity);
+				$("#in-demographics-trade-network .value").text(hasAccessToTradeNetwork ? "có" : "không");
+				$("#in-demographics-trade-network .value").toggleClass("warning", !hasAccessToTradeNetwork);
+			}
 			
+			// luxury resources
 			let availableLuxuryResources = GameGlobals.campHelper.getAvailableLuxuryResources(sector);
+			let showLuxuryResources = availableLuxuryResources.length > 0
 			let availableLuxuryResourcesInfoText = availableLuxuryResources.map(res => TribeConstants.getLuxuryDisplayName(res)).join(", ");
 			$("#in-demographics-general-luxuries .value").text(availableLuxuryResources.length);
 			UIConstants.updateCalloutContent($("#in-demographics-general-luxuries .info-icon"), availableLuxuryResourcesInfoText, true);
-			GameGlobals.uiFunctions.toggle("#in-demographics-general-luxuries", availableLuxuryResources.length > 0);
+			GameGlobals.uiFunctions.toggle("#in-demographics-general-luxuries", showLuxuryResources);
 
+			// raids
 			let showRaid = raidDanger > 0 || raidDefence > CampConstants.CAMP_BASE_DEFENCE || campComponent.population > 1;
 			if (showRaid) {
 				let showRaidWarning = raidDanger > CampConstants.REPUTATION_PENALTY_DEFENCES_THRESHOLD;
@@ -953,11 +978,12 @@
 				$("#in-demographics-raid-danger .value").text(Math.round(raidDanger * 100) + "%");
 				$("#in-demographics-raid-danger .value").toggleClass("warning", showRaidWarning);
 				UIAnimations.animateOrSetNumber($("#in-demographics-raid-defence .value"), true, raidDefence, "", false, Math.round);
-				UIConstants.updateCalloutContent("#in-demographics-raid-danger", this.getRaidDangerCalloutContent());
-				UIConstants.updateCalloutContent("#in-demographics-raid-defence", defenceS);
+				UIConstants.updateCalloutContent($("#in-demographics-raid-danger .info-icon"), this.getRaidDangerCalloutContent(), true);
+				UIConstants.updateCalloutContent($("#in-demographics-raid-defence .info-icon"), defenceS, true);
 			}
 			GameGlobals.uiFunctions.toggle("#in-demographics-raid", showRaid);
 
+			// disease
 			let showDisease = campComponent.population > 1;
 			if (showDisease) {
 				let hasHerbs = GameGlobals.campHelper.hasHerbs(sector);
@@ -965,43 +991,55 @@
 				let apothecaryLevel = GameGlobals.upgradeEffectsHelper.getWorkerLevel("apothecary", this.tribeUpgradesNodes.head.upgrades);
 				let diseaseChance = OccurrenceConstants.getDiseaseOutbreakChance(campComponent.population, hasHerbs, hasMedicine, apothecaryLevel);
 				let showDiseaseWarning = diseaseChance > CampConstants.REPUTATION_PENALTY_DEFENCES_THRESHOLD; // not related to defences but matching raid warning value
-				UIConstants.updateCalloutContent("#in-demographics-disease-chance", this.getDiseaseChanceCalloutContent());
+				UIConstants.updateCalloutContent("#in-demographics-disease-chance .info-icon", this.getDiseaseChanceCalloutContent(), true);
 				UIAnimations.animateOrSetNumber($("#in-demographics-disease-chance .value"), true, Math.round(diseaseChance * 100), "%", false, Math.round);
 				$("#in-demographics-disease-chance .value").toggleClass("warning", showDiseaseWarning);
 			}
 			GameGlobals.uiFunctions.toggle("#in-demographics-disease", showDisease);
 
-			var showLevelStats = GameGlobals.gameState.numCamps > 1;
-			if (showLevelStats) {
-				var levelComponent = this.playerLevelNodes.head.level;
-				var hasUnlockedTrade = this.hasUpgrade(GameGlobals.upgradeEffectsHelper.getUpgradeToUnlockBuilding(improvementNames.tradepost));
-				$("#in-demographics-level-population .value").text(UIConstants.getFactorLabel(levelComponent.habitability));
-				$("#in-demographics-level-danger .value").text(UIConstants.getFactorLabel(levelComponent.raidDangerFactor));
-				$("#in-demographics-trade-network").toggle(hasUnlockedTrade);
-				if (hasUnlockedTrade) {
-					var hasAccessToTradeNetwork = GameGlobals.resourcesHelper.hasAccessToTradeNetwork(this.playerLocationNodes.head.entity);
-					$("#in-demographics-trade-network .value").text(hasAccessToTradeNetwork ? "yes" : "no");
-					$("#in-demographics-trade-network .value").toggleClass("warning", !hasAccessToTradeNetwork);
-				}
-			}
-
-			GameGlobals.uiFunctions.toggle("#in-demographics-level", showLevelStats);
-			GameGlobals.uiFunctions.toggle("#in-demographics", showCalendar || showRaid || showLevelStats);
-
+			// debug info
 			if (GameConstants.isDebugVersion) {
 				let debugInfoText = "";
 				let campTimers = sector.get(CampEventTimersComponent);
 				for (let key in OccurrenceConstants.campOccurrenceTypes) {
 					let event = OccurrenceConstants.campOccurrenceTypes[key];
 					if (campTimers.eventStartTimers[event]) {
-						debugInfoText += "next " + event + " in " + UIConstants.getTimeToNum(campTimers.eventStartTimers[event]) + "<br/>";
+						debugInfoText += "sự kiện kế tiếp " + event + " sau " + UIConstants.getTimeToNum(campTimers.eventStartTimers[event]) + "<br/>";
 					}
 					if (campTimers.eventEndTimers[event] && campTimers.eventEndTimers[event] != OccurrenceConstants.EVENT_DURATION_INFINITE) {
-						debugInfoText += event + " ends in " + UIConstants.getTimeToNum(campTimers.eventEndTimers[event]) + "<br/>";
+						debugInfoText += event + " kết thúc sau " + UIConstants.getTimeToNum(campTimers.eventEndTimers[event]) + "<br/>";
 					}
 				}
 				$("#in-demographics-debug-general").html(debugInfoText);
 			}
+
+		},
+
+		updateCampDemographics: function () {
+			let campComponent = this.playerLocationNodes.head.entity.get(CampComponent);
+			if (!campComponent) return;
+			let levelComponent = this.playerLevelNodes.head.level;
+
+			let showDemographics = GameGlobals.gameState.numCamps > 1;
+
+			if (showDemographics) {
+				let level = this.playerLocationNodes.head.position.level;
+				let campOrdinal = GameGlobals.worldState.getCampOrdinal(level);
+				let seed = GameGlobals.worldState.worldSeed;
+				let campFeatures = GameGlobals.campBalancingHelper.getCampUniqueFeaturesSummary(seed, campOrdinal);
+				
+				// founding date
+				let showCalendar = this.tribeUpgradesNodes.head.upgrades.hasUpgrade(GameGlobals.upgradeEffectsHelper.getUpgradeIdForUIEffect(UpgradeConstants.upgradeUIEffects.calendar));
+				let inGameFoundingDate = UIConstants.getInGameDate(campComponent.foundedTimeStampGameTime);
+				$("#in-demographics-general-age .value").text(inGameFoundingDate);
+				GameGlobals.uiFunctions.toggle("#in-demographics-general-age", showCalendar);
+
+				// camp unique features
+				$("#in-demographics-camp-features").html(UIConstants.getCampUniqueFeaturesDiv(campFeatures, { showText: true, shortText: true }));
+				GameGlobals.uiFunctions.generateInfoCallouts("#in-demographics-camp-features");
+			}
+
+			GameGlobals.uiFunctions.toggle($("#in-demographics-static-container"), showDemographics);
 		},
 
 		updateNews: function () {
@@ -1021,12 +1059,15 @@
 				}
 			}
 
-			let hasLastEvent = lastEventDescription != null;
-			lastEventDescription = lastEventDescription || "(none)";
+			let showLastEvent = true; // lastEventDescription != null;
+			
+			if (showLastEvent) {
+				lastEventDescription = lastEventDescription || "(none)";
 
-			$("#in-demographics-raid-last .value").text(lastEventDescription);
+				$("#in-demographics-event-last .value").text(lastEventDescription);
+			}
 
-			GameGlobals.uiFunctions.toggle("#in-demographics-raid-last", hasLastEvent);
+			GameGlobals.uiFunctions.toggle("#in-demographics-event-last", showLastEvent);
 		},
 
 		updateLayout: function () {
@@ -1074,7 +1115,7 @@
 				textFragments.push(this.getDamagedBuildingDescriptionTextVO(sector, eventVO.damagedBuilding));
 			}
 
-			textFragments.push({ rawText: " (" + UIConstants.getTimeSinceText(campComponent.lastRaid.timestamp) + " ago)" });
+			textFragments.push({ rawText: " (" + UIConstants.getTimeSinceText(campComponent.lastRaid.timestamp) + ")" });
 			
 			let textVO = { textFragments: textFragments, delimiter: "ui.common.sentence_separator" };
 			return Text.compose(textVO);
@@ -1100,7 +1141,7 @@
 				textFragments.push({ textKey: "ui.camp.last_event_disabled_workers_message", textParams: { num: eventVO.workersDisabled } });
 			}
 
-			textFragments.push({ rawText: " (" + UIConstants.getTimeSinceText(eventVO.timestamp) + " ago)" });
+			textFragments.push({ rawText: " (" + UIConstants.getTimeSinceText(eventVO.timestamp) + ")" });
 			
 			let textVO = { textFragments: textFragments, delimiter: "ui.common.sentence_separator" };
 			return Text.compose(textVO);
@@ -1121,68 +1162,76 @@
 
 		getWorkerDescription: function (def) {
 			let workerLevel = GameGlobals.upgradeEffectsHelper.getWorkerLevel(def.id, this.tribeUpgradesNodes.head.upgrades);
-			var improvements = this.playerLocationNodes.head.entity.get(SectorImprovementsComponent);
-			var productionS = "";
-			var generalConsumptionS =
-				"<br/><span class='warning'>water -" + UIConstants.roundValue(GameGlobals.campHelper.getWaterConsumptionPerSecond(1), true, true) + "/s</span>" +
-				"<br/><span class='warning'>food -" + UIConstants.roundValue(GameGlobals.campHelper.getFoodConsumptionPerSecond(1), true, true) + "/s</span>";
-			var specialConsumptionS = "";
+			let improvements = this.playerLocationNodes.head.entity.get(SectorImprovementsComponent);
+			let workerFactors = GameGlobals.campHelper.getWorkerFactors(this.playerPosNodes.head.position.level);
+			let isWorkedBuffed = workerFactors[def.id] && workerFactors[def.id] > 1;
+
+			let productionS = "";
+			let generalConsumptionS =
+				"<br/><span class='warning'>nước -" + UIConstants.roundValue(GameGlobals.campHelper.getWaterConsumptionPerSecond(1), true, true) + "/s</span>" +
+				"<br/><span class='warning'>thức ăn -" + UIConstants.roundValue(GameGlobals.campHelper.getFoodConsumptionPerSecond(1), true, true) + "/s</span>";
+			let specialConsumptionS = "";
 			switch (def.id) {
 				case CampConstants.workerTypes.scavenger.id:
-					productionS = "metal +" + UIConstants.roundValue(GameGlobals.campHelper.getMetalProductionPerSecond(1, improvements), true, true) + "/s";
+					productionS = "kim loại +" + UIConstants.roundValue(GameGlobals.campHelper.getMetalProductionPerSecond(1, improvements, workerFactors), true, true, 1000) + "/s";
 					break;
 				case CampConstants.workerTypes.trapper.id:
-					productionS = "food +" + UIConstants.roundValue(GameGlobals.campHelper.getFoodProductionPerSecond(1, improvements), true, true) + "/s";
+					productionS = "thức ăn +" + UIConstants.roundValue(GameGlobals.campHelper.getFoodProductionPerSecond(1, improvements, workerFactors), true, true, 1000) + "/s";
 					break;
 				case CampConstants.workerTypes.water.id:
-					productionS = "water +" + UIConstants.roundValue(GameGlobals.campHelper.getWaterProductionPerSecond(1, improvements), true, true) + "/s";
+					productionS = "nước +" + UIConstants.roundValue(GameGlobals.campHelper.getWaterProductionPerSecond(1, improvements, workerFactors), true, true, 1000) + "/s";
 					break;
 				case CampConstants.workerTypes.ropemaker.id:
-					productionS = "rope +" + UIConstants.roundValue(GameGlobals.campHelper.getRopeProductionPerSecond(1, improvements), true, true) + "/s";
+					productionS = "dây thừng +" + UIConstants.roundValue(GameGlobals.campHelper.getRopeProductionPerSecond(1, improvements, workerFactors), true, true, 1000) + "/s";
 					break;
 				case CampConstants.workerTypes.chemist.id:
-					productionS = "fuel +" + UIConstants.roundValue(GameGlobals.campHelper.getFuelProductionPerSecond(1, improvements), true, true) + "/s";
+					productionS = "nhiên liệu +" + UIConstants.roundValue(GameGlobals.campHelper.getFuelProductionPerSecond(1, improvements, workerFactors), true, true, 1000) + "/s";
 					break;
 				case CampConstants.workerTypes.rubbermaker.id:
-					productionS = "rubber +" + UIConstants.roundValue(GameGlobals.campHelper.getRubberProductionPerSecond(1, improvements), true, true) + "/s";
+					productionS = "cao su +" + UIConstants.roundValue(GameGlobals.campHelper.getRubberProductionPerSecond(1, improvements, workerFactors), true, true, 1000) + "/s";
 					break;
 				case CampConstants.workerTypes.gardener.id:
-					productionS = "herbs +" + UIConstants.roundValue(GameGlobals.campHelper.getHerbsProductionPerSecond(1, improvements), true, true) + "/s";
+					productionS = "thảo dược +" + UIConstants.roundValue(GameGlobals.campHelper.getHerbsProductionPerSecond(1, improvements, workerFactors), true, true, 1000) + "/s";
 					break;
 				case CampConstants.workerTypes.apothecary.id:
-					productionS = "medicine +" + UIConstants.roundValue(GameGlobals.campHelper.getMedicineProductionPerSecond(1, improvements), true, true) + "/s";
-					specialConsumptionS = "<br/><span class='warning'>herbs -" + GameGlobals.campHelper.getWorkerHerbsConsumptionPerSecond(1) + "/s</span>";
+					productionS = "thuốc +" + UIConstants.roundValue(GameGlobals.campHelper.getMedicineProductionPerSecond(1, improvements, workerFactors), true, true, 1000) + "/s";
+					specialConsumptionS = "<br/><span class='warning'>thảo dược -" + GameGlobals.campHelper.getWorkerHerbsConsumptionPerSecond(1, workerFactors) + "/s</span>";
 					break;
 				case CampConstants.workerTypes.concrete.id:
-					productionS = "concrete +" + UIConstants.roundValue(GameGlobals.campHelper.getConcreteProductionPerSecond(1, improvements), true, true) + "/s";
-					specialConsumptionS = "<br/><span class='warning'>metal -" + GameGlobals.campHelper.getMetalConsumptionPerSecondConcrete(1) + "/s</span>";
+					productionS = "bê tông +" + UIConstants.roundValue(GameGlobals.campHelper.getConcreteProductionPerSecond(1, improvements, workerFactors), true, true, 1000) + "/s";
+					specialConsumptionS = "<br/><span class='warning'>kim loại -" + GameGlobals.campHelper.getMetalConsumptionPerSecondConcrete(1, workerFactors) + "/s</span>";
 					break;
 				case CampConstants.workerTypes.toolsmith.id:
-					productionS = "tools +" + UIConstants.roundValue(GameGlobals.campHelper.getToolsProductionPerSecond(1, improvements), true, true) + "/s";
-					specialConsumptionS = "<br/><span class='warning'>metal -" + GameGlobals.campHelper.getMetalConsumptionPerSecondSmith(1) + "/s</span>";
+					productionS = "dụng cụ +" + UIConstants.roundValue(GameGlobals.campHelper.getToolsProductionPerSecond(1, improvements, workerFactors), true, true, 1000) + "/s";
+					specialConsumptionS = "<br/><span class='warning'>kim loại -" + GameGlobals.campHelper.getMetalConsumptionPerSecondSmith(1, workerFactors) + "/s</span>";
 					break;
 				case CampConstants.workerTypes.robotmaker.id:
-					let robotVal = GameGlobals.campHelper.getRobotsProductionPerSecond(1, improvements);
+					let robotVal = GameGlobals.campHelper.getRobotsProductionPerSecond(1, improvements, workerFactors);
 					let robotValDivisor = robotVal < 0.01 ? 10000 : null;
-					productionS = "robots +" + UIConstants.roundValue(robotVal, true, true, robotValDivisor) + "/s";
-					specialConsumptionS = "<br/><span class='warning'>tools -" + GameGlobals.campHelper.getToolsConsumptionPerSecondRobots(1) + "/s</span>";
+					productionS = "robot +" + UIConstants.roundValue(robotVal, true, true, robotValDivisor) + "/s";
+					specialConsumptionS = "<br/><span class='warning'>dụng cụ -" + GameGlobals.campHelper.getToolsConsumptionPerSecondRobots(1, workerFactors) + "/s</span>";
 					break;
 				case CampConstants.workerTypes.scientist.id:
-					productionS = "evidence +" + UIConstants.roundValue(GameGlobals.campHelper.getEvidenceProductionPerSecond(1, improvements), true, true, 1000) + "/s";
+					productionS = "bằng chứng +" + UIConstants.roundValue(GameGlobals.campHelper.getEvidenceProductionPerSecond(1, improvements, workerFactors), true, true, 1000) + "/s";
 					break;
 				case CampConstants.workerTypes.cleric.id:
-					productionS = "hope +" + UIConstants.roundValue(GameGlobals.campHelper.getHopeProductionPerSecond(1, improvements), true, true, 100000) + "/s";
+					productionS = "hy vọng +" + UIConstants.roundValue(GameGlobals.campHelper.getHopeProductionPerSecond(1, improvements, workerFactors), true, true, 100000) + "/s";
 					break;
 				case CampConstants.workerTypes.soldier.id:
 					var soldierLevel = GameGlobals.upgradeEffectsHelper.getWorkerLevel("soldier", this.tribeUpgradesNodes.head.upgrades);
 					let barracksLevel = improvements.getLevel(improvementNames.barracks);
-					productionS = "camp defence +" + CampConstants.getSoldierDefence(soldierLevel, barracksLevel);
+					productionS = "phòng thủ trại +" + CampConstants.getSoldierDefence(soldierLevel, barracksLevel);
 					break;
 				default:
 					log.w("no description defined for worker type: " + def.id);
 					break;
 			}
-			return "Level " + workerLevel + "<br/>" + productionS + generalConsumptionS + specialConsumptionS;
+
+			let result = "Cấp " + workerLevel + "<br/>";
+			if (isWorkedBuffed && GameGlobals.gameState.numCamps > 1) result += "Hệ số cấp: +" + Math.round((workerFactors[def.id] - 1) * 100) + "%<br/>";
+			result += productionS + generalConsumptionS + specialConsumptionS;
+
+			return result;
 		},
 
 		getPopulationDecreaseHint: function () {
@@ -1203,7 +1252,13 @@
 
 			if (!mainSource) return null;
 
-			return mainSource.source;
+			let sourceNames = {
+				milestones: "cột mốc",
+				luxury: "tài nguyên xa xỉ",
+				"luxury-resources": "tài nguyên xa xỉ",
+				"level-population": "dân số trên tầng",
+			};
+			return sourceNames[mainSource.source] || mainSource.source;
 		},
 
 		getRaidDangerCalloutContent: function () {
@@ -1218,8 +1273,8 @@
 
 			let result = Text.t("ui.camp.raid_danger_description");
 			result += "<hr/>";
-			result += "Danger points: " + dangerPoints + "<br/>";
-			result += "Defence points: " + defencePoints + "<br/>";
+			result += "Điểm nguy hiểm: " + dangerPoints + "<br/>";
+			result += "Điểm phòng thủ: " + defencePoints + "<br/>";
 
 			return result;
 		},
@@ -1232,14 +1287,14 @@
 			let hasMedicine = GameGlobals.campHelper.hasMedicine(sector);
 			let apothecaryLevel = GameGlobals.upgradeEffectsHelper.getWorkerLevel("apothecary", this.tribeUpgradesNodes.head.upgrades);
 
-			let result = "Risk that a disease occurring in the camp turns into an outbreak";
+			let result = "Nguy cơ dịch bệnh trong trại bùng phát";
 			result += "<hr/>";
-			result += "Population: " + Math.round(OccurrenceConstants.getDiseaseOutbreakChance(campComponent.population, false, false, 0) * 100) + "%<br/>";
+			result += "Dân số: " + Math.round(OccurrenceConstants.getDiseaseOutbreakChance(campComponent.population, false, false, 0) * 100) + "%<br/>";
 
 			if (hasMedicine) {
-				result += "Medicine: -" + ((1 - OccurrenceConstants.getDiseaseMedicineFactor(hasMedicine, apothecaryLevel)) * 100) + "%<br/>";
+				result += "Thuốc: -" + ((1 - OccurrenceConstants.getDiseaseMedicineFactor(hasMedicine, apothecaryLevel)) * 100) + "%<br/>";
 			} else if (hasHerbs) {
-				result += "Herbs: -" + ((1 - OccurrenceConstants.getDiseaseHerbsFactor()) * 100) + "%<br/>";
+				result += "Thảo dược: -" + ((1 - OccurrenceConstants.getDiseaseHerbsFactor()) * 100) + "%<br/>";
 			}
 
 			return result;
@@ -1305,6 +1360,37 @@
 			li.$root.toggleClass("event-no-timer", !data.hasTimer);
 			li.$label.html(displayName);
 		},
+
+		showNewCampPopup: function () {
+			if (!this.playerLocationNodes.head || !this.playerLocationNodes.head.entity) return;
+			let level = this.playerLocationNodes.head.position.level;
+			if (GameGlobals.gameState.uiStatus.seenCamps.indexOf(level) >= 0) return;
+
+			let sector =  this.playerLocationNodes.head.entity;
+			let improvements = this.playerLocationNodes.head.entity.get(SectorImprovementsComponent);
+			if (improvements.getCount(improvementNames.house) > 0) return;
+			if (improvements.getCount(improvementNames.campfire) > 0) return;
+
+			let seed = GameGlobals.worldState.worldSeed;
+			let campOrdinal = GameGlobals.worldState.getCampOrdinal(level);
+			let features = GameGlobals.campBalancingHelper.getCampUniqueFeaturesSummary(seed, campOrdinal);
+
+			let title = Text.t("ui.camp.new_camp_popup_title");
+			let msg = "";
+			let introKey = campOrdinal == 1 ? "ui.camp.new_camp_popup_intro_first" : "ui.camp.new_camp_popup_intro";
+
+			msg += "<p>" + Text.t(introKey) + "</p>"
+			
+			if (campOrdinal > 1) {
+				msg += UIConstants.getCampUniqueFeaturesDiv(features, { hideWorkshop: true });
+				msg += UIConstants.getCampUniqueFeaturesDiv(features, { hideWorkshop: true, showText: true, hideIcons: true });
+			}
+
+			GameGlobals.uiFunctions.showInfoPopup(title, msg);
+			GameGlobals.uiFunctions.generateInfoCallouts(".popup");
+
+			GameGlobals.gameState.uiStatus.seenCamps.push(level);
+		},
 		
 		isCampActionListItemDataSame: function (d1, d2) {
 			return d1.action == d2.action;
@@ -1347,6 +1433,12 @@
 				this.refresh();
 				this.updateCharacters();
 			}
+		},
+
+		onCampEntered: function () {			
+			setTimeout(() => {
+				this.showNewCampPopup();
+			}, 100);
 		},
 
 		onCampEventStarted: function () {

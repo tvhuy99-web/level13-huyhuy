@@ -96,7 +96,7 @@ define([
 			this.saveMetaState();
 			
 			if (isDefaultSlot) {
-				this.error = success ? null : "Failed to save";
+				this.error = success ? null : "Không thể lưu";
 				this.lastDefaultSaveTimestamp = new Date().getTime();
 			}
 		},
@@ -183,6 +183,9 @@ define([
 			let save = {};
 			save.entitiesObject = entitiesObject;
 			save.gameState = GameGlobals.gameState;
+			save.worldState = {};
+			Object.assign(save.worldState, GameGlobals.worldState);
+			save.worldState.worldTemplateVO = GameGlobals.worldState.worldTemplateVO.getCustomSaveObject();
 			save.timeStamp = new Date();
 			save.version = version;
 

@@ -52,7 +52,7 @@ define([
 		
 		getCurrentCampStep: function () {
 			let campOrdinal = this.getCurrentCampOrdinal();
-			let level = GameGlobals.gameState.getLevelForCamp(campOrdinal);
+			let level = GameGlobals.worldState.getLevelForCamp(campOrdinal);
 			let levelStats = GameGlobals.levelHelper.getLevelStats(level);
 			let scoutedPercent = levelStats.percentClearedSectors;
 			if (scoutedPercent < 0.25)
@@ -126,78 +126,105 @@ define([
 			return campComponent.availableLuxuryResources || [];
 		},
 
+		getWorkerFactors: function (level) {
+			let levelComponent = GameGlobals.levelHelper.getLevelComponentForPosition(level);
+
+			let result = {};
+
+			result[CampConstants.workerTypes.scavenger.id] = levelComponent.workerMetalFactor || 1;
+			result[CampConstants.workerTypes.trapper.id] = levelComponent.workerFoodFactor || 1;
+			result[CampConstants.workerTypes.water.id] = levelComponent.workerWaterFactor || 1;
+
+			result[CampConstants.workerTypes.ropemaker.id] = levelComponent.workerArtisanFactor || 1;
+			result[CampConstants.workerTypes.toolsmith.id] = levelComponent.workerArtisanFactor || 1;
+
+			result[CampConstants.workerTypes.scientist.id] = levelComponent.workerAcademicFactor || 1;
+			result[CampConstants.workerTypes.cleric.id] = levelComponent.workerHopeFactor || 1;
+
+			return result;
+		},
+
 		getCampProductionMultiplier: function () {
-			let result = GameConstants.gameSpeedCamp;
+			let result = 1;
+			result *= GameConstants.gameSpeedCamp;
 			if (GameConstants.cheatModeCampProduction) result *= 2;
 			return result;
 		},
+
+		getCampWorkerProductionMultiplier: function (workerFactors, workerType) {
+			if (!workerType || !workerFactors) {
+				debugger
+				return 1;
+			}
+			return workerFactors[workerType] || 1;
+		},
 		
-		getMetalProductionPerSecond: function (workers, improvementsComponent, robots) {
-			let multiplier = this.getCampProductionMultiplier();
+		getMetalProductionPerSecond: function (workers, improvementsComponent, workerFactors, robots) {
+			let multiplier = this.getCampProductionMultiplier() * this.getCampWorkerProductionMultiplier(workerFactors, CampConstants.workerTypes.scavenger.id);
 			return GameGlobals.campBalancingHelper.getMetalProductionPerSecond(workers, improvementsComponent, this.tribeUpgradesNodes.head.upgrades, robots) * multiplier;
 		},
 		
-		getFoodProductionPerSecond: function (workers, improvementsComponent, robots) {
-			let multiplier = this.getCampProductionMultiplier();
+		getFoodProductionPerSecond: function (workers, improvementsComponent, workerFactors, robots) {
+			let multiplier = this.getCampProductionMultiplier() * this.getCampWorkerProductionMultiplier(workerFactors, CampConstants.workerTypes.trapper.id);
 			return GameGlobals.campBalancingHelper.getFoodProductionPerSecond(workers, improvementsComponent, this.tribeUpgradesNodes.head.upgrades, robots) * multiplier;
 		},
 		
-		getWaterProductionPerSecond: function (workers, improvementsComponent, robots) {
-			let multiplier = this.getCampProductionMultiplier();
+		getWaterProductionPerSecond: function (workers, improvementsComponent, workerFactors, robots) {
+			let multiplier = this.getCampProductionMultiplier() * this.getCampWorkerProductionMultiplier(workerFactors, CampConstants.workerTypes.water.id);
 			return GameGlobals.campBalancingHelper.getWaterProductionPerSecond(workers, improvementsComponent, this.tribeUpgradesNodes.head.upgrades, robots) * multiplier;
 		},
 		
-		getRopeProductionPerSecond: function (workers, improvementsComponent, robots) {
-			let multiplier = this.getCampProductionMultiplier();
+		getRopeProductionPerSecond: function (workers, improvementsComponent, workerFactors, robots) {
+			let multiplier = this.getCampProductionMultiplier() * this.getCampWorkerProductionMultiplier(workerFactors, CampConstants.workerTypes.ropemaker.id);
 			return GameGlobals.campBalancingHelper.getRopeProductionPerSecond(workers, improvementsComponent, this.tribeUpgradesNodes.head.upgrades, robots) * multiplier;
 		},
 		
-		getFuelProductionPerSecond: function (workers, improvementsComponent, robots) {
-			let multiplier = this.getCampProductionMultiplier();
+		getFuelProductionPerSecond: function (workers, improvementsComponent, workerFactors, robots) {
+			let multiplier = this.getCampProductionMultiplier() * this.getCampWorkerProductionMultiplier(workerFactors, CampConstants.workerTypes.chemist.id);
 			return GameGlobals.campBalancingHelper.getFuelProductionPerSecond(workers, improvementsComponent, this.tribeUpgradesNodes.head.upgrades, robots) * multiplier;
 		},
 		
-		getRubberProductionPerSecond: function (workers, improvementsComponent, robots) {
-			let multiplier = this.getCampProductionMultiplier();
+		getRubberProductionPerSecond: function (workers, improvementsComponent, workerFactors, robots) {
+			let multiplier = this.getCampProductionMultiplier() * this.getCampWorkerProductionMultiplier(workerFactors, CampConstants.workerTypes.rubbermaker.id);
 			return GameGlobals.campBalancingHelper.getRubberProductionPerSecond(workers, improvementsComponent, this.tribeUpgradesNodes.head.upgrades, robots) * multiplier;
 		},
 		
-		getHerbsProductionPerSecond: function (workers, improvementsComponent, robots) {
-			let multiplier = this.getCampProductionMultiplier();
+		getHerbsProductionPerSecond: function (workers, improvementsComponent, workerFactors, robots) {
+			let multiplier = this.getCampProductionMultiplier() * this.getCampWorkerProductionMultiplier(workerFactors, CampConstants.workerTypes.gardener.id);
 			return GameGlobals.campBalancingHelper.getHerbsProductionPerSecond(workers, improvementsComponent, this.tribeUpgradesNodes.head.upgrades, robots) * multiplier;
 		},
 		
-		getMedicineProductionPerSecond: function (workers, improvementsComponent, robots) {
-			let multiplier = this.getCampProductionMultiplier();
+		getMedicineProductionPerSecond: function (workers, improvementsComponent, workerFactors, robots) {
+			let multiplier = this.getCampProductionMultiplier() * this.getCampWorkerProductionMultiplier(workerFactors, CampConstants.workerTypes.apothecary.id);
 			return GameGlobals.campBalancingHelper.getMedicineProductionPerSecond(workers, improvementsComponent, this.tribeUpgradesNodes.head.upgrades, robots) * multiplier;
 		},
 		
-		getToolsProductionPerSecond: function (workers, improvementsComponent, robots) {
-			let multiplier = this.getCampProductionMultiplier();
+		getToolsProductionPerSecond: function (workers, improvementsComponent, workerFactors, robots) {
+			let multiplier = this.getCampProductionMultiplier() * this.getCampWorkerProductionMultiplier(workerFactors, CampConstants.workerTypes.toolsmith.id);
 			return GameGlobals.campBalancingHelper.getToolsProductionPerSecond(workers, improvementsComponent, this.tribeUpgradesNodes.head.upgrades, robots) * multiplier;
 		},
 		
-		getConcreteProductionPerSecond: function (workers, improvementsComponent, robots) {
-			let multiplier = this.getCampProductionMultiplier();
+		getConcreteProductionPerSecond: function (workers, improvementsComponent, workerFactors, robots) {
+			let multiplier = this.getCampProductionMultiplier() * this.getCampWorkerProductionMultiplier(workerFactors, CampConstants.workerTypes.concrete.id);
 			return GameGlobals.campBalancingHelper.getConcreteProductionPerSecond(workers, improvementsComponent, this.tribeUpgradesNodes.head.upgrades, robots) * multiplier;
 		},
 		
-		getRobotsProductionPerSecond: function (workers, improvementsComponent, robots) {
-			let multiplier = this.getCampProductionMultiplier();
+		getRobotsProductionPerSecond: function (workers, improvementsComponent, workerFactors, robots) {
+			let multiplier = this.getCampProductionMultiplier() * this.getCampWorkerProductionMultiplier(workerFactors, CampConstants.workerTypes.robotmaker.id);
 			return GameGlobals.campBalancingHelper.getRobotsProductionPerSecond(workers, improvementsComponent, this.tribeUpgradesNodes.head.upgrades, robots) * multiplier;
 		},
 		
-		getEvidenceProductionPerSecond: function (workers, improvementComponent) {
+		getEvidenceProductionPerSecond: function (workers, improvementComponent, workerFactors) {
 			workers = workers || 0;
 			let evidenceUpgradeBonus = this.getUpgradeBonus("scientist");
-			let multiplier = this.getCampProductionMultiplier();
+			let multiplier = this.getCampProductionMultiplier() * this.getCampWorkerProductionMultiplier(workerFactors, CampConstants.workerTypes.scientist.id);
 			return workers * CampConstants.PRODUCTION_EVIDENCE_PER_WORKER_PER_S * evidenceUpgradeBonus * multiplier;
 		},
 		
-		getHopeProductionPerSecond: function (workers, improvementComponent) {
+		getHopeProductionPerSecond: function (workers, improvementComponent, workerFactors) {
 			workers = workers || 0;
 			let upgradeBonus = this.getUpgradeBonus("cleric");
-			let multiplier = this.getCampProductionMultiplier();
+			let multiplier = this.getCampProductionMultiplier() * this.getCampWorkerProductionMultiplier(workerFactors, CampConstants.workerTypes.cleric.id);
 			return workers * CampConstants.PRODUCTION_HOPE_PER_WORKER_PER_S * upgradeBonus * multiplier;
 		},
 		
@@ -221,27 +248,27 @@ define([
 			return CampConstants.CONSUMPTION_MEDICINE_PER_WORKER_PER_S * Math.floor(population) * speed;
 		},
 		
-		getWorkerHerbsConsumptionPerSecond: function (workers) {
+		getWorkerHerbsConsumptionPerSecond: function (workers, workerFactors) {
 			workers = workers || 0;
-			let multiplier = this.getCampProductionMultiplier();
+			let multiplier = this.getCampProductionMultiplier() * this.getCampWorkerProductionMultiplier(workerFactors, CampConstants.workerTypes.apothecary.id);
 			return workers * CampConstants.CONSUMPTION_HERBS_PER_MEDICINE_WORKER_PER_S * multiplier;
 		},
 		
-		getMetalConsumptionPerSecondSmith: function (workers) {
+		getMetalConsumptionPerSecondSmith: function (workers, workerFactors) {
 			workers = workers || 0;
-			let multiplier = this.getCampProductionMultiplier();
+			let multiplier = this.getCampProductionMultiplier() * this.getCampWorkerProductionMultiplier(workerFactors, CampConstants.workerTypes.toolsmith.id);
 			return workers * CampConstants.CONSUMPTION_METAL_PER_TOOLSMITH_PER_S * multiplier;
 		},
 		
-		getMetalConsumptionPerSecondConcrete: function (workers) {
+		getMetalConsumptionPerSecondConcrete: function (workers, workerFactors) {
 			workers = workers || 0;
-			let multiplier = this.getCampProductionMultiplier();
+			let multiplier = this.getCampProductionMultiplier() * this.getCampWorkerProductionMultiplier(workerFactors, CampConstants.workerTypes.concrete.id);
 			return workers * CampConstants.CONSUMPTION_METAL_PER_CONCRETE_PER_S * multiplier;
 		},
 		
-		getToolsConsumptionPerSecondRobots: function (workers) {
+		getToolsConsumptionPerSecondRobots: function (workers, workerFactors) {
 			workers = workers || 0;
-			let multiplier = this.getCampProductionMultiplier();
+			let multiplier = this.getCampProductionMultiplier() * this.getCampWorkerProductionMultiplier(workerFactors, CampConstants.workerTypes.robotmaker.id);
 			return workers * CampConstants.CONSUMPTION_TOOLS_PER_ROBOT_MAKER_PER_S * multiplier;
 		},
 		
@@ -388,14 +415,24 @@ define([
 			let position = sector.get(PositionComponent);
 			let features = sector.get(SectorFeaturesComponent);
 
-			let surfaceLevel = GameGlobals.gameState.getSurfaceLevel();
-			let groundLevel = GameGlobals.gameState.getGroundLevel();
+			let levelComponent = GameGlobals.levelHelper.getLevelComponentForPosition(position.level);
+
+			let surfaceLevel = GameGlobals.worldState.getSurfaceLevel();
+			let groundLevel = GameGlobals.worldState.getGroundLevel();
 
 			result.push(CampConstants.DISASTER_TYPE_COLLAPSE);
 			result.push(CampConstants.DISASTER_TYPE_EARTHQUAKE);
 			result.push(CampConstants.DISASTER_TYPE_EARTHQUAKE);
+			
 			if (features.sunlit) result.push(CampConstants.DISASTER_TYPE_STORM);
 			if (position.level != surfaceLevel && position.level != groundLevel) result.push(CampConstants.DISASTER_TYPE_FLOOD);
+
+			if (levelComponent.signatureDisaster) {
+				let count = result.length * 2;
+				for (let i = 0; i < count; i++) {
+					result.push(levelComponent.signatureDisaster);
+				}
+			}
 
 			return result;
 		},
@@ -404,7 +441,7 @@ define([
 			let result = [];
 			
 			let position = sector.get(PositionComponent);
-			let campOrdinal = GameGlobals.gameState.getCampOrdinal(position.level);
+			let campOrdinal = GameGlobals.worldState.getCampOrdinal(position.level);
 
 			let isForceExpedition = this.isValidCampForExpeditionVisitors(campOrdinal);
 
@@ -413,6 +450,8 @@ define([
 				return result;
 			}
 
+			let levelComponent = GameGlobals.levelHelper.getLevelComponentForPosition(position.level);
+
 			result.push(CharacterConstants.characterTypes.bard);
 			result.push(CharacterConstants.characterTypes.crafter);
 			result.push(CharacterConstants.characterTypes.drifter);
@@ -420,13 +459,27 @@ define([
 
 			if (position.level < 14) {
 				result.push(CharacterConstants.characterTypes.drifter);
+				result.push(CharacterConstants.characterTypes.fortuneTeller);
 				result.push(CharacterConstants.characterTypes.shaman);
 			}
 			
 			if (position.level > 14) {
-				result.push(CharacterConstants.characterTypes.crafter);
 				result.push(CharacterConstants.characterTypes.bard);
+				result.push(CharacterConstants.characterTypes.crafter);
 				result.push(CharacterConstants.characterTypes.doomsayer);
+			}
+
+			if (levelComponent.habitability > 1) {
+				result.push(CharacterConstants.characterTypes.bard);
+			}
+
+			if (levelComponent.habitability < 1) {
+				result.push(CharacterConstants.characterTypes.doomsayer);
+			}
+
+			if (levelComponent.raidDangerFactor < 1) {
+				result.push(CharacterConstants.characterTypes.crafter);
+				result.push(CharacterConstants.characterTypes.drifter);
 			}
 
 			return result;
@@ -438,71 +491,77 @@ define([
 			return true;
 		},
 
-		getValidCampCharacters: function (campComponent) {
+		getValidCampCharacters: function (campComponent, unique) {
 			let result = [];
 
 			for (let origin in campComponent.populationByOrigin) {
 				let num = campComponent.populationByOrigin[origin];
 				if (num <= 0) continue;
-				switch (origin) {
-					case CultureConstants.origins.SURFACE: 
-						result.push(CharacterConstants.characterTypes.surfaceRefugee);
-						break;
-					case CultureConstants.origins.SLUMS: 
-						result.push(CharacterConstants.characterTypes.slumRefugee);
-						break;
-					case CultureConstants.origins.DARKLEVELS: 
-						result.push(CharacterConstants.characterTypes.darkDweller);
-						break;
+				let count = unique ? 1 : num;
+				for (let i = 0; i < count; i++) {
+					switch (origin) {
+						case CultureConstants.origins.SURFACE: 
+							result.push(CharacterConstants.characterTypes.surfaceRefugee);
+							break;
+						case CultureConstants.origins.SLUMS: 
+							result.push(CharacterConstants.characterTypes.slumRefugee);
+							break;
+						case CultureConstants.origins.DARKLEVELS: 
+							result.push(CharacterConstants.characterTypes.darkDweller);
+							break;
+					}
 				}
 			}
 			
 			for(let key in campComponent.assignedWorkers) {
 				let num = campComponent.assignedWorkers[key] || 0;
 				if (num <= 0) continue;
-				switch (key) {
-					case CampConstants.workerTypes.scavenger.id:
-						result.push(CharacterConstants.characterTypes.workerScavenger);
-						break;
-					case CampConstants.workerTypes.trapper.id:
-						result.push(CharacterConstants.characterTypes.workerTrapper);
-						break;
-					case CampConstants.workerTypes.water.id:
-						result.push(CharacterConstants.characterTypes.workerWater);
-						break;
-					case CampConstants.workerTypes.ropemaker.id:
-						result.push(CharacterConstants.characterTypes.workerRope);
-						break;
-					case CampConstants.workerTypes.chemist.id:
-						result.push(CharacterConstants.characterTypes.workerChemist);
-						break;
-					case CampConstants.workerTypes.rubbermaker.id:
-						result.push(CharacterConstants.characterTypes.workerRubber);
-						break;
-					case CampConstants.workerTypes.gardener.id:
-						result.push(CharacterConstants.characterTypes.workerGardener);
-						break;
-					case CampConstants.workerTypes.apothecary.id:
-						result.push(CharacterConstants.characterTypes.workerApothecary);
-						break;
-					case CampConstants.workerTypes.toolsmith.id:
-						result.push(CharacterConstants.characterTypes.workerToolsmith);
-						break;
-					case CampConstants.workerTypes.concrete.id:
-						result.push(CharacterConstants.characterTypes.workerConcrete);
-						break;
-					case CampConstants.workerTypes.robotmaker.id:
-						result.push(CharacterConstants.characterTypes.workerRobotmaker);
-						break;
-					case CampConstants.workerTypes.scientist.id:
-						result.push(CharacterConstants.characterTypes.workerScientist);
-						break;
-					case CampConstants.workerTypes.soldier.id:
-						result.push(CharacterConstants.characterTypes.workerSoldier);
-						break;
-					case CampConstants.workerTypes.cleric.id:
-						result.push(CharacterConstants.characterTypes.workerCleric);
-						break;
+				let count = unique ? 1 : num;
+				for (let i = 0; i < count; i++) {
+					switch (key) {
+						case CampConstants.workerTypes.scavenger.id:
+							result.push(CharacterConstants.characterTypes.workerScavenger);
+							break;
+						case CampConstants.workerTypes.trapper.id:
+							result.push(CharacterConstants.characterTypes.workerTrapper);
+							break;
+						case CampConstants.workerTypes.water.id:
+							result.push(CharacterConstants.characterTypes.workerWater);
+							break;
+						case CampConstants.workerTypes.ropemaker.id:
+							result.push(CharacterConstants.characterTypes.workerRope);
+							break;
+						case CampConstants.workerTypes.chemist.id:
+							result.push(CharacterConstants.characterTypes.workerChemist);
+							break;
+						case CampConstants.workerTypes.rubbermaker.id:
+							result.push(CharacterConstants.characterTypes.workerRubber);
+							break;
+						case CampConstants.workerTypes.gardener.id:
+							result.push(CharacterConstants.characterTypes.workerGardener);
+							break;
+						case CampConstants.workerTypes.apothecary.id:
+							result.push(CharacterConstants.characterTypes.workerApothecary);
+							break;
+						case CampConstants.workerTypes.toolsmith.id:
+							result.push(CharacterConstants.characterTypes.workerToolsmith);
+							break;
+						case CampConstants.workerTypes.concrete.id:
+							result.push(CharacterConstants.characterTypes.workerConcrete);
+							break;
+						case CampConstants.workerTypes.robotmaker.id:
+							result.push(CharacterConstants.characterTypes.workerRobotmaker);
+							break;
+						case CampConstants.workerTypes.scientist.id:
+							result.push(CharacterConstants.characterTypes.workerScientist);
+							break;
+						case CampConstants.workerTypes.soldier.id:
+							result.push(CharacterConstants.characterTypes.workerSoldier);
+							break;
+						case CampConstants.workerTypes.cleric.id:
+							result.push(CharacterConstants.characterTypes.workerCleric);
+							break;
+					}
 				}
 			}
 
@@ -540,7 +599,7 @@ define([
 				case CharacterConstants.characterTypes.workerWater:
 					return campComponent.assignedWorkers[CampConstants.workerTypes.water.id];
 				default:
-					let validTypes = this.getValidCampCharacters(campComponent);
+					let validTypes = this.getValidCampCharacters(campComponent, true);
 					return validTypes.indexOf(characterType) >= 0 ? campComponent.population : 0;
 			}
 		},
@@ -551,24 +610,7 @@ define([
 			let level = position.level;
 			let maxPopulation = campComponent.maxPopulation;
 
-			let possibleOrigins = [];
-
-			possibleOrigins.push(CultureConstants.origins.SURFACE);
-			if (level > 20) possibleOrigins.push(CultureConstants.origins.SURFACE);
-			if (level > 17) possibleOrigins.push(CultureConstants.origins.SURFACE);
-			if (level > 14) possibleOrigins.push(CultureConstants.origins.SURFACE);
-
-			possibleOrigins.push(CultureConstants.origins.SLUMS);
-			if (level < 20) possibleOrigins.push(CultureConstants.origins.SLUMS);
-			if (level > 14) possibleOrigins.push(CultureConstants.origins.SLUMS);
-			if (level > 6) possibleOrigins.push(CultureConstants.origins.SLUMS);
-
-			possibleOrigins.push(CultureConstants.origins.DARKLEVELS);
-			if (level < 13) possibleOrigins.push(CultureConstants.origins.DARKLEVELS);
-			if (level < 10) possibleOrigins.push(CultureConstants.origins.DARKLEVELS);
-			if (maxPopulation < 24) possibleOrigins.push(CultureConstants.origins.DARKLEVELS);
-
-			return MathUtils.randomElement(possibleOrigins);
+			return CultureConstants.getRandomOrigin(level, maxPopulation >= 24);
 		},
 		
 		getRandomIncomingCaravan: function (campOrdinal, levelOrdinal, traderLevel, unlockedResources, neededIngredient) {
@@ -684,12 +726,12 @@ define([
 				let ids = [];
 
 				if (rand2 <= 0.33) {
-					name = "weapons trader";
+					name = "thương nhân vũ khí";
 					categories.push("weapon");
 					ids.push("consumable_weapon");
 					ids.push("stamina_potion_1");
 				} else if (rand2 <= 0.66) {
-					name = "clothing trader";
+					name = "thương nhân quần áo";
 					categories.push("clothing_over");
 					categories.push("clothing_upper");
 					categories.push("clothing_lower");
@@ -697,7 +739,7 @@ define([
 					categories.push("clothing_head");
 					categories.push("shoes");
 				} else {
-					name = "equipment trader";
+					name = "thương nhân trang bị";
 					categories.push("light");
 					categories.push("bag");
 					categories.push("exploration");
@@ -719,7 +761,7 @@ define([
 				usesCurrency = traderLevel > 1;
 			} else if (traderType == TradeConstants.traderType.GENERAL) {
 				// 2) misc trader: sells ingredients, random items, buys all items, uses currency
-				name = "general trader";
+				name = "thương nhân tổng hợp";
 				let categories = [];
 				while (categories.length < 3) {
 					if (Math.random() <= 0.2) categories.push("light");
@@ -751,7 +793,7 @@ define([
 				usesCurrency = traderLevel > 1;
 			} else if (traderType == TradeConstants.traderType.CRAFTING) {
 				// 3) ingredient trader: sells ingredients, buys ingredients, occational items, no currency
-				name = "crafting trader";
+				name = "thương nhân nguyên liệu chế tạo";
 				let ingredientProbability = 0.25;
 				let num = 5 + campOrdinal * 3;
 				while (sellItems.length < num && ingredientProbability <= 1) {
@@ -775,12 +817,12 @@ define([
 				let mainResource = RandomUtils.selectOneFromRelativeProbabilities(mainResourceRelativeProbabilities);
 					
 				if (mainResource == resourceNames.herbs) {
-					name = "herbs trader";
+					name = "thương nhân thảo dược";
 					sellResources.addResource(resourceNames.herbs, minResAmount + Math.random() * randResAmount);
 					buyResources.push(resourceNames.herbs);
 					if (unlockedResources.medicine && Math.random() < 0.75) {
 						if (campOrdinal > 8) {
-							name = "medicine trader";
+							name = "thương nhân thuốc";
 							sellResources.addResource(resourceNames.medicine, minResAmount + Math.random() * randResAmount);
 						}
 						buyResources.push(resourceNames.medicine);
@@ -789,25 +831,25 @@ define([
 						addSellItemsFromCategories([ "voucher" ], 0.3, 1, 1, true, "cache_hope");
 					}
 				} else if (mainResource == resourceNames.tools) {
-					name = "tools trader";
+					name = "thương nhân dụng cụ";
 					sellResources.addResource(resourceNames.tools, minResAmount + Math.random() * randResAmount);
 					buyResources.push(resourceNames.tools);
 				} else if (mainResource == resourceNames.fuel) {
-					name = "fuel trader";
+					name = "thương nhân nhiên liệu";
 					sellResources.addResource(resourceNames.fuel, minResAmount + Math.random() * randResAmount);
 					buyResources.push(resourceNames.fuel);
 				} else if (mainResource == resourceNames.rubber) {
-					name = "rubber trader";
+					name = "thương nhân cao su";
 					sellResources.addResource(resourceNames.rubber, minResAmount + Math.random() * randResAmount);
 					buyResources.push(resourceNames.rubber);
 				} else if (mainResource == resourceNames.water) {
-					name = "supplies trader";
+					name = "thương nhân nhu yếu phẩm";
 					sellResources.addResource(resourceNames.water, minResAmount + Math.random() * randResAmount);
 					sellResources.addResource(resourceNames.food, minResAmount + Math.random() * randResAmount);
 					buyResources.push(resourceNames.water);
 					buyResources.push(resourceNames.food);
 				} else {
-					name = "materials trader";
+					name = "thương nhân vật liệu";
 					sellResources.addResource(resourceNames.metal, minResAmount + Math.random() * randResAmount);
 					buyResources.push(resourceNames.metal);
 					sellResources.addResource(resourceNames.rope, minResAmount + Math.random() * randResAmount);
@@ -822,7 +864,7 @@ define([
 			} else if (traderType == TradeConstants.traderType.PARTNER) {
 				// 5) trading partner trader: buys and sells same stuff as partner, plus occational items, currency based on partner
 				var partner = TradeConstants.getRandomTradePartner(campOrdinal);
-				name = "trader from " + partner.name;
+				name = "thương nhân từ " + partner.name;
 				for (let i = 0; i < partner.sellsResources.length; i++) {
 					sellResources.addResource(partner.sellsResources[i], minResAmount + Math.random() * randResAmount, "get-trader");
 				}
@@ -845,7 +887,7 @@ define([
 				usesCurrency = partner.usesCurrency;
 			} else if (traderType == TradeConstants.traderType.VALUABLES) {
 				// 6) valuables trader (artefacts, cahces)
-				name = "rarities trader";
+				name = "thương nhân đồ quý";
 				addSellItemsFromCategories([ "bag" ], 0.1, 1, 1, false);
 				addSellItemsFromCategories([ "light" ], 0.1, 1, 1, false);
 				addSellItemsFromCategories([ "artefact" ], 0.3, 1, 2, true);
@@ -871,7 +913,7 @@ define([
 		getMaxWorkers: function (sector, workerID) {
 			var position = sector.get(PositionComponent);
 			var level = position.level;
-			var campOrdinal = GameGlobals.gameState.getCampOrdinal(position.level);
+			var campOrdinal = GameGlobals.worldState.getCampOrdinal(position.level);
 			
 			var improvements = sector.get(SectorImprovementsComponent);
 			var upgrades = this.tribeUpgradesNodes.head.upgrades;

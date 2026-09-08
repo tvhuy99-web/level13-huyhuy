@@ -10,6 +10,7 @@ define([
 	'game/constants/TradeConstants', 
 	'game/components/common/PositionComponent',
 	'game/components/sector/SectorFeaturesComponent',
+	'game/components/sector/SectorLocalesComponent',
 	'game/components/sector/SectorStatusComponent',
 	'game/nodes/NearestCampNode',
 	'game/vos/CharacterVO'
@@ -24,6 +25,7 @@ define([
 	TradeConstants, 
 	PositionComponent, 
 	SectorFeaturesComponent, 
+	SectorLocalesComponent,
 	SectorStatusComponent, 
 	NearestCampNode,
 	CharacterVO
@@ -124,12 +126,12 @@ define([
 		},
 
 		getMaxCharactersForLevel: function (level) {
-			if (level == GameGlobals.gameState.getSurfaceLevel()) return 0;
-			if (level == GameGlobals.gameState.getGroundLevel()) return 1;
+			if (level == GameGlobals.worldState.getSurfaceLevel()) return 0;
+			if (level == GameGlobals.worldState.getGroundLevel()) return 1;
 			if (level == 14) return 0;
 
 			let isCampable = GameGlobals.levelHelper.isLevelCampable(level);
-			let campOrdinal = GameGlobals.gameState.getCampOrdinal(level);
+			let campOrdinal = GameGlobals.worldState.getCampOrdinal(level);
 
 			let result = 5;
 
@@ -240,6 +242,7 @@ define([
 
 				let sectorPosition = sector.get(PositionComponent);
 				let sectorFeaturesComponent = sector.get(SectorFeaturesComponent);
+				let sectorLocalesComponent = sector.get(SectorLocalesComponent);
 				let neighbours = GameGlobals.levelHelper.getSectorNeighboursList(sector);
 
 				score -= Math.abs(Math.floor(sectorPosition.sectorX / 5)) * weightX;
@@ -252,6 +255,7 @@ define([
 				if (sectorFeaturesComponent.hasSpring) score += 3 * weightSpring;
 				if (sectorFeaturesComponent.examineSpots.length > 1) score -= 1;
 				if (sectorFeaturesComponent.heapResource) score -= 1;
+				if (sectorLocalesComponent.hasLocale(localeTypes.butcher)) score -= 2;
 				if (neighbours.count < 2) score -= 1;
 
 				return score;
@@ -271,11 +275,11 @@ define([
 			let sectorPosition = sector.get(PositionComponent);
 
 			let level = sectorPosition.level;
-			let levelOrdinal = GameGlobals.gameState.getLevelOrdinal(level);
+			let levelOrdinal = GameGlobals.worldState.getLevelOrdinal(level);
 			let isCampable = GameGlobals.levelHelper.isLevelCampable(sectorPosition.level);
 			let condition = sectorFeatures.getCondition();
 			let isEarlyZone = sectorFeatures.isEarlyZone();
-			let isGround = sectorPosition.level == GameGlobals.gameState.getGroundLevel();
+			let isGround = sectorPosition.level == GameGlobals.worldState.getGroundLevel();
 			let hasHazards = sectorFeatures.hasHazards();
 
 			let existingTypes = existingCharacters.map(characterVO => characterVO.characterType);
@@ -352,7 +356,7 @@ define([
 				validTypes.push(CharacterConstants.characterTypes.hunter);
 			}
 
-			if (sectorFeatures.isOnCriticalPath()) {
+			if (sectorFeatures.isOnCriticalPath) {
 				validTypes.push(CharacterConstants.characterTypes.mercenary);
 			}
 
@@ -388,7 +392,7 @@ define([
 				validTypes.push(CharacterConstants.characterTypes.shaman);
 			}
 
-			if (sectorFeatures.sectorType == SectorConstants.SECTOR_TYPE_SLUM) {
+			if (sectorFeatures.wealth < 5) {
 				validTypes.push(CharacterConstants.characterTypes.slumRefugee);
 			}
 			
@@ -408,7 +412,7 @@ define([
 				validTypes.push(CharacterConstants.characterTypes.trader);
 			}
 			
-			if (isCampable && sectorFeatures.isOnCriticalPath()) {
+			if (isCampable && sectorFeatures.isOnCriticalPath) {
 				validTypes.push(CharacterConstants.characterTypes.trader);
 			}
 

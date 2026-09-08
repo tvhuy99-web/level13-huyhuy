@@ -3,11 +3,13 @@ define(['ash',
     'game/GameGlobals', 
     'game/constants/DialogueConstants', 
     'game/constants/ExplorerConstants',
+    'game/constants/ItemConstants',
     'game/constants/PositionConstants',
     'game/constants/StoryConstants',
+    'game/constants/TextConstants',
     'game/components/common/PositionComponent',
     'game/nodes/player/DialogueNode' 
-], function (Ash, Text, GameGlobals, DialogueConstants, ExplorerConstants, PositionConstants, StoryConstants, PositionComponent, DialogueNode) {
+], function (Ash, Text, GameGlobals, DialogueConstants, ExplorerConstants, ItemConstants, PositionConstants, StoryConstants, TextConstants, PositionComponent, DialogueNode) {
         
         let DialogueHelper = Ash.Class.extend({
 
@@ -102,6 +104,12 @@ define(['ash',
                 }
             },
 
+            getCurrentDialogeID: function () {
+                if (!this.dialogueNodes.head.dialogue) return "(none)";
+                if (!this.dialogueNodes.head.dialogue.activeDialogue) return "(none)";
+                return this.dialogueNodes.head.dialogue.activeDialogue.dialogueID;
+            },
+
             getCurrentPageVO: function () {
                 if (!this.dialogueNodes.head) return null;
 
@@ -114,6 +122,11 @@ define(['ash',
                 let currentPageVO = this.dialogueNodes.head.dialogue.activeDialogue.pagesByID[currentPageID];
 
                 return currentPageVO;
+            },
+
+            getCurrentPageSelection: function () {
+                let selection = $("#dialogue-page-selection");
+                return selection && selection.length > 0 ? selection.val() : null;
             },
 
             isDialogueValid: function (dialogueVO, explorerVO, storyTag) {
@@ -146,9 +159,13 @@ define(['ash',
                     if (conditions.explorer.trust && conditions.explorer.trust > explorerVO.trust) return false;
                     if (conditions.explorer.maxTrust && conditions.explorer.maxTrust < explorerVO.trust) return false;
                     if (typeof conditions.explorer.inParty !== "undefined" && conditions.explorer.inParty != explorerVO.inParty) return false;
+			        let forcedExplorerID = GameGlobals.explorerHelper.getForcedExplorerID();
+                    let isForced = explorerVO.id == forcedExplorerID
+                    if (typeof conditions.explorer.isForced !== "undefined" && conditions.explorer.isForced != isForced) return false;
                     if (conditions.explorer.injured && explorerVO.injuredTimer <= 0) return false;
                     if (conditions.explorer.abilityType && explorerVO.abilityType != conditions.explorer.abilityType) return false;
                     if (conditions.explorer.quest && GameGlobals.storyHelper.getExplorerQuestStories(explorerVO).indexOf(conditions.explorer.quest) <0) return false;
+                    if (typeof conditions.explorer.isFamiliarLevel !== "undefined" && conditions.explorer.isFamiliarLevel != GameGlobals.explorerHelper.isFamiliarWithCurrentLevel(explorerVO)) return false;
                     if (conditions.explorer.meetCampOrdinal 
                         && GameGlobals.playerActionsHelper.checkRequirementsRange(conditions.explorer.meetCampOrdinal, explorerVO.meetCampOrdinal)) return false;
                 }
@@ -168,7 +185,9 @@ define(['ash',
                 return true;
             },
 
-            getDialogueTextParams: function (dialogueVO, pageVO, resultVO, isExplorer, staticTextParams) {
+            getDialogueTextParams: function (dialogueVO, pageVO, resultVO, isExplorer) {
+                let staticTextParams = this.dialogueNodes.head.dialogue.textParams;
+                
                 let result = staticTextParams || {};
 
                 if (dialogueVO.conditions.vicinity) {
@@ -185,15 +204,20 @@ define(['ash',
                     let type = dialogueVO.conditions.missedUpgrade;
                     let upgradeIDs = GameGlobals.tribeHelper.getMissedUpgrades(type);
                     let upgradeID = upgradeIDs.length > 0 ? upgradeIDs[0] : "?";
-                    result.upgradeName = Text.t("game.upgrades." + upgradeID + "_name");
+                    result.upgradeName = TextConstants.getUpgradeDisplayName(upgradeID);
                 }
 
                 if (dialogueVO.conditions.upgrades) {
                     let upgradeIDs = Object.keys(dialogueVO.conditions.upgrades);
                     if (upgradeIDs.length > 0) {
                         let upgradeID = upgradeIDs[0];
-                        result.upgradeName = Text.t("game.upgrades." + upgradeID + "_name");
+                        result.upgradeName = TextConstants.getUpgradeDisplayName(upgradeID);
                     }
+                }
+
+                for (let j = 0; j < pageVO.options.length; j++) {
+                    let optionVO = pageVO.options[j];
+                    this.addDialogueTextParamsFromCosts(result, optionVO.costs);
                 }
 
                 if (GameGlobals.gameState.getStoryFlag(StoryConstants.flags.SPIRITS_SEARCHING_FOR_SPIRITS)) {
@@ -215,10 +239,22 @@ define(['ash',
                     }
                 }
 
-                result.surfaceLevel = GameGlobals.gameState.getSurfaceLevel();
-                result.surfaceLevelMinus1 = GameGlobals.gameState.getSurfaceLevel() - 1;
+                result.surfaceLevel = GameGlobals.worldState.getSurfaceLevel();
+                result.surfaceLevelMinus1 = GameGlobals.worldState.getSurfaceLevel() - 1;
 
                 return result;
+            },
+
+            addDialogueTextParamsFromCosts: function (result, costs) {                
+			    for (let costName in costs) {
+                    let costNameParts = costName.split("_");
+                    let costNameParam = costName.replace(costNameParts[0] + "_", "");
+
+                    if (costName == "explorer_animal") {
+					    let explorerVO = GameGlobals.playerActionsHelper.getExplorerForCost(costNameParam);
+                        if (explorerVO) result.explorerName = explorerVO.name;
+                    }
+                }
             },
 
             findPOIDataForDialogue: function (poiType, isScouted) {
@@ -286,6 +322,27 @@ define(['ash',
                     }
                 }
                 return false;
+            },
+
+            getSelectionOptions: function (source) {
+                let result = [];
+
+                if (source == "item_disassemblable") {
+                    let items = GameGlobals.playerHelper.getAllAvailableItems();
+                    for (let i = 0; i < items.length; i++) {
+                        let itemVO = items[i];
+                        if (ItemConstants.isDisassemblable(itemVO)) {
+                            let label = ItemConstants.getItemDisplayName(itemVO);
+                            if (itemVO.equipped) label += " " + Text.t("ui.common.value_detail_postfix", Text.t("ui.inventory.item_status_equipped"));
+                            result.push({
+                                label: label,
+                                id: itemVO.itemID,
+                            });
+                        }
+                    }
+                }
+
+                return result;
             },
 
             // explorer dialogue

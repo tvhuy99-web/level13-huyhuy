@@ -21,18 +21,18 @@ define([], function () {
 	};
 
 	AccessibilityMapHelper.prototype.setup = function () {
-		this.setLabel("select-header-level", "Map level");
-		this.setLabel("select-header-mapmode", "Map mode");
-		this.setLabel("select-header-mapstyle", "Map style");
+		this.setLabel("select-header-level", "Tầng bản đồ");
+		this.setLabel("select-header-mapmode", "Chế độ bản đồ");
+		this.setLabel("select-header-mapstyle", "Kiểu bản đồ");
 
 		let asciiMap = document.querySelector("#mainmap-container-ascii textarea");
 		if (asciiMap && !asciiMap.getAttribute("aria-label")) {
-			asciiMap.setAttribute("aria-label", "ASCII level map");
+			asciiMap.setAttribute("aria-label", "Bản đồ tầng dạng ASCII");
 		}
 
 		let mapCanvas = document.getElementById("mainmap");
 		if (mapCanvas) {
-			mapCanvas.setAttribute("aria-label", "Visual level map. Use the sector controls or ASCII map for an accessible map view.");
+			mapCanvas.setAttribute("aria-label", "Bản đồ tầng trực quan. Dùng các nút khu vực hoặc bản đồ ASCII để xem bản đồ dễ tiếp cận hơn.");
 		}
 
 		let background = document.getElementById("minimap-background");
@@ -41,7 +41,7 @@ define([], function () {
 		let details = document.getElementById("mainmap-sector-details");
 		if (details) {
 			details.setAttribute("role", "region");
-			details.setAttribute("aria-label", "Selected sector details");
+			details.setAttribute("aria-label", "Chi tiết khu vực đã chọn");
 		}
 
 		this.configureLevelOptions();
@@ -66,9 +66,9 @@ define([], function () {
 			let text = this.normalize(option.textContent);
 			if (!text) continue;
 			let state = "";
-			if (/\(!\)\s*$/.test(text)) state = "new changes";
-			else if (/\(x\)\s*$/i.test(text)) state = "cleared";
-			else if (/\(-\)\s*$/.test(text)) state = "not cleared";
+			if (/\(!\)\s*$/.test(text)) state = "có thay đổi mới";
+			else if (/\(x\)\s*$/i.test(text)) state = "đã dọn sạch";
+			else if (/\(-\)\s*$/.test(text)) state = "chưa dọn sạch";
 			let base = text.replace(/\s*\((?:!|x|-)\)\s*$/i, "").trim();
 			option.setAttribute("aria-label", state ? base + ", " + state : base);
 		}
@@ -77,9 +77,9 @@ define([], function () {
 		if (bubble) {
 			bubble.setAttribute("aria-hidden", "true");
 			let count = parseInt(this.normalize(bubble.textContent), 10);
-			let baseLabel = "Map level";
+			let baseLabel = "Tầng bản đồ";
 			if (isFinite(count) && count > 0) {
-				baseLabel += ", " + count + (count === 1 ? " level has new changes" : " levels have new changes");
+				baseLabel += ", " + count + (count === 1 ? " tầng có thay đổi mới" : " tầng có thay đổi mới");
 			}
 			select.setAttribute("aria-label", baseLabel);
 		}
@@ -114,7 +114,7 @@ define([], function () {
 		let y = cell.getAttribute("data-y");
 		cell.setAttribute("role", "button");
 		if (!cell.hasAttribute("tabindex")) cell.setAttribute("tabindex", "0");
-		cell.setAttribute("aria-label", "Sector on level " + level + ", x " + x + ", y " + y);
+		cell.setAttribute("aria-label", "Khu vực ở tầng " + level + ", x " + x + ", y " + y);
 		cell.setAttribute("aria-pressed", cell.classList.contains("selected") ? "true" : "false");
 
 		if (cell.getAttribute("data-accessibility-key-bound") !== "true") {
@@ -188,7 +188,7 @@ define([], function () {
 
 		this.lastSectorSummary = summary;
 		if (this.announcer && this.announcer.announcePolite) {
-			this.announcer.announcePolite("Selected sector. " + summary);
+			this.announcer.announcePolite("Đã chọn khu vực. " + summary);
 		}
 	};
 
