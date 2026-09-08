@@ -40,7 +40,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m http.server 8000 >/tmp/level13-http.log 2>&1 &
+          python3 -m http.server 8000 --directory .. >/tmp/level13-http.log 2>&1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID || true' EXIT
-          python3 scripts/accessibility-master-runtime-smoke.py
+          LEVEL13_BASE_URL="http://127.0.0.1:8000/level13-huyhuy/" python3 scripts/accessibility-master-runtime-smoke.py
