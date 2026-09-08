@@ -76,9 +76,8 @@ try:
         }
         req([
             'game/GameGlobals',
-            'game/GlobalSignals',
             'game/components/sector/SectorStatusComponent'
-        ], function (GameGlobals, GlobalSignals, SectorStatusComponent) {
+        ], function (GameGlobals, SectorStatusComponent) {
             try {
                 const actions = GameGlobals.playerActionFunctions;
                 const node = actions && actions.playerLocationNodes ? actions.playerLocationNodes.head : null;
@@ -92,9 +91,13 @@ try:
                     done({ ok: false, reason: 'SectorStatusComponent missing from current sector' });
                     return;
                 }
+                const helper = GameGlobals.accessibilityActionCalloutHelper;
+                if (!helper || typeof helper.refreshScoutDependentButtons !== 'function') {
+                    done({ ok: false, reason: 'Scout accessibility refresh helper missing' });
+                    return;
+                }
                 status.scouted = true;
-                if (GlobalSignals.visionChangedSignal) GlobalSignals.visionChangedSignal.dispatch();
-                if (GlobalSignals.sectorScoutedSignal) GlobalSignals.sectorScoutedSignal.dispatch();
+                helper.refreshScoutDependentButtons();
                 done({ ok: true });
             } catch (error) {
                 done({ ok: false, reason: String(error && (error.stack || error.message || error)) });
