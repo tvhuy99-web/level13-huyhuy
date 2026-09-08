@@ -75,9 +75,9 @@ define([
 		pendingResourceBarUpdateTime: null, 
 		
 		SCAVENGE_BONUS_TYPES: [
-			{ itemBonusType: ItemConstants.itemBonusTypes.scavenge_general, displayName: "general", containerID: "scavenge-bonus-general" },
-			{ itemBonusType: ItemConstants.itemBonusTypes.scavenge_ingredients, displayName: "ingredients", containerID: "scavenge-bonus-ingredients" },
-			{ itemBonusType: ItemConstants.itemBonusTypes.scavenge_supplies, displayName: "supplies", containerID: "scavenge-bonus-supplies" },
+			{ itemBonusType: ItemConstants.itemBonusTypes.scavenge_general, displayName: "chung", containerID: "scavenge-bonus-general" },
+			{ itemBonusType: ItemConstants.itemBonusTypes.scavenge_ingredients, displayName: "nguyên liệu", containerID: "scavenge-bonus-ingredients" },
+			{ itemBonusType: ItemConstants.itemBonusTypes.scavenge_supplies, displayName: "nhu yếu phẩm", containerID: "scavenge-bonus-supplies" },
 		],
 
 		constructor: function () {
@@ -171,6 +171,7 @@ define([
 			GlobalSignals.add(this, GlobalSignals.launchCompletedSignal, this.onLaunchCompleted);
 			GlobalSignals.add(this, GlobalSignals.popupClosedSignal, this.onPopupClosed);
 			GlobalSignals.add(this, GlobalSignals.windowResizedSignal, this.onWindowResized);
+			GlobalSignals.add(this, GlobalSignals.errorLoggedSignal, this.onErrorLogged);
 
 			this.generateStatsCallouts();
 			this.updateGameVersion();
@@ -282,7 +283,7 @@ define([
 		},
 
 		initDynamicBackgroundItems: function () {
-			let isSunlit = $("body").hasClass("sunlit");
+			let isSunlit = !$("body").hasClass("dark");
 			if (isSunlit) {
 				log.w("can't init dynamic background items while sunlit theme is active");
 				return;
@@ -397,18 +398,18 @@ define([
 
 			GameGlobals.uiFunctions.toggle(this.elements.statIndicatorVision, !isSmallLayout || !isInCamp);
 			this.elements.valVision.text(shownVision + " / " + maxVision);
-			this.updateStatsCallout("Makes exploration safer and scavenging more effective", this.elements.statIndicatorVision, playerStatsNode.vision.accSources);
+			this.updateStatCalloutWithMax("Giúp thám hiểm an toàn hơn và thu nhặt hiệu quả hơn", this.elements.statIndicatorVision, playerStatsNode.vision.maxSources);
 			this.updateChangeIndicator(this.elements.changeIndicatorVision, maxVision - shownVision, shownVision < maxVision);
 
 			GameGlobals.uiFunctions.toggle(this.elements.statIndicatorHealth, !isSmallLayout);
 			this.elements.valHealth.text(Math.round(playerStatsNode.stamina.health));
-			this.updateHealthStatCallout("Determines maximum stamina", this.elements.statIndicatorHealth);
+			this.updateHealthStatCallout("Quyết định thể lực tối đa", this.elements.statIndicatorHealth);
 			let healthAccumulation = playerStatsNode.stamina.healthAccumulation;
 			this.updateChangeIndicator(this.elements.changeIndicatorHealth, healthAccumulation, healthAccumulation != 0, false);
 
 			GameGlobals.uiFunctions.toggle($("#stats-stamina"), GameGlobals.gameState.unlockedFeatures.scavenge);
 			this.elements.valStamina.text(showStamina + " / " + maxStamina);
-			this.updateStatsCallout("Required for exploration", this.elements.statIndicatorStamina, playerStatsNode.stamina.accSources);
+			this.updateStatCalloutWithAcc("Cần thiết để thám hiểm", this.elements.statIndicatorStamina, playerStatsNode.stamina.accSources);
 			this.updateChangeIndicator(this.elements.changeIndicatorStamina, playerStatsNode.stamina.accumulation, playerStamina < maxStamina, isResting || isHealing);
 
 			this.elements.valVision.toggleClass("warning", playerVision <= 25);
@@ -450,9 +451,9 @@ define([
 
 				$(".header-camp-population .value").text(Math.floor(campComponent.population) + " / " + maxPopulation);
 				this.updateChangeIndicator(this.elements.changeIndicatorPopulation, campComponent.populationChangePerSecWithoutCooldown, maxPopulation > 0);
-				var populationCalloutContent = "Required reputation:<br/>";
-				populationCalloutContent += "current: " + reqReputationCurrent + "<br/>";
-				populationCalloutContent += "next: " + reqReputationNext;
+				var populationCalloutContent = "Danh tiếng cần thiết:<br/>";
+				populationCalloutContent += "hiện tại: " + reqReputationCurrent + "<br/>";
+				populationCalloutContent += "tiếp theo: " + reqReputationNext;
 				UIConstants.updateCalloutContent($(".header-camp-population"), populationCalloutContent);
 				GameGlobals.uiFunctions.toggle(".header-camp-population", true);
 				GameGlobals.uiFunctions.toggle(".header-camp-reputation", true);
@@ -475,7 +476,27 @@ define([
 			if (source.isPercentage && source.percentageValue) {
 				displayValue = (source.amount > 0 ? "+" : "") + Math.round(source.percentageValue) + "%";
 			}
-			return source.source + ": " + displayValue + "<br/>";
+			return this.getDisplaySourceName(source.source) + ": " + displayValue + "<br/>";
+		},
+
+		getDisplaySourceName: function (source) {
+			let sourceNames = {
+				"Base": "Cơ bản",
+				"Population": "Dân số",
+				"Campfires": "Lửa trại",
+				"Markets": "Chợ",
+				"Inns": "Quán trọ",
+				"Temples": "Đền thờ",
+				"Clerics": "Giáo sĩ",
+				"Libraries": "Thư viện",
+				"Scientists": "Nhà khoa học",
+				"Research Center": "Trung tâm nghiên cứu",
+				"Radio": "Đài phát thanh",
+				"Level population": "Dân số theo tầng",
+				"milestones": "Cột mốc",
+				"luxury-resources": "Tài nguyên quý",
+			};
+			return sourceNames[source] || source;
 		},
 		
 		updateScavengeBonus: function (showScavangeAbility) {
@@ -534,7 +555,7 @@ define([
 			let animate = UIAnimations.shouldAnimateChange(previousValue, currentValue, previousUpdate, now, component.accumulation);
 			UIAnimations.animateOrSetNumber(valueElement, animate, displayValue, suffix, flipNegative, (v) => { return Math.floor(v); });
 			
-			this.updateStatsCallout("", $container, component.accSources);
+			this.updateStatCalloutWithAcc("", $container, component.accSources);
 			this.updateChangeIndicator(changeIndicatorElement, component.accumulation, isVisible && !isAtLimit);
 			this.previousStats[stat] = currentValue;
 			this.previousStatsUpdates[stat] = now;
@@ -572,7 +593,8 @@ define([
 			UIConstants.updateCalloutContent($indicatorElem, content);
 		},
 
-		updateStatsCallout: function (description, $indicatorElem, changeSources, hideNumbers) {
+		// stat callout showing change/accumulation sources
+		updateStatCalloutWithAcc: function (description, $indicatorElem, changeSources, hideNumbers) {
 			var sources = "";
 			var source;
 			var total = 0;
@@ -580,28 +602,47 @@ define([
 				source = changeSources[i];
 				if (source.amount != 0) {
 					if (hideNumbers) {
-						sources += source.source + "<br/>";
+						sources += this.getDisplaySourceName(source.source) + "<br/>";
 					} else {
 						var amount = Math.round(source.amount * 1000)/1000;
 						if (amount == 0 && source.amount > 0) {
 							amount = "<&nbsp;" + (1/1000);
 						}
-						sources += source.source + ": " + amount + "/s<br/>";
+						sources += this.getDisplaySourceName(source.source) + ": " + amount + "/s<br/>";
 						total+= source.amount;
 					}
 				}
 			}
 
 			if (sources.length <= 0) {
-				sources = "(no change)";
+				sources = "(không thay đổi)";
 			}
 			
 			var content = description + (description && sources ? "<hr/>" : "") + sources;
 			
 			if (!hideNumbers) {
-				var totals = "Total: " + Math.round(total * 10000)/10000 + "/s";
+				var totals = "Tổng: " + Math.round(total * 10000)/10000 + "/s";
 				content += (total > 0 ? ("<hr/>" + totals) : "");
 			}
+			
+			UIConstants.updateCalloutContent($indicatorElem, content);
+		},
+
+		// stat callout focused on what constitutes to the max value, less about accumulation
+		updateStatCalloutWithMax: function (description, $indicatorElem, maxSources) {
+			let sources = "";
+			for (let i in maxSources) {
+				let source = maxSources[i];
+				if (source.amount != 0) {
+					let amount = Math.round(source.amount * 1000)/1000;
+					if (amount == 0 && source.amount > 0) {
+						amount = "<&nbsp;" + (1/1000);
+					}
+					sources += this.getDisplaySourceName(source.source) + ": " + amount + "<br/>";
+				}
+			}
+			
+			let content = description + (description && sources ? "<hr/>" : "") + sources;
 			
 			UIConstants.updateCalloutContent($indicatorElem, content);
 		},
@@ -694,19 +735,19 @@ define([
 			let statuses = [];
 			
 			if (GameGlobals.playerHelper.getCurrentBonus(ItemConstants.itemBonusTypes.detect_hazards) > 0) {
-				statuses.push({ name: "Hazard foresight", icon: "img/status-hazard-prediction.png", isNegative: false });
+				statuses.push({ name: "Dự cảm mối nguy", icon: "img/status-hazard-prediction.png", isNegative: false });
 			}
 			
 			if (GameGlobals.playerHelper.getCurrentBonus(ItemConstants.itemBonusTypes.detect_supplies) > 0) {
-				statuses.push({ name: "Supplies detection", icon: "img/status-supplies-prediction.png", isNegative: false });
+				statuses.push({ name: "Phát hiện vật tư", icon: "img/status-supplies-prediction.png", isNegative: false });
 			}
 			
 			if (GameGlobals.playerHelper.getCurrentBonus(ItemConstants.itemBonusTypes.detect_ingredients) > 0) {
-				statuses.push({ name: "Ingredients detection", icon: "img/status-ingredients-prediction.png", isNegative: false });
+				statuses.push({ name: "Phát hiện nguyên liệu", icon: "img/status-ingredients-prediction.png", isNegative: false });
 			}
 			
 			if (GameGlobals.playerHelper.getCurrentBonus(ItemConstants.itemBonusTypes.detect_poi) > 0) {
-				statuses.push({ name: "POI detection", icon: "img/status-poi-prediction.png", isNegative: false });
+				statuses.push({ name: "Phát hiện điểm đáng chú ý", icon: "img/status-poi-prediction.png", isNegative: false });
 			}
 			
 			for (let i = 0; i < statuses.length; i++) {
@@ -734,13 +775,13 @@ define([
 			let perks = perksComponent.getAll();
 
 			let perksList = isSmallLayout ? this.perksListMobile : this.perksListDefault;
-			let sunlit = this.elements.body.hasClass("sunlit");
-			let themeChanged = sunlit != this.lastPerkUpdateSunlit;
+			let theme = this.getCurrentTheme();
+			let themeChanged = theme != this.lastPerkUpdateTheme;
 			let newItems = UIList.update(perksList, perks, themeChanged);
 
 			this.handleNewPerks(newItems);
 
-			this.lastPerkUpdateSunlit = sunlit;
+			this.lastPerkUpdateTheme = theme;
 		},
 
 		handleNewPerks: function (newItems) {
@@ -768,12 +809,11 @@ define([
 
 			let isSmallLayout = this.elements.body.hasClass("layout-small");
 			let isResting = this.isResting();
-			let now = new Date().getTime();
-			let sunlit = this.elements.body.hasClass("sunlit");
+			let theme = this.getCurrentTheme();
 			let isNegative = PerkConstants.isNegative(perk);
-			let backgroundColor = ColorConstants.getColor(sunlit, "bg_box_1");
+			let backgroundColor = ColorConstants.getColor(theme, "bg_box_1");
 			
-			let fillColor = isNegative ? ColorConstants.getColor(sunlit, "bg_warning_stronger") : ColorConstants.getColor(sunlit, "bg_element_1");
+			let fillColor = isNegative ? ColorConstants.getColor(theme, "bg_warning_stronger") : ColorConstants.getColor(theme, "bg_element_1");
 			let warningPercentage = perk.removeTimer > 0 ? 
 				perk.effectFactor * 100:
 				PerkConstants.getPerkActivePercent(perk) * 100;
@@ -843,7 +883,7 @@ define([
 				$(".header-camp-storage .value").text(storageCap);
 
 				let showStorageNameKey = GameGlobals.resourcesHelper.getCurrentStorageNameKey(isSmallLayout);
-				UIConstants.updateCalloutContent(".header-camp-storage", "Amount of each resource that can be stored");
+				UIConstants.updateCalloutContent(".header-camp-storage", "Số lượng tối đa của mỗi tài nguyên có thể lưu trữ");
 				GameGlobals.uiFunctions.setText(".header-camp-storage .label", showStorageNameKey);
 			}
 
@@ -1013,7 +1053,8 @@ define([
 						value *= GameGlobals.sectorHelper.getBeaconMovementBonus(this.currentLocationNodes.head.entity, this.playerStatsNodes.head.perks);
 						value *= GameGlobals.sectorHelper.getHazardsMovementMalus(this.currentLocationNodes.head.entity);
 						value = Math.round(value * 10) / 10;
-						isVisible = GameGlobals.gameState.unlockedFeatures.camp;
+						let hasEffect = value != 1 || detail.length > 0;
+						isVisible = hasEffect && GameGlobals.gameState.unlockedFeatures.camp;
 						flipNegative = true;
 						break;
 					
@@ -1048,13 +1089,22 @@ define([
 
 		updateGameMsg: function () {
 			if (!this.engine) return;
-			let gameMsgKey = "";
+
 			let saveSystem = this.engine.getSystem(SaveSystem);
 			let timeStamp = new Date().getTime();
+			let showErrorSeconds = 10;
+			let showSaveMessageSeconds = 3;
+			
+			let gameMsgKey = "";
+			let isError = false;
 
-			if (saveSystem && saveSystem.error) {
+			if (GameConstants.isDebugVersion && this.lastError && timeStamp - this.lastErrorTimestamp < showErrorSeconds * 1000) {
+				gameMsgKey = this.lastError;
+				isError = true;
+			} else if (saveSystem && saveSystem.error) {
 				gameMsgKey = saveSystem.error;
-			} else if (saveSystem && saveSystem.lastDefaultSaveTimestamp > 0 && timeStamp - saveSystem.lastDefaultSaveTimestamp < 3 * 1000) {
+				isError = true;
+			} else if (saveSystem && saveSystem.lastDefaultSaveTimestamp > 0 && timeStamp - saveSystem.lastDefaultSaveTimestamp < showSaveMessageSeconds * 1000) {
 				gameMsgKey = "ui.meta.game_saved_message";
 			} else if (GameGlobals.gameState.isPaused) {
 				gameMsgKey = "ui.meta.game_paused_message";
@@ -1064,6 +1114,7 @@ define([
 
 			if (this.lastGameMsg !== gameMsgKey) {
 				this.elements.gameMsg.text(Text.t(gameMsgKey));
+				this.elements.gameMsg.toggleClass("warning", isError);
 				this.lastGameMsg = gameMsgKey;
 			}
 		},
@@ -1095,7 +1146,7 @@ define([
 				let showLevel = GameGlobals.gameState.unlockedFeatures.levels;
 				positionText = this.currentLocationNodes.head.entity.get(PositionComponent).getPosition().getInGameFormat(showLevel, true);
 			}
-			$("#out-position-indicator").text("Position: " + positionText);
+			$("#out-position-indicator").text("Vị trí: " + positionText);
 			
 			this.updateLevelIcon();
 		},
@@ -1158,8 +1209,8 @@ define([
 			let playerPosition = this.playerStatsNodes.head.entity.get(PositionComponent);
 			let campComponent = this.currentLocationNodes.head.entity.get(CampComponent);
 			let isInCamp = playerPosition.inCamp;
-			let isGround = playerPosition.level == GameGlobals.gameState.getGroundLevel();
-			let isSurface = playerPosition.level == GameGlobals.gameState.getSurfaceLevel();
+			let isGround = playerPosition.level == GameGlobals.worldState.getGroundLevel();
+			let isSurface = playerPosition.level == GameGlobals.worldState.getSurfaceLevel();
 
 			let headerText; 
 			if (isInCamp && campComponent) { 
@@ -1188,15 +1239,21 @@ define([
 		},
 		
 		updateTheme: function () {
-			let sunlit = false;
+			let theme = UIConstants.THEME_DARK;
+
+			let getThemeBySunlitValue = function (sunlit) {
+				if (sunlit > 0.5) return UIConstants.THEME_SUNLIT;
+				if (sunlit > 0) return UIConstants.THEME_DUSKY;
+				return UIConstants.THEME_DARK;
+			}
 			
 			if (this.currentLocationNodes.head) {
 				let featuresComponent = this.currentLocationNodes.head.entity.get(SectorFeaturesComponent);
-				sunlit = featuresComponent.sunlit;
+				theme = getThemeBySunlitValue(featuresComponent.sunlit);
 			}
 			
 			if (GameGlobals.gameState.isFinished || GameGlobals.gameState.isLaunchCompleted) {
-				sunlit = false;
+				theme = UIConstants.THEME_DARK;
 			}
 			
 			if (this.playerStatsNodes.head && this.playerStatsNodes.head.entity.has(MovementComponent)) {
@@ -1204,30 +1261,35 @@ define([
 				let movementSector = GameGlobals.levelHelper.getSectorByPosition(movementComponent.level, movementComponent.sectorX, movementComponent.sectorY);
 				if (movementSector) {
 					let movementSectorFeaturesComponent = movementSector.get(SectorFeaturesComponent);
-					sunlit = movementSectorFeaturesComponent.sunlit;
+					theme = getThemeBySunlitValue(movementSectorFeaturesComponent.sunlit);
 				}
 			}
 			
-			if (GameGlobals.gameState.uiStatus.forceSunlit) sunlit = true;
-			if (GameGlobals.gameState.uiStatus.forceDark) sunlit = false;
+			if (GameGlobals.gameState.uiStatus.forcedTheme) theme = GameGlobals.gameState.uiStatus.forcedTheme;
 
-			if (GameGlobals.gameState.uiStatus.isHidden) return;
+			// nice if theme transition can happen while loading new level when moving to a new level
+			// if (GameGlobals.gameState.uiStatus.isHidden) return;
 			
-			this.updateThemeTo(sunlit);
+			this.updateThemeTo(theme);
+		},
+
+		getCurrentTheme: function () {
+			return UIConstants.getCurrentTheme(this.elements.body);
 		},
 		
-		updateThemeTo: function (sunlit) {
-			let wasSunlit = this.elements.body.hasClass("sunlit");
-			if (sunlit == wasSunlit) {
+		updateThemeTo: function (theme) {
+			let currentTheme = this.getCurrentTheme();
+			if (theme == currentTheme) {
 				return;
 			}
 			
-			log.w("[ui] update theme to: " + (sunlit ? "sunlit" : "dark"));
-			this.transitionTheme(wasSunlit, sunlit);
+			log.i("[ui] update theme to: " + theme);
+			this.transitionTheme(currentTheme, theme);
 		},
 		
 		updateThemedIcons: function () {
-			let sunlit = this.elements.body.hasClass("sunlit");
+			let theme = this.getCurrentTheme();
+			let sunlit = theme != UIConstants.THEME_DARK;
 			for (let i = 0; i < this.themedIcons.length; i++) {
 				let icon = this.themedIcons[i];
 				let path = sunlit ? icon.pathSunlit : icon.pathDark;
@@ -1257,7 +1319,7 @@ define([
 			let visionStep = Math.round(visionFactor / 10);
 			
 			UIState.refreshState(this, "vision-step", visionStep, function () {
-				log.i("update vision step: " + visionStep);
+				log.i("update vision step: " + visionStep, "ui");
 				for (let i = 0; i <= 10; i++) {
 					this.elements.body.toggleClass("vision-step-" + i, i == visionStep);
 				}
@@ -1271,7 +1333,7 @@ define([
 			this.visionLevel = visionLevel;
 
 			UIState.refreshState(this, "vision-level", visionLevel, function () {
-				log.i("update vision level: " + visionLevel);
+				log.i("update vision level: " + visionLevel, "ui");
 				this.updatePageBackgroundColor();
 				for (let i = 1; i <= 4; i++) {
 					this.elements.body.toggleClass("vision-level-" + i, i == visionLevel);
@@ -1282,10 +1344,11 @@ define([
 
 		updatePageBackgroundColor: function () {
 			let visionLevel = this.visionLevel;
+			let theme = this.getCurrentTheme();
 			let sunlit = this.elements.body.hasClass("sunlit");
-			let backgroundColor = ColorConstants.getColor(sunlit, "bg_page_vision_level_" + visionLevel);
+			let backgroundColor = ColorConstants.getColor(theme, "bg_page_vision_level_" + visionLevel);
 
-			log.i("update page background color: sunlit:" + sunlit + " | visionLevel:" + visionLevel);
+			log.i("update page background color: theme:" + theme + " | visionLevel:" + visionLevel, "ui");
 			
 			$("body").css("background", backgroundColor);
 			
@@ -1319,6 +1382,7 @@ define([
 		
 		transitionTheme: function (oldValue, newValue) {
 			if (oldValue == newValue) return;
+
 			if (this.currentThemeTransitionTargetValue != null && this.currentThemeTransitionTargetValue === newValue) {
 				return;
 			}
@@ -1349,8 +1413,9 @@ define([
 			$("#theme-transition-overlay").stop(true).animate({ opacity: 1 }, fadeOutDuration).delay(transitionDuration).animate({ opacity: 0 }, fadeInDuration);
 			
 			this.currentThemeTransitionID = setTimeout(function () {
-				sys.elements.body.toggleClass("sunlit", newValue);
-				sys.elements.body.toggleClass("dark", !newValue);
+				sys.elements.body.toggleClass("sunlit", newValue == UIConstants.THEME_SUNLIT);
+				sys.elements.body.toggleClass("dark", newValue == UIConstants.THEME_DARK);
+				sys.elements.body.toggleClass("dusky", newValue == UIConstants.THEME_DUSKY);
 				
 				sys.updatePageBackgroundColor();
 				sys.updateVisionStatus();
@@ -1387,37 +1452,37 @@ define([
 			
 			if (inCamp) {
 				base = levelComponent.habitability < 1 ? "ui-camp-outpost" : "ui-camp-default";
-				desc = levelComponent.habitability < 1 ? "in camp | outpost" : "in camp | regular";
+					desc = levelComponent.habitability < 1 ? "trong trại | tiền đồn" : "trong trại | thông thường";
 			} else if (!GameGlobals.levelHelper.isLevelTypeRevealed(position.level)) {
 				base = "ui-level-unknown";
-				desc = "outside | unknown level";
+					desc = "bên ngoài | tầng chưa biết";
 			} else {
-				var surfaceLevel = GameGlobals.gameState.getSurfaceLevel();
-				var groundLevel = GameGlobals.gameState.getGroundLevel();
+				var surfaceLevel = GameGlobals.worldState.getSurfaceLevel();
+				var groundLevel = GameGlobals.worldState.getGroundLevel();
 				if (position.level == surfaceLevel) {
 					base = "ui-level-sun";
-					desc = "outside | surface";
+					desc = "bên ngoài | mặt đất";
 				} else if (position.level == groundLevel) {
 					base = "ui-level-ground";
-					desc = "outside | ground";
+					desc = "bên ngoài | tầng mặt đất";
 				} else if (!levelComponent.isCampable) {
 					switch (levelComponent.notCampableReason) {
 						case LevelConstants.UNCAMPABLE_LEVEL_TYPE_RADIATION:
 							base = "ui-level-radiation";
-							desc = "outside | radiation level";
+							desc = "bên ngoài | tầng phóng xạ";
 							break;
 						case LevelConstants.UNCAMPABLE_LEVEL_TYPE_POLLUTION:
 							base = "ui-level-poison";
-							desc = "outside | polluted level";
+							desc = "bên ngoài | tầng ô nhiễm";
 							break;
 						default:
 							base = "ui-level-empty";
-							desc = "outside | uninhabitable level";
+							desc = "bên ngoài | tầng không thể sinh sống";
 							break;
 					}
 				} else {
 					base = "ui-level-default";
-					desc = "outside | regular level";
+					desc = "bên ngoài | tầng thông thường";
 				}
 			}
 			
@@ -1620,7 +1685,12 @@ define([
 		onWindowResized: function () {
 			this.updateLayoutMode();
 			this.updateLayout();
-		}
+		},
+
+		onErrorLogged: function (msg) {
+			this.lastError = msg;
+			this.lastErrorTimestamp = new Date().getTime();
+		},
 	});
 
 	return UIOutHeaderSystem;

@@ -177,14 +177,14 @@ define([
 						let minInfections = Math.min(maxInfections, Math.ceil(pop.num / 2));
 						let numNewDiseased = MathUtils.randomIntBetween(minInfections, maxInfections + 1);
 						pop.num += numNewDiseased;
-						GameGlobals.playerHelper.addLogMessageWithPosition(LogConstants.getUniqueID(), "The disease spreads.", pos);
+						GameGlobals.playerHelper.addLogMessageWithPosition(LogConstants.getUniqueID(), "Dịch bệnh đang lan rộng.", pos);
 						break;
 
 					case CampConstants.DISEASE_UPDATE_TYPE_WANE:
 						let numCured = MathUtils.randomIntBetween(1, pop.num);
 						if (numCured > 0) {
 							pop.num -= numCured;
-							GameGlobals.playerHelper.addLogMessageWithPosition(LogConstants.getUniqueID(), numCured + " people recovered from the disease.", pos);
+							GameGlobals.playerHelper.addLogMessageWithPosition(LogConstants.getUniqueID(), numCured + " người đã khỏi bệnh.", pos);
 						}
 						break;
 
@@ -192,14 +192,14 @@ define([
 						let numKilled = MathUtils.randomIntBetween(1, Math.ceil(pop.num / 4));
 						camp.population -= numKilled;
 						pop.num -= numKilled;
-						GameGlobals.playerHelper.addLogMessageWithPosition(LogConstants.getUniqueID(), numKilled + " people killed by the disease.", pos);
+						GameGlobals.playerHelper.addLogMessageWithPosition(LogConstants.getUniqueID(), numKilled + " người đã chết vì bệnh.", pos);
 						break;
 
 					case CampConstants.DISEASE_UPDATE_TYPE_END:
 						let numLastCured = pop.num;
 						pop.num = 0;
 						if (numLastCured > 0) {
-							GameGlobals.playerHelper.addLogMessageWithPosition(LogConstants.getUniqueID(), numLastCured + " people recovered from the disease.", pos);
+							GameGlobals.playerHelper.addLogMessageWithPosition(LogConstants.getUniqueID(), numLastCured + " người đã khỏi bệnh.", pos);
 						}
 						break;
 				}
@@ -358,12 +358,13 @@ define([
 		
 		reassignWorkers: function (node) {
 			let improvements = node.entity.get(SectorImprovementsComponent);
+			let workerFactors = GameGlobals.campHelper.getWorkerFactors(node.position.level);
 
 			let reservedWorkers = {};
 			let foodConsumption = GameGlobals.campHelper.getFoodConsumptionPerSecond(node.camp.population);
-			let foodProduction = GameGlobals.campHelper.getFoodProductionPerSecond(1, improvements);
+			let foodProduction = GameGlobals.campHelper.getFoodProductionPerSecond(1, improvements, workerFactors);
 			let waterConsumption = GameGlobals.campHelper.getWaterConsumptionPerSecond(node.camp.population);
-			let waterProduction = GameGlobals.campHelper.getWaterProductionPerSecond(1, improvements);
+			let waterProduction = GameGlobals.campHelper.getWaterProductionPerSecond(1, improvements, workerFactors);
 			reservedWorkers[CampConstants.workerTypes.scavenger.id] = 1;
 			reservedWorkers[CampConstants.workerTypes.trapper.id] = Math.ceil(foodConsumption / foodProduction);
 			reservedWorkers[CampConstants.workerTypes.water.id] = Math.ceil(waterConsumption / waterProduction);
@@ -431,7 +432,7 @@ define([
 
 			if (populationDeficit <= 1) return 0;
 
-			let campOrdinal = GameGlobals.gameState.getCampOrdinal(node.position.level);
+			let campOrdinal = GameGlobals.worldState.getCampOrdinal(node.position.level);
 			let habitability = GameGlobals.campBalancingHelper.getHabitability(campOrdinal);
 			
 			let probability = MathUtils.map(populationDeficit, 1, 10, 0.05, 0.5);
@@ -527,7 +528,7 @@ define([
 		logRestoredPopulation: function (node, restoredPopulation) {
 			let pos = node.position.getPosition();
 			pos.inCamp = true;
-			GameGlobals.playerHelper.addLogMessageWithPosition(LogConstants.getUniqueID(), restoredPopulation + " workers ready to work again", pos);
+			GameGlobals.playerHelper.addLogMessageWithPosition(LogConstants.getUniqueID(), restoredPopulation + " người lao động đã sẵn sàng làm việc trở lại.", pos);
 		},
 		
 		onGameStarted: function () {

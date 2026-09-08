@@ -103,9 +103,14 @@ define([
 
 		updateBubble: function () {
 			let bubbleNumber = 0;
+			let numUnseenWorldChanges = GameGlobals.worldHelper.getUnseenChangesLevels().length;
+			bubbleNumber += numUnseenWorldChanges;
 			if (!GameGlobals.gameState.hasSeenTab(GameGlobals.uiFunctions.elementIDs.tabs.map)) bubbleNumber = "!";
 			GameGlobals.uiFunctions.updateBubble("#switch-map .bubble", this.bubbleNumber, bubbleNumber);
 			this.bubbleNumber = bubbleNumber;
+
+			$("#select-map-level-bubble").toggle(numUnseenWorldChanges > 0);
+			$("#select-map-level-bubble").text(numUnseenWorldChanges);
 		},
 		
 		updateHeight: function () {
@@ -116,8 +121,8 @@ define([
 		initLevelSelector: function () {
 			$("#select-header-level").empty();
 			var html = "";
-			var surfaceLevel = GameGlobals.gameState.getSurfaceLevel();
-			var groundLevel = GameGlobals.gameState.getGroundLevel();
+			var surfaceLevel = GameGlobals.worldState.getSurfaceLevel();
+			var groundLevel = GameGlobals.worldState.getGroundLevel();
 			for (let i = surfaceLevel; i >= groundLevel; i--) {
 				let label = this.getLevelSelectorOptionLabel(i);
 				html += "<option value='" + i + "' id='map-level-selector-level-" + i + "'>" + label + "</option>"
@@ -128,48 +133,52 @@ define([
 		initMapModeSelector: function () {
 			$("#select-header-mapmode").empty();
 			var html = "";
-			html += "<option value='" + MapUtils.MAP_MODE_DEFAULT + "' id='map-style-selector-" + this.MAP_MODE_DEFAULT + "'>Default</option>";
-			html += "<option value='" + MapUtils.MAP_MODE_HAZARDS + "' id='map-style-selector-" + this.MAP_MODE_HAZARDS + "'>Hazards</option>";
-			html += "<option value='" + MapUtils.MAP_MODE_SCAVENGING + "' id='map-style-selector-" + this.MAP_MODE_SCAVENGING + "'>Scavenging</option>";
+			html += "<option value='" + MapUtils.MAP_MODE_DEFAULT + "' id='map-style-selector-" + this.MAP_MODE_DEFAULT + "'>Mặc định</option>";
+			html += "<option value='" + MapUtils.MAP_MODE_HAZARDS + "' id='map-style-selector-" + this.MAP_MODE_HAZARDS + "'>Mối nguy</option>";
+			html += "<option value='" + MapUtils.MAP_MODE_SCAVENGING + "' id='map-style-selector-" + this.MAP_MODE_SCAVENGING + "'>Lục soát</option>";
 			$("#select-header-mapmode").append(html);
 		},
 		
 		initMapStyleSelector: function () {
 			$("#select-header-mapstyle").empty();
 			var html = "";
-			html += "<option value='" + this.MAP_STYLE_CANVAS + "' id='map-style-selector-" + this.MAP_STYLE_CANVAS + "'>Canvas</option>";
+			html += "<option value='" + this.MAP_STYLE_CANVAS + "' id='map-style-selector-" + this.MAP_STYLE_CANVAS + "'>Đồ họa</option>";
 			html += "<option value='" + this.MAP_STYLE_ASCII + "' id='map-style-selector-" + this.MAP_STYLE_CANVAS + "'>ASCII</option>";
 			$("#select-header-mapstyle").append(html);
 		},
 
 		updateLevelSelector: function () {
-			var surfaceLevel = GameGlobals.gameState.getSurfaceLevel();
-			var groundLevel = GameGlobals.gameState.getGroundLevel();
-			var countVisible = 0;
+			let surfaceLevel = GameGlobals.worldState.getSurfaceLevel();
+			let groundLevel = GameGlobals.worldState.getGroundLevel();
+			let unseenWorldChanges = GameGlobals.worldHelper.getUnseenChangesLevels();
+
+			let countVisible = 0;
 			for (let i = surfaceLevel; i >= groundLevel; i--) {
 				let isVisible = GameGlobals.uiMapHelper.isMapRevealed || GameGlobals.levelHelper.isVisited(i);
 				let $elem = $("#map-level-selector-level-" + i);
 				let levelStats = GameGlobals.levelHelper.getLevelStats(i);
 				let isCleared = levelStats.percentClearedSectors >= 1;
+				let hasUnseenChanges = unseenWorldChanges.indexOf(i) >= 0;
 				GameGlobals.uiFunctions.toggle($elem, isVisible);
 				if (isVisible) {
-					$elem.text(this.getLevelSelectorOptionLabel(i, isCleared));
+					$elem.text(this.getLevelSelectorOptionLabel(i, isCleared, hasUnseenChanges));
 					countVisible++;
 				}
 			}
 			GameGlobals.uiFunctions.toggle($("#select-header-level"), countVisible > 1);
 		},
 
-		getLevelSelectorOptionLabel: function (level, isCleared) {
-				let surfaceLevel = GameGlobals.gameState.getSurfaceLevel();
-				let groundLevel = GameGlobals.gameState.getGroundLevel();
+		getLevelSelectorOptionLabel: function (level, isCleared, hasUnseenChanges) {
+				let surfaceLevel = GameGlobals.worldState.getSurfaceLevel();
+				let groundLevel = GameGlobals.worldState.getGroundLevel();
 
-				let result = "Level " + level;
+				let result = "Tầng " + level;
 				
-				if (level == surfaceLevel) result = "Surface";
-				if (level == groundLevel) result = "Ground";
+				if (level == surfaceLevel) result = "Bề mặt";
+				if (level == groundLevel) result = "Mặt đất";
 
-				if (isCleared) result += " (x)";
+				if (hasUnseenChanges) result += "(!)";
+				else if (isCleared) result += " (x)";
 				else result += " (-)";
 
 				return result;
@@ -179,9 +188,14 @@ define([
 			$("#select-header-level").val(level);
 			this.selectedLevel = level;
 			this.selectedSector = null;
-			this.updateMap();
-			this.updateSector();
-			this.centerMap();
+
+			GameGlobals.gameManager.generateLevel(level).then(() => {
+				this.updateMap();
+				this.updateSector();
+				this.centerMap();
+				this.updateMapCompletionHint();
+				this.updateLevelSelector();
+			});
 		},
 
 		selectSector: function (level, x, y) {
@@ -263,6 +277,8 @@ define([
 				$("#mainmap-container-ascii textarea").attr("rows", rows)
 				$("#mainmap-ascii-legend").text(GameGlobals.uiMapHelper.getASCIILegend(this.selectedMapMode));
 			}
+
+			GameGlobals.worldHelper.setChangesSeen(mapPosition.level);
 		},
 
 		updateSector: function () {
@@ -285,10 +301,10 @@ define([
 				var isVisited = GameGlobals.sectorHelper.isVisited(this.selectedSector);
 				var sectorFeatures = this.selectedSector.get(SectorFeaturesComponent);
 				var features = GameGlobals.sectorHelper.getTextFeatures(this.selectedSector);
-				var header = isVisited ? TextConstants.getSectorName(isScouted, features) : "Sector";
+				var header = isVisited ? TextConstants.getSectorName(isScouted, features) : "Khu vực";
 				$("#mainmap-sector-details-name").text(header);
 				$("#mainmap-sector-details-pos").text(position.getInGameFormat(false));
-				$("#mainmap-sector-details-district").text(this.getDistrictText(this.selectedSector));
+				$("#mainmap-sector-details-district").text(this.getDistrictText(position.level, this.selectedSector));
 				$("#mainmap-sector-details-distance").text(this.getDistanceText(this.selectedSector));
 				$("#mainmap-sector-details-poi").text(this.getPOIText(this.selectedSector, isScouted));
 				$("#mainmap-sector-details-res-sca").text(this.getResScaText(this.selectedSector, isScouted, statusComponent, sectorFeatures));
@@ -297,7 +313,7 @@ define([
 				$("#mainmap-sector-details-blockers").text(this.getBlockersHTML(this.selectedSector, isScouted));
 				$("#mainmap-sector-details-env").html(this.getEnvironmentHTML(this.selectedSector, isScouted));
 				$("#mainmap-sector-details-misc").html(this.getMiscHTML(this.selectedSector, isScouted));
-				$("#mainmap-sector-debug-text").text("Zone: " + sectorFeatures.zone);
+				$("#mainmap-sector-debug-text").text("Vùng: " + sectorFeatures.zone);
 			}
 		},
 
@@ -451,7 +467,7 @@ define([
 			let position = this.selectedSector.get(PositionComponent).getPosition();
 			let startPosition = this.playerLocationNodes.head.position.getPosition();
 			let includeLevel = position.level != startPosition.level;
-			let title = "Directions from " + startPosition.getInGameFormat(includeLevel) + " to " + position.getInGameFormat(includeLevel);
+			let title = "Chỉ đường từ " + startPosition.getInGameFormat(includeLevel) + " đến " + position.getInGameFormat(includeLevel);
 			
 			GlobalSignals.triggerSoundSignal.dispatch(UIConstants.soundTriggerIDs.buttonClicked);
 			
@@ -486,22 +502,22 @@ define([
 				
 				let instructionPreface = "";
 				if (stretches.length > 1) {
-					if (isLast && stretches.length > 3) instructionPreface = "finally, ";
-					else if (isLevelChange) instructionPreface = "then, ";
+					if (isLast && stretches.length > 3) instructionPreface = "cuối cùng, ";
+					else if (isLevelChange) instructionPreface = "sau đó, ";
 				}
 				
 				let isPerpendicular = i > 0 && PositionConstants.isPerpendicular(stretch.direction, stretches[i-1].direction);
 				
-				let goVerb = isPerpendicular ? "turn" : "move";
-				let stepNoun = stretch.steps > 1 ? "steps" : "step";
+				let goVerb = isPerpendicular ? "rẽ" : "đi";
+				let stepNoun = stretch.steps > 1 ? "bước" : "bước";
 				let stepsPhrase = isLevelChange ? "" : "<span class='hl-functionality'>" + stretch.steps + "</span> " + stepNoun + " ";
-				let endPosition = isLevelChange ? "level " + stretch.endPos.level : stretch.endPos.getInGameFormat();
+				let endPosition = isLevelChange ? "tầng " + stretch.endPos.level : stretch.endPos.getInGameFormat();
 				
 				let instructionBase =
 					goVerb + " " +
 					stepsPhrase +
 					"<span class='hl-functionality'>" + PositionConstants.getDirectionName(stretch.direction) + "</span>" +
-					" to " + endPosition;
+					" đến " + endPosition;
 				
 				let instruction = instructionPreface + " " + instructionBase;
 				
@@ -519,8 +535,8 @@ define([
 			let levelTypeTextVO = {};
 			
 			let levelComponent = GameGlobals.levelHelper.getLevelEntityForPosition(level).get(LevelComponent);
-			let surfaceLevel = GameGlobals.gameState.getSurfaceLevel();
-			let groundLevel = GameGlobals.gameState.getGroundLevel();
+			let surfaceLevel = GameGlobals.worldState.getSurfaceLevel();
+			let groundLevel = GameGlobals.worldState.getGroundLevel();
 			let isTypeRevealed = GameGlobals.levelHelper.isLevelTypeRevealed(level);
 			
 			if (level == surfaceLevel) {
@@ -564,9 +580,12 @@ define([
 			$("#map-completion-hint").text(Text.compose(hint));
 		},
 		
-		getDistrictText: function (sector) {
+		getDistrictText: function (level, sector) {
+			let levelComponent = GameGlobals.levelHelper.getLevelEntityForPosition(level).get(LevelComponent);
 			let sectorFeatures = sector.get(SectorFeaturesComponent);
-			return sectorFeatures.isEarlyZone() ? "central" : "outer";
+			let districtVO = levelComponent.districts[sectorFeatures.districtIndex];
+			let districtType = districtVO.type;
+			return (sectorFeatures.isEarlyZone() ? "trung tâm" : "ngoại vi") + " (" + sectorFeatures.districtIndex + " " + districtType + ")";
 		},
 		
 		getPOIText: function (sector, isScouted) {
@@ -583,21 +602,21 @@ define([
 			let numUnexaminedSpots = GameGlobals.sectorHelper.getNumUnexaminedSpots(sector);
 			
 			let result = [];
-			if (sector.has(CampComponent)) result.push("camp");
+			if (sector.has(CampComponent)) result.push("trại");
 			if (sector.has(WorkshopComponent)) {
 				let workshopComponent = sector.get(WorkshopComponent);
 				if (workshopComponent.isClearable) {
 					let sectorControlComponent = sector.get(SectorControlComponent);
 					if (sectorControlComponent.hasControlOfLocale(LocaleConstants.LOCALE_ID_WORKSHOP)) {
-						result.push("workshop (cleared)");
+						result.push("xưởng (đã dọn)");
 					} else {
-						result.push("workshop (not cleared)");
+						result.push("xưởng (chưa dọn)");
 					}
 				}
 			}
 			
-			if (improvements.getCount(improvementNames.greenhouse)) result.push("greenhouse");
-			if (!hasCampOnLevel && sectorFeatures.canHaveCamp()) result.push("good place for camp");
+			if (improvements.getCount(improvementNames.greenhouse)) result.push("nhà kính");
+			if (!hasCampOnLevel && sectorFeatures.canHaveCamp()) result.push("nơi phù hợp để dựng trại");
 			if (sectorPassages.passageUp) {
 				var passageUpBuilt = improvements.getCount(improvementNames.passageUpStairs) +
 					improvements.getCount(improvementNames.passageUpElevator) +
@@ -610,18 +629,18 @@ define([
 					improvements.getCount(improvementNames.passageDownHole) > 0;
 				result.push(TextConstants.getPassageDescription(sectorPassages.passageDown, PositionConstants.DIRECTION_DOWN, passageDownBuilt, true));
 			}
-			if (unScoutedLocales > 0) result.push("unscouted locales");
-			if (numUnexaminedSpots > 0) result.push("unexamined features");
+			if (unScoutedLocales > 0) result.push("địa điểm chưa thám sát");
+			if (numUnexaminedSpots > 0) result.push("đặc điểm chưa khám xét");
 			if (sectorFeatures.hasSpring) result.push(TextConstants.getSpringName(sectorFeatures));
 			
 			for (let i = 0; i < localesComponent.locales.length; i++) {
 				var locale = localesComponent.locales[i];
 				if (statusComponent.isLocaleScouted(i)) {
 					if (locale.type == localeTypes.tradingpartner) {
-						var campOrdinal = GameGlobals.gameState.getCampOrdinal(sector.get(PositionComponent).level);
+						var campOrdinal = GameGlobals.worldState.getCampOrdinal(sector.get(PositionComponent).level);
 						var partner = TradeConstants.getTradePartner(campOrdinal);
 						if (partner) {
-							result.push(partner.name + " (trade partner)");
+							result.push(partner.name + " (đối tác buôn bán)");
 						}
 					}
 				}
@@ -629,7 +648,7 @@ define([
 			
 			
 			if (improvements.getCount(improvementNames.beacon) > 0) {
-				result.push("beacon");
+				result.push("đèn hiệu");
 			}
 			
 			if (result.length < 1) return "-";
@@ -656,17 +675,17 @@ define([
 				if (showIngredients) result += TextConstants.getScaItemString(items, knownItems, featuresComponent.itemsScavengeable);
 			}
 			
-			result += " (" + scavengedPercent + "% scavenged) ";
+			result += " (" + scavengedPercent + "% đã lục lọi) ";
 
 			if (featuresComponent.heapResource) {
 				let heapName = TextConstants.getHeapDisplayName(featuresComponent.heapResource, featuresComponent);
 				let heapScavengedPercentage = Math.round(statusComponent.getHeapScavengedPercent());
 				let resourceName = TextConstants.getResourceDisplayName(featuresComponent.heapResource);
-				result += ", " + heapName + " (" + resourceName + ", " + heapScavengedPercentage + "% scavenged)";
+				result += ", " + heapName + " (" + resourceName + ", " + heapScavengedPercentage + "% đã lục lọi)";
 			}
 			
 			if (investigatedPercent > 0) {
-				result += " (" + investigatedPercent + "% investigated) ";
+				result += " (" + investigatedPercent + "% đã điều tra) ";
 			}
 			
 			return result;
@@ -685,19 +704,19 @@ define([
 			var result1 = [];
 			var result2 = [];
 			if (isScouted) {
-				if (collectorFood.count === 1) result1.push("1 trap");
-				if (collectorFood.count > 1) result1.push("traps");
-				if (collectorFood.count == 0 && featuresComponent.resourcesCollectable.food > 0 && hazards.territory == 0) result2.push ("food")
-				if (collectorWater.count === 1) result1.push("1 bucket");
-				if (collectorWater.count > 1) result1.push("buckets");
-				if (collectorWater.count == 0 && featuresComponent.resourcesCollectable.water > 0 && hazards.territory == 0) result2.push ("water")
+				if (collectorFood.count === 1) result1.push("1 bẫy");
+				if (collectorFood.count > 1) result1.push("bẫy");
+				if (collectorFood.count == 0 && featuresComponent.resourcesCollectable.food > 0 && hazards.territory == 0) result2.push ("thức ăn")
+				if (collectorWater.count === 1) result1.push("1 xô");
+				if (collectorWater.count > 1) result1.push("xô");
+				if (collectorWater.count == 0 && featuresComponent.resourcesCollectable.water > 0 && hazards.territory == 0) result2.push ("nước")
 			}
 			
 			let part1 = "-";
 			if (result1.length > 0) part1 = result1.join(", ");
 			
 			let part2 = "";
-			if (result2.length > 0) part2 = " (can collect " + result2.join(", ") + ")";
+			if (result2.length > 0) part2 = " (có thể thu thập " + result2.join(", ") + ")";
 			return part1 + part2;
 		},
 		
@@ -753,18 +772,19 @@ define([
 				return label + " (<span class='warning'>" + value + "</span>)";
 			};
 			
-			if (featuresComponent.sunlit) result.push("sunlit");
-			if (hazards.debris > 0) result.push("debris");
-			if (hazards.territory > 0) result.push("gang territory");
+			if (featuresComponent.sunlit > 0.5) result.push("có nắng");
+			else if (featuresComponent.sunlit > 0) result.push("có nắng gián tiếp");
+			if (hazards.debris > 0) result.push("đống đổ nát");
+			if (hazards.territory > 0) result.push("lãnh địa băng nhóm");
 			
 			if (hazards.radiation > 0)
-				result.push(getHazardSpan("radioactivity", hazards.radiation, hazards.radiation > itemsComponent.getCurrentBonus(ItemConstants.itemBonusTypes.res_radiation)));
+				result.push(getHazardSpan("phóng xạ", hazards.radiation, hazards.radiation > itemsComponent.getCurrentBonus(ItemConstants.itemBonusTypes.res_radiation)));
 			if (hazards.poison > 0)
-				result.push(getHazardSpan("pollution", hazards.poison, hazards.poison > itemsComponent.getCurrentBonus(ItemConstants.itemBonusTypes.res_poison)));
+				result.push(getHazardSpan("ô nhiễm", hazards.poison, hazards.poison > itemsComponent.getCurrentBonus(ItemConstants.itemBonusTypes.res_poison)));
 			if (hazards.cold > 0)
-				result.push(getHazardSpan("cold", hazards.cold, hazards.cold > itemsComponent.getCurrentBonus(ItemConstants.itemBonusTypes.res_cold)));
+				result.push(getHazardSpan("lạnh", hazards.cold, hazards.cold > itemsComponent.getCurrentBonus(ItemConstants.itemBonusTypes.res_cold)));
 			if (hazards.flooded > 0)
-				result.push(getHazardSpan("flooded", hazards.flooded, hazards.flooded > itemsComponent.getCurrentBonus(ItemConstants.itemBonusTypes.res_water)));
+				result.push(getHazardSpan("ngập", hazards.flooded, hazards.flooded > itemsComponent.getCurrentBonus(ItemConstants.itemBonusTypes.res_water)));
 			
 			if (result.length < 1) return "-";
 			else return result.join(", ");
@@ -780,11 +800,17 @@ define([
 				let featuresComponent = sector.get(SectorFeaturesComponent);
 
 				if (GameGlobals.sectorHelper.canBeInvestigated(sector)) {
-					result.push("can be investigated");
+					result.push("có thể điều tra");
 				}
 				
 				if (statusComponent.graffiti) {
-					result.push("Graffiti: '" + statusComponent.graffiti + "'");
+					result.push("Hình vẽ graffiti: '" + statusComponent.graffiti + "'");
+				}
+				
+				let levelFeatures = featuresComponent.levelFeatures;
+				for (let i = 0; i < levelFeatures.length; i++) {
+					let featureType = levelFeatures[i];
+					result.push(TextConstants.getLevelFeatureName(featureType));
 				}
 			}
 			
@@ -865,7 +891,13 @@ define([
 		
 		updateHeader: function () {
 			let header = Text.t("ui.map.page_header");
-			if (this.isMapModesVisible()) header += " (" + this.selectedMapMode + ")";
+			if (this.isMapModesVisible()) {
+				let modeNames = {};
+				modeNames[MapUtils.MAP_MODE_DEFAULT] = "Mặc định";
+				modeNames[MapUtils.MAP_MODE_HAZARDS] = "Mối nguy";
+				modeNames[MapUtils.MAP_MODE_SCAVENGING] = "Lục soát";
+				header += " (" + (modeNames[this.selectedMapMode] || this.selectedMapMode) + ")";
+			}
 			$("#tab-header h2").text(header);
 		},
 		
@@ -877,7 +909,6 @@ define([
 			let level = parseInt($("#select-header-level").val());
 			if (this.selectedLevel === level) return;
 			this.selectLevel(level);
-			this.updateMapCompletionHint();
 		},
 		
 		onMapModeSelectorChanged: function () {

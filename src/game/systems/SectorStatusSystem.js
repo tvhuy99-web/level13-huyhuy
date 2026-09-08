@@ -1,4 +1,4 @@
-// A system that updates a Sector's MovementOptionsComponent based on its neighbours and improvements
+// Updates a Sector's visited/seen status and MovementOptionsComponent based on its neighbours and improvements
 define([
 	'ash',
 	'game/GameGlobals',
@@ -41,6 +41,7 @@ define([
 		playerLocationNodes: null,
 		itemsNodes: null,
 		
+		// TODO this should be in some helper
 		neighboursDict: {},
 
 		contest: "SectorStatusSystem",
@@ -64,6 +65,9 @@ define([
 				sys.updateCurrentLocation();
 			});
 			GlobalSignals.gameStateReadySignal.add(function () {
+				sys.queueFindAllNeighbours();
+			});
+			GlobalSignals.levelGeneratedSignal.add(function (level) {
 				sys.queueFindAllNeighbours();
 			});
 			GlobalSignals.gameStateRefreshSignal.add(function () {
@@ -95,7 +99,6 @@ define([
 			if (!this.playerLocationNodes.head) return;
 			if (!this.playerLocationNodes.head.entity) return;
 			
-			log.i("update current location", this);
 			this.findNeighboursIfNotAlready(this.playerLocationNodes.head.entity);
 			this.updateSector(this.playerLocationNodes.head.entity);
 		},
@@ -110,7 +113,6 @@ define([
 		},
 
 		updateAllSectors: function () {
-			log.i("update all sectors | " + Object.keys(this.neighboursDict).length, this);
 			for (let sectorNode = this.sectorNodes.head; sectorNode; sectorNode = sectorNode.next) {
 				this.updateSector(sectorNode.entity);
 			}
@@ -208,7 +210,7 @@ define([
 				movementOptions.canMoveTo[direction] = movementOptions.canMoveTo[direction] && !GameGlobals.movementHelper.isBlocked(entity, direction);
 				movementOptions.cantMoveToReason[direction] = GameGlobals.movementHelper.getBlockedReason(entity, direction);
 				if (isBlockedByHazard) movementOptions.cantMoveToReason[direction] = GameGlobals.sectorHelper.getHazardDisabledReason(featuresComponent, statusComponent, this.itemsNodes.head.items);
-				if (!neighbour) movementOptions.cantMoveToReason[direction] = "Nothing here.";
+				if (!neighbour) movementOptions.cantMoveToReason[direction] = "Không có gì ở đó.";
 				
 				//log.i(PositionConstants.getDirectionName(direction) + "\t" + isBlockedByHazard + " | " + movementOptions.cantMoveToReason[direction]);
 			}
@@ -295,11 +297,9 @@ define([
 		},
 
 		findNeigbhoursForQueued: function () {
-			if (!this.sectorsPendingFindNeighbours) return;
+			if (!this.sectorsPendingFindNeighbours || this.sectorsPendingFindNeighbours.length == 0) return;
 
 			let sector = this.sectorsPendingFindNeighbours.pop();
-
-			if (!sector) return;
 
 			this.findNeighboursIfNotAlready(sector);
 
@@ -308,21 +308,23 @@ define([
 				this.updateAllSectors();
 			}
 		},
-
+		
 		findNeighboursIfNotAlready: function (entity) {
+			if (!entity) return;
 			let positionComponent = entity.get(PositionComponent);
 			let sectorKey = this.getSectorKey(positionComponent);
-			if (!this.neighboursDict[sectorKey]) this.findNeighbours(entity);
+			if (this.neighboursDict[sectorKey]) return;
+			this.findNeighbours(entity);
 		},
 		
 		findNeighbours: function (entity) {
-			var positionComponent = entity.get(PositionComponent);
-			var sectorKey = this.getSectorKey(positionComponent);
-			
-			var otherPositionComponent;
+			let positionComponent = entity.get(PositionComponent);
+			let sectorKey = this.getSectorKey(positionComponent);
+
 			this.neighboursDict[sectorKey] = {};
+
 			for (var otherNode = this.sectorNodes.head; otherNode; otherNode = otherNode.next) {
-				otherPositionComponent = otherNode.entity.get(PositionComponent);
+				let otherPositionComponent = otherNode.entity.get(PositionComponent);
 					
 				if (positionComponent.level === otherPositionComponent.level) {
 					if (positionComponent.sectorY === otherPositionComponent.sectorY) {
@@ -357,15 +359,6 @@ define([
 						
 					if (positionComponent.sectorX + 1 === otherPositionComponent.sectorX && positionComponent.sectorY + 1 === otherPositionComponent.sectorY) {
 						this.neighboursDict[sectorKey].se = otherNode.entity;
-					}
-				}
-					
-				if (positionComponent.sectorId() === otherPositionComponent.sectorId()) {
-					if (positionComponent.level - 1 === otherPositionComponent.level) {
-						this.neighboursDict[sectorKey].down = otherNode.entity;
-					}
-					if (positionComponent.level + 1 === otherPositionComponent.level) {
-						this.neighboursDict[sectorKey].up = otherNode.entity;
 					}
 				}
 			}

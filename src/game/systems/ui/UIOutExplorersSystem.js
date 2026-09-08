@@ -95,7 +95,7 @@ define([
 			let hasRecruit = recruitComponent && recruitComponent.explorer != null;
 			let showRecruits = GameGlobals.campHelper.getTotalNumImprovementsBuilt(improvementNames.inn) > 0 || hasRecruit;
 			
-			$("#tab-header h2").text("Exploration party");
+			$("#tab-header h2").text("Đội thám hiểm");
 			
 			GameGlobals.uiFunctions.toggle($("#tab-explorers-section-recruits"), inCamp && showRecruits);
 			GameGlobals.uiFunctions.toggle($("#tab-explorers-section-unselected"), inCamp);
@@ -155,11 +155,11 @@ define([
 				tr += "<td class='list-ordinal'>" + UIConstants.getCostsSpans(recruitAction, costs) + "</td>";
 				tr += "<td class='minwidth'>" + UIConstants.getExplorerDivSimple(explorer, false, false, false) + "</td>";
 				tr += "<td class='list-ordinal'>" + (recruitComponent.isFoundAsReward ? this.getFoundRecruitIcon() : "") + "</td>";
-				tr += "<td class='minwidth'><button class='action recruit-select' action='" + recruitAction + "'>Recruit</button></td>";
-				tr += "<td class='minwidth'><button class='action recruit-select' action='" + talkAction + "'>Talk</button></td>";
+				tr += "<td class='minwidth'><button class='action recruit-select' action='" + recruitAction + "'>Chiêu mộ</button></td>";
+				tr += "<td class='minwidth'><button class='action recruit-select' action='" + talkAction + "'>Nói chuyện</button></td>";
 				tr += "<td class='minwidth'>";
 				if (GameGlobals.explorerHelper.isDismissable(explorer)) {
-					tr += "<button class='action recruit-dismiss btn-secondary' action='dismiss_recruit_" + explorer.id + "'>Dismiss</button>";
+					tr += "<button class='action recruit-dismiss btn-secondary' action='dismiss_recruit_" + explorer.id + "'>Cho thôi</button>";
 				}
 				tr += "</td>";
 				tr += "</tr>";

@@ -17,11 +17,10 @@ define(function () {
 				bg_warning: "#e6464626",
 				bg_warning_stronger: "#e6464659",
 				border_highlight: "#888",
+				map_background_hole: "#141414",
+				map_background_district: "#1a1b1a",
 				map_background_default: "#202220",
 				map_background_surface: "#202220",
-				map_background_2_default: "#252725",
-				map_background_2_surface: "#252725",
-				map_background_2_ground: "#252a22",
 				map_stroke_grid: "#292b29",
 				map_stroke_sector: "#ddee66",
 				map_stroke_sector_hazard: "#ee4444",
@@ -33,6 +32,7 @@ define(function () {
 				map_stroke_sector_territory: "#ee4444",
 				map_stroke_sector_sunlit: "#ffee11",
 				map_stroke_sector_lit: "#ddcc1133",
+				map_stroke_districts: "#3d3d3d",
 				map_stroke_movementlines: "#3d3d3d",
 				map_fill_sector_unvisited: "#3d3d3d",
 				map_fill_sector_unscouted: "#686868",
@@ -63,8 +63,16 @@ define(function () {
 				campvis_building_z3_detail: "#444",
 				campvis_building_z4_detail: "#333",
 			},
+			dusky: {
+				bg_page: "#7c7c7c",
+				bg_page_vision_level_0: "#7c7c7c",
+				bg_page_vision_level_1: "#7c7c7c",
+				bg_page_vision_level_2: "#7c7c7c",
+				bg_page_vision_level_3: "#7c7c7c",
+				bg_page_vision_level_4: "#7c7c7c",
+				bg_element_1: "#c5c5c5",
+			},
 			sunlit: {
-				// f4f2ea
 				bg_page: "#fdfdfd",
 				bg_page_vision_level_0: "#fdfdfd",
 				bg_page_vision_level_1: "#fdfdfd",
@@ -76,11 +84,10 @@ define(function () {
 				bg_warning: "#fa000026",
 				bg_warning_stronger: "#fa000059",
 				border_highlight: "#888",
-				map_background_default: "#fdfdfd",
+				map_background_hole: "#9f9f9f",
+				map_background_district: "#fff",
+				map_background_default: "#e8e8e8",
 				map_background_surface: "#fffff7",
-				map_background_2_default: "#f2f2f2",
-				map_background_2_surface: "#fcfceb",
-				map_background_2_ground: "#efefef",
 				map_stroke_grid: "#efefef",
 				map_stroke_sector: "#ddee66",
 				map_stroke_sector_hazard: "#ee4444",
@@ -92,6 +99,7 @@ define(function () {
 				map_stroke_sector_debris: "#ee4444",
 				map_stroke_sector_sunlit: "#ffee11",
 				map_stroke_sector_lit: "#eedd11cc",
+				map_stroke_districts: "#ccc",
 				map_stroke_movementlines: "#ccc",
 				map_fill_sector_unvisited: "#d0d0d0",
 				map_fill_sector_unscouted: "#aaa",
@@ -133,10 +141,20 @@ define(function () {
 			}
 		},
 		
-		getColor: function (sunlit, name) {
-			var theme = sunlit ? "sunlit" : "dark";
-			var color = this.colors[theme][name];
+		getColor: function (theme, name) {
+			if (typeof theme === "boolean") theme = theme ? "sunlit" : "dark";
+			let color = this.colors[theme][name];
+
+			if (!color && theme == "dusky") {
+				return this.getColor("sunlit", name);
+			}
+
 			if (!color) {
+				color = this.getGlobalColor(name);;
+			}
+
+			if (!color) {
+				debugger
 				log.w("No such color: " + name);
 				return "#000";
 			}
@@ -144,7 +162,7 @@ define(function () {
 		},
 		
 		getGlobalColor: function (name) {
-			var color = this.colors.global[name];
+			let color = this.colors.global[name];
 			if (!color) {
 				log.w("No such color: " + name);
 				return "#000";

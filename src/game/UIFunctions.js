@@ -94,7 +94,7 @@ define(['ash',
 				});
 				$("#btn-restart").click(function (e) {
 					GlobalSignals.triggerSoundSignal.dispatch(UIConstants.soundTriggerIDs.buttonClicked);
-					uiFunctions.onRestartButton();
+					uiFunctions.onRestartButton(false);
 				});
 				$("#btn-more").click(function (e) {
 					GlobalSignals.triggerSoundSignal.dispatch(UIConstants.soundTriggerIDs.buttonClicked);
@@ -141,8 +141,8 @@ define(['ash',
 					GlobalSignals.triggerSoundSignal.dispatch(UIConstants.soundTriggerIDs.buttonClicked);
 					var prevCampName = GameGlobals.playerActionFunctions.getNearestCampName();
 					uiFunctions.showInput(
-						"Rename Camp",
-						"Give your camp a new name",
+						"Đổi tên trại",
+						"Đặt tên mới cho trại của bạn",
 						prevCampName,
 						true,
 						function (input) {
@@ -176,36 +176,36 @@ define(['ash',
 			registerHotkeys: function () {
 				let tabs = GameGlobals.uiFunctions.elementIDs.tabs;
 				let defaultModifier = this.HOTKEY_DEFAULT_MODIFIER;
-				this.registerHotkey("Move N", "KeyW", defaultModifier, tabs.out, false, false, "move_sector_north");
-				this.registerHotkey("Move N", "Numpad8", defaultModifier, tabs.out, false, false, "move_sector_north");
-				this.registerHotkey("Move W", "KeyA", defaultModifier, tabs.out, false, false, "move_sector_west");
-				this.registerHotkey("Move W", "Numpad4", defaultModifier, tabs.out, false, false, "move_sector_west");
-				this.registerHotkey("Move S", "KeyS", defaultModifier, tabs.out, false, false, "move_sector_south");
-				this.registerHotkey("Move S", "Numpad2", defaultModifier, tabs.out, false, false, "move_sector_south");
-				this.registerHotkey("Move E", "KeyD", defaultModifier, tabs.out, false, false, "move_sector_east");
-				this.registerHotkey("Move E", "Numpad6", defaultModifier, tabs.out, false, false, "move_sector_east");
-				this.registerHotkey("Move NW", "KeyQ", defaultModifier, tabs.out, false, false, "move_sector_nw");
-				this.registerHotkey("Move NW", "Numpad7", defaultModifier, tabs.out, false, false, "move_sector_nw");
-				this.registerHotkey("Move NE", "KeyE", defaultModifier, tabs.out, false, false, "move_sector_ne");
-				this.registerHotkey("Move NE", "Numpad9", defaultModifier, tabs.out, false, false, "move_sector_ne");
-				this.registerHotkey("Move SW", "KeyZ", defaultModifier, tabs.out, false, false, "move_sector_sw");
-				this.registerHotkey("Move SW", "Numpad1", defaultModifier, tabs.out, false, false, "move_sector_sw");
-				this.registerHotkey("Move SE", "KeyC", defaultModifier, tabs.out, false, false, "move_sector_se");
-				this.registerHotkey("Move SE", "Numpad3", defaultModifier, tabs.out, false, false, "move_sector_se");
+				this.registerHotkey("Di chuyển lên", "KeyW", defaultModifier, tabs.out, false, false, "move_sector_north");
+				this.registerHotkey("Di chuyển lên", "Numpad8", defaultModifier, tabs.out, false, false, "move_sector_north");
+				this.registerHotkey("Di chuyển trái", "KeyA", defaultModifier, tabs.out, false, false, "move_sector_west");
+				this.registerHotkey("Di chuyển trái", "Numpad4", defaultModifier, tabs.out, false, false, "move_sector_west");
+				this.registerHotkey("Di chuyển xuống", "KeyS", defaultModifier, tabs.out, false, false, "move_sector_south");
+				this.registerHotkey("Di chuyển xuống", "Numpad2", defaultModifier, tabs.out, false, false, "move_sector_south");
+				this.registerHotkey("Di chuyển phải", "KeyD", defaultModifier, tabs.out, false, false, "move_sector_east");
+				this.registerHotkey("Di chuyển phải", "Numpad6", defaultModifier, tabs.out, false, false, "move_sector_east");
+				this.registerHotkey("Di chuyển lên-trái", "KeyQ", defaultModifier, tabs.out, false, false, "move_sector_nw");
+				this.registerHotkey("Di chuyển lên-trái", "Numpad7", defaultModifier, tabs.out, false, false, "move_sector_nw");
+				this.registerHotkey("Di chuyển lên-phải", "KeyE", defaultModifier, tabs.out, false, false, "move_sector_ne");
+				this.registerHotkey("Di chuyển lên-phải", "Numpad9", defaultModifier, tabs.out, false, false, "move_sector_ne");
+				this.registerHotkey("Di chuyển xuống-trái", "KeyZ", defaultModifier, tabs.out, false, false, "move_sector_sw");
+				this.registerHotkey("Di chuyển xuống-trái", "Numpad1", defaultModifier, tabs.out, false, false, "move_sector_sw");
+				this.registerHotkey("Di chuyển xuống-phải", "KeyC", defaultModifier, tabs.out, false, false, "move_sector_se");
+				this.registerHotkey("Di chuyển xuống-phải", "Numpad3", defaultModifier, tabs.out, false, false, "move_sector_se");
 
-				this.registerHotkey("Scavenge", "KeyN", defaultModifier, tabs.out, false, false, "scavenge");
-				this.registerHotkey("Scout", "KeyM", defaultModifier, tabs.out, false, false, "scout");
-				this.registerHotkey("Collect water", "KeyG", defaultModifier, tabs.out, false, false, "use_out_collector_water");
-				this.registerHotkey("Collect food", "KeyF", defaultModifier, tabs.out, false, false, "use_out_collector_food");
+				this.registerHotkey("Lục soát", "KeyN", defaultModifier, tabs.out, false, false, "scavenge");
+				this.registerHotkey("Trinh sát", "KeyM", defaultModifier, tabs.out, false, false, "scout");
+				this.registerHotkey("Thu thập nước", "KeyG", defaultModifier, tabs.out, false, false, "use_out_collector_water");
+				this.registerHotkey("Thu thập thức ăn", "KeyF", defaultModifier, tabs.out, false, false, "use_out_collector_food");
 
-				this.registerHotkey("Teleport home", "KeyH", defaultModifier, null, false, true, () => GlobalSignals.triggerCheatSignal.dispatch(CheatConstants.CHEAT_NAME_TELEPORT_HOME));
-				this.registerHotkey("Pass time", "KeyK", defaultModifier, null, false, true, () => GlobalSignals.triggerCheatSignal.dispatch(CheatConstants.CHEAT_NAME_TIME + " " + 1));
-				this.registerHotkey("Toggle map", "KeyL", defaultModifier, null, false, true, () => GlobalSignals.triggerCheatSignal.dispatch(CheatConstants.CHEAT_NAME_REVEAL_MAP));
+				this.registerHotkey("Dịch chuyển về nhà", "KeyH", defaultModifier, null, false, true, () => GlobalSignals.triggerCheatSignal.dispatch(CheatConstants.CHEAT_NAME_TELEPORT_HOME));
+				this.registerHotkey("Trôi qua thời gian", "KeyK", defaultModifier, null, false, true, () => GlobalSignals.triggerCheatSignal.dispatch(CheatConstants.CHEAT_NAME_TIME + " " + 1));
+				this.registerHotkey("Bật/tắt bản đồ", "KeyL", defaultModifier, null, false, true, () => GlobalSignals.triggerCheatSignal.dispatch(CheatConstants.CHEAT_NAME_REVEAL_MAP));
 
-				this.registerHotkey("Previous tab", "ArrowLeft", "shiftKey", null, false, false, () => GameGlobals.uiFunctions.showPreviousTab());
-				this.registerHotkey("Next tab", "ArrowRight", "shiftKey", null, false, false, () => GameGlobals.uiFunctions.showNextTab());
+				this.registerHotkey("Tab trước", "ArrowLeft", "shiftKey", null, false, false, () => GameGlobals.uiFunctions.showPreviousTab());
+				this.registerHotkey("Tab tiếp theo", "ArrowRight", "shiftKey", null, false, false, () => GameGlobals.uiFunctions.showNextTab());
 
-				this.registerHotkey("Dismiss popup", "Escape", null, null, true, false, () => GameGlobals.uiFunctions.popupManager.dismissPopups());
+				this.registerHotkey("Đóng cửa sổ", "Escape", null, null, true, false, () => GameGlobals.uiFunctions.popupManager.dismissPopups());
 			},
 
 			registerHotkey: function (description, code, modifier, tab, isUniversal, isDev, cb) {
@@ -546,7 +546,7 @@ define(['ash',
 										if (actionImprovementName == displayName) {
 											displayName = "";
 										}
-										s += rangeText + " " + displayName + " on level (" + count + ")";
+									s += rangeText + " " + displayName + " ở tầng (" + count + ")";
 									}
 								}
 								break;
@@ -607,7 +607,6 @@ define(['ash',
 			},
 
 			startGame: function () {
-				log.i("Starting game..");
 				var startTab = this.elementIDs.tabs.out;
 				var playerPos = GameGlobals.playerActionFunctions.playerPositionNodes.head.position;
 				if (playerPos.inCamp) startTab = this.elementIDs.tabs.in;
@@ -631,9 +630,10 @@ define(['ash',
 
 			showGame: function () {
 				this.hideGameCounter = this.hideGameCounter || 1;
+				log.i("[ui] show game " + this.hideGameCounter);
 				this.hideGameCounter--;
 				if (this.hideGameCounter > 0) return;
-				log.i("[ui] show game ");
+				log.i("[ui] show game true");
 				this.setGameOverlay(false, false);
 				this.setGameElementsVisibility(true);
 				this.updateButtonCooldowns();
@@ -647,7 +647,7 @@ define(['ash',
 			hideGame: function (showLoading, showThinking) {
 				this.hideGameCounter = this.hideGameCounter || 0;
 				this.hideGameCounter++;
-				log.i("[ui] hide game (showLoading: " + showLoading + ", showThinking: " + showThinking + ")");
+				log.i("[ui] hide game (showLoading: " + showLoading + ", showThinking: " + showThinking + ", counter: " + this.hideGameCounter + ")");
 				showThinking = showThinking && !showLoading;
 				this.setGameOverlay(showLoading, showThinking);
 				this.setGameElementsVisibility(showThinking);
@@ -739,7 +739,7 @@ define(['ash',
 							} else if (stat.isPercentage) {
 								displayValue = UIConstants.roundValue(stat.value * 100) + "%";
 							} else if (stat.unit == GameConstants.gameStatUnits.steps) {
-								displayValue = UIConstants.roundValue(stat.value) + " steps";
+								displayValue = UIConstants.roundValue(stat.value) + " bước";
 							} else {
 								displayValue = UIConstants.getDisplayValue(UIConstants.roundValue(stat.value));
 							}
@@ -758,17 +758,17 @@ define(['ash',
 							if (stat.entry.hasOwnProperty("sectorX")) {
 								entryDisplay = new PositionVO(stat.entry.level, stat.entry.sectorX, stat.entry.sectorY).getInGameFormat(true);
 							} else if (stat.entry.hasOwnProperty("level")) {
-								entryDisplay = "on level " + stat.entry.level;
+								entryDisplay = "ở tầng " + stat.entry.level;
 							} else if (stat.entry.hasOwnProperty("name")) {
 								entryDisplay = stat.entry.name;
 							} else if (EnemyConstants.tryGetEnemy(stat.entry)) {
-								entryDisplay = EnemyConstants.getEnemy(stat.entry).name;
+								entryDisplay = EnemyConstants.getEnemyDisplayName(EnemyConstants.getEnemy(stat.entry));
 							} else if(ItemConstants.getItemDefinitionByID(stat.entry, true)) {
 								entryDisplay = ItemConstants.getItemDisplayNameFromID(stat.entry);
 							} else if (stat.entry.hasOwnProperty("timestamp")) {
 								entryDisplay = UIConstants.getTimeSinceText(stat.entry.timestamp);
 							} else if (stat.entryUnit == GameConstants.gameStatUnits.level) {
-								entryDisplay = "on level " + stat.entry;
+								entryDisplay = "ở tầng " + stat.entry;
 							}
 							html += "<span class='game-stat-span game-stat-highscore-entry'>(" + entryDisplay + ")</span>";
 						}
@@ -786,10 +786,10 @@ define(['ash',
 
 			getGameInfoDiv: function () {
 				let html = "";
-				html += "<span id='changelog-version'>version " + GameGlobals.changeLogHelper.getCurrentVersionNumber() + "<br/>updated " + GameGlobals.changeLogHelper.getCurrentVersionDate() + "</span>";
-				html += "<p>Note that this game is still in development and many features are incomplete and unbalanced. Updates might break saves. Feedback and bug reports are appreciated!</p>";
-				html += "<p>Feedback:<br/>" + GameConstants.getFeedbackLinksHTML() + "</p>";
-				html += "<p>More info:<br/><a href='faq.html' target='faq'>faq</a> | <a href='changelog.html' target='changelog'>changelog</a></p>";
+				html += "<span id='changelog-version'>phiên bản " + GameGlobals.changeLogHelper.getCurrentVersionNumber() + "<br/>cập nhật " + GameGlobals.changeLogHelper.getCurrentVersionDate() + "</span>";
+				html += "<p>Lưu ý: trò chơi vẫn đang được phát triển nên nhiều tính năng chưa hoàn thiện hoặc chưa cân bằng. Các bản cập nhật có thể làm hỏng bản lưu. Rất mong bạn gửi phản hồi và báo lỗi!</p>";
+				html += "<p>Phản hồi:<br/>" + GameConstants.getFeedbackLinksHTML() + "</p>";
+				html += "<p>Thông tin thêm:<br/><a href='faq.html' target='faq'>câu hỏi thường gặp</a> | <a href='changelog.html' target='changelog'>nhật ký thay đổi</a></p>";
 				return html;
 			},
 
@@ -1098,12 +1098,15 @@ define(['ash',
 				}
 			},
 			
-			onRestartButton: function () {
-				var sys = this;
+			onRestartButton: function (showGame) {
+				let sys = this;
 				this.showConfirmation(
-					"Do you want to restart the game? Your progress will be lost.",
+					"Bạn có muốn khởi động lại trò chơi không? Mọi tiến trình sẽ bị mất.",
 					function () {
 						sys.restart();
+
+						// show game because it's been hidden by an exception
+						if (showGame) GameGlobals.uiFunctions.showGame();
 					},
 					true
 				);
@@ -1273,10 +1276,28 @@ define(['ash',
 				return (($element).is(":visible"));
 			},
 
+			shouldIgnoreClick: function (e) {
+				if (e && e.target) {
+					// clicking on callouts that are part of clickable elements shouldn't trigger those elements
+					if ($(e.target).hasClass("info-callout-content")) return true;
+				}
+				
+				return false;
+			},
+
 			setText: function (selector, key, options) {
 				if (!selector) {
-					log.w("invalid selector for automatic text update");
+					log.w("setText: invalid selector for automatic text update");
 					return;
+				}
+
+				if (typeof selector === "object") {
+					let id = $(selector).attr("id");
+					if (!id) {
+						log.w("setText: invalid element for automatic text update (needs id)")
+						return;
+					}
+					selector = "#" + id;
 				}
 
 				this.texts[selector] = { key: key, options: options };
@@ -1286,7 +1307,7 @@ define(['ash',
 			updateTexts: function () {
 				for (let selector in this.texts) {
 					let saved = this.texts[selector];
-					let $elem = typeof selector === "string" ? $(selector) : selector;
+					let $elem = $(selector);
 					this.updateText($elem, Text.t(saved.key, saved.options));
 				}
 			},
@@ -1395,6 +1416,7 @@ define(['ash',
 					let valueWithoutBonuses = costsWithoutBonuses[key];
 					let isNegatedByBonus = value === 0 && valueWithoutBonuses !== 0;
 					let isAccumulatingCost = GameGlobals.playerActionsHelper.isAccumulatingCost(key, false);
+					let isWarning = GameGlobals.playerActionsHelper.isWarningCost(key);
 
 					if (isAccumulatingCost && !hasNonAccumulatingCost) {
 						let costCountdown = GameGlobals.playerActionsHelper.getCostCountdownSeconds(key, value);
@@ -1433,6 +1455,7 @@ define(['ash',
 					}
 					$costSpan.toggleClass("action-cost-blocker", costFraction < 1);
 					$costSpan.toggleClass("action-cost-blocker-storage", isFullCostBlocker);
+					$costSpan.toggleClass("warning", isWarning);
 
 					let displayValue = UIConstants.getDisplayValue(value);
 					if (isNegatedByBonus) {
@@ -1529,14 +1552,14 @@ define(['ash',
 					$(this).attr("data-long-tap-timeout", 0);
 				};
 				$element.on('mousedown', function (e) {
-					var target = e.target;
-					var $target = $(this);
+					let target = e.target;
+					let $target = $(this);
 					cancelLongTap()
-					var timer = setTimeout(function () {
+					let timer = setTimeout(function () {
 						cancelLongTap()
 						var interval = setInterval(function () {
 							if (GameGlobals.gameState.uiStatus.mouseDown && GameGlobals.gameState.uiStatus.mouseDownElement == target) {
-								callback.apply($target, e);
+								callback.apply($target, [ e ]);
 							} else {
 								cancelLongTap();
 							}
@@ -1658,7 +1681,7 @@ define(['ash',
 			},
 
 			showInfoPopup: function (title, msg, buttonLabel, resultVO, callback, isMeta, isDismissable) {
-				if (!buttonLabel) buttonLabel = "Continue";
+				if (!buttonLabel) buttonLabel = Text.t("ui.common.continue_button_label");
 				let options = {
 					isMeta: isMeta,
 					isDismissable: isDismissable,
@@ -1669,7 +1692,7 @@ define(['ash',
 			showResultPopup: function (title, msg, resultVO, callback, options) {
 				options = options || {};
 				options.isDismissable = !resultVO || resultVO.isVisuallyEmpty();
-				this.popupManager.showPopup(title, msg, "Continue", false, resultVO, callback, null, options);
+				this.popupManager.showPopup(title, msg, Text.t("ui.common.continue_button_label"), false, resultVO, callback, null, options);
 			},
 
 			showActionPopup: function (action, title, msg) {
@@ -1684,7 +1707,7 @@ define(['ash',
 
 				title = title || actionName;
 				
-				this.popupManager.showPopup(title, msg, null, "Cancel", null, null, null, options);
+				this.popupManager.showPopup(title, msg, null, Text.t("story.dialogue.npc_request_cancel"), null, null, null, options);
 			},
 
 			showConfirmation: function (msg, callback, isMeta) {
@@ -1702,7 +1725,7 @@ define(['ash',
 					isDismissable: false,
 				};
 				
-				this.popupManager.showPopup("Confirmation", msg, "Confirm", "Cancel", null, okCallback, cancelCallback, options);
+				this.popupManager.showPopup("Xác nhận", msg, "Xác nhận", "Hủy", null, okCallback, cancelCallback, options);
 			},
 
 			showQuestionPopup: function (title, msg, buttonLabel, cancelButtonLabel, callbackOK, callbackNo, isMeta) {
@@ -1712,7 +1735,6 @@ define(['ash',
 					callbackOK();
 				};
 				let cancelCallback = function () {
-					uiFunctions.popupManager.closePopup("common-popup");
 					if (callbackNo) callbackNo();
 				};
 				let options = {
@@ -1736,14 +1758,14 @@ define(['ash',
 						return false;
 					}
 				};
-				let cancelButtonLabel = allowCancel ? "Cancel" : null;
+				let cancelButtonLabel = allowCancel ? "Hủy" : null;
 				let options = {
 					isMeta: false,
 					isDismissable: false,
 					isCloseable: false,
 				};
 				
-				this.popupManager.showPopup(title, msg, "Confirm", cancelButtonLabel, null, okCallback, null, options);
+				this.popupManager.showPopup(title, msg, "Xác nhận", cancelButtonLabel, null, okCallback, null, options);
 
 				var uiFunctions = this;
 				var maxChar = 40;

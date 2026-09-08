@@ -32,10 +32,10 @@ define([], function () {
 	};
 
 	AccessibilityFightHelper.prototype.configureFightProgressBars = function () {
-		this.configureProgressBar("fight-bar-enemy", "Enemy health");
-		this.configureProgressBar("fight-bar-enemy-shield", "Enemy shield");
-		this.configureProgressBar("fight-bar-self", "Your health");
-		this.configureProgressBar("fight-bar-self-shield", "Your shield");
+		this.configureProgressBar("fight-bar-enemy", "Sinh lực kẻ địch");
+		this.configureProgressBar("fight-bar-enemy-shield", "Khiên kẻ địch");
+		this.configureProgressBar("fight-bar-self", "Sinh lực của bạn");
+		this.configureProgressBar("fight-bar-self-shield", "Khiên của bạn");
 		this.updateFightProgressBars();
 	};
 
@@ -63,28 +63,28 @@ define([], function () {
 		if (typeof value !== "number" || !isFinite(value)) return;
 		value = Math.max(0, Math.min(100, Math.round(value)));
 		element.setAttribute("aria-valuenow", String(value));
-		element.setAttribute("aria-valuetext", value + " percent");
+		element.setAttribute("aria-valuetext", value + "%");
 	};
 
 	AccessibilityFightHelper.prototype.observeFightEvents = function () {
 		this.observeText("fight-damage-indictor-self", (text) => {
 			let value = this.getAbsoluteNumber(text);
-			return value === null ? "" : "You take " + value + " damage.";
+			return value === null ? "" : "Bạn chịu " + value + " sát thương.";
 		}, true);
 
 		this.observeText("fight-damage-indictor-enemy", (text) => {
 			let value = this.getAbsoluteNumber(text);
-			return value === null ? "" : "Enemy takes " + value + " damage.";
+			return value === null ? "" : "Kẻ địch chịu " + value + " sát thương.";
 		}, false);
 
 		this.observeText("fight-status-indictor-self", (text) => {
 			if (!text) return "";
-			return text.toLowerCase() === "dodge" ? "You dodge." : "Your status: " + text + ".";
+			return text.toLowerCase() === "dodge" ? "Bạn né tránh." : "Trạng thái của bạn: " + text + ".";
 		}, true);
 
 		this.observeText("fight-status-indictor-enemy", (text) => {
 			if (!text) return "";
-			return text.toLowerCase() === "dodge" ? "Enemy dodges." : "Enemy status: " + text + ".";
+			return text.toLowerCase() === "dodge" ? "Kẻ địch né tránh." : "Trạng thái kẻ địch: " + text + ".";
 		}, false);
 	};
 
@@ -143,7 +143,7 @@ define([], function () {
 		let enemyStats = this.getText("fight-popup-enemy-stats");
 		let summary = this.normalize([title, enemyName, enemyStats].filter(Boolean).join(". "));
 		if (!summary || !this.announcer || !this.announcer.announceAssertive) return;
-		this.announcer.announceAssertive("Fight started. " + summary);
+			this.announcer.announceAssertive("Trận chiến bắt đầu. " + summary);
 	};
 
 	AccessibilityFightHelper.prototype.observeFightResults = function () {
@@ -168,7 +168,7 @@ define([], function () {
 		if (!summary || summary === this.lastResults) return;
 		this.lastResults = summary;
 		if (this.announcer && this.announcer.announceAssertive) {
-			this.announcer.announceAssertive("Fight result. " + summary);
+			this.announcer.announceAssertive("Kết quả chiến đấu. " + summary);
 		}
 	};
 

@@ -57,10 +57,11 @@ define([
 			this.playerLocationNodes = engine.getNodeList(PlayerLocationNode);
 			
 			GlobalSignals.add(this, GlobalSignals.gameStateReadySignal, this.updateAll);
+			GlobalSignals.add(this, GlobalSignals.levelStateReadySignal, this.onLevelStateReady);
 			GlobalSignals.add(this, GlobalSignals.sectorScoutedSignal, this.onSectorScouted);
 			GlobalSignals.add(this, GlobalSignals.improvementBuiltSignal, this.updateAll);
 			GlobalSignals.add(this, GlobalSignals.campBuiltSignal, this.updateAllLevels);
-			GlobalSignals.add(this, GlobalSignals.playerPositionChangedSignal, this.onPlayerPositionChanged);
+			GlobalSignals.add(this, GlobalSignals.playerLocationChangedSignal, this.onPlayerLocationChanged);
 			GlobalSignals.add(this, GlobalSignals.workshopClearedSignal, this.updateAllLevels);
 		},
 
@@ -104,10 +105,11 @@ define([
 			let passageUp = passagesComponent.passageUp;
 			let passageDown = passagesComponent.passageDown;
 			if (passageUp == null && passageDown == null) return;
-
+			
 			let positionComponent = entity.get(PositionComponent);
 			let improvementsComponent = entity.get(SectorImprovementsComponent);
 			let s = positionComponent.sectorId();
+
 			let passageUpBuilt =
 				improvementsComponent.getCount(improvementNames.passageUpStairs) > 0 ||
 				improvementsComponent.getCount(improvementNames.passageUpHole) > 0 ||
@@ -116,8 +118,8 @@ define([
 				improvementsComponent.getCount(improvementNames.passageDownStairs) > 0 ||
 				improvementsComponent.getCount(improvementNames.passageDownHole) > 0 ||
 				improvementsComponent.getCount(improvementNames.passageDownElevator) > 0;
-			let levelEntity = GameGlobals.levelHelper.getLevelEntityForSector(entity);
 			
+			let levelEntity = GameGlobals.levelHelper.getLevelEntityForSector(entity);
 			this.updateLevelPassagesComponent(levelEntity, s, passageUp, passageUpBuilt, passageDown, passageDownBuilt);
 		},
 
@@ -224,7 +226,7 @@ define([
 			this.registerScoutedFeatures(sector);
 		},
 		
-		onPlayerPositionChanged: function () {
+		onPlayerLocationChanged: function () {
 			let level = this.playerLocationNodes.head.position.level;
 			if (GameGlobals.levelHelper.isLevelTypeRevealed(level)) return;
 			
@@ -268,13 +270,17 @@ define([
 				}
 			}
 		},
+
+		onLevelStateReady: function (level) {
+			this.updateAllPassages();
+		},
 		
 		getLevelPreviousLevelsMaxHazard: function (level, hazardType) {
-			let levelOrdinal = GameGlobals.gameState.getLevelOrdinal(level);
+			let levelOrdinal = GameGlobals.worldState.getLevelOrdinal(level);
 			if (levelOrdinal == 1) return 0;
 			let result = 0;
 			for (let i = 1; i < levelOrdinal; i++) {
-				let previousLevel = GameGlobals.gameState.getLevelForOrdinal(i);
+				let previousLevel = GameGlobals.worldState.getLevelForOrdinal(i);
 				result = Math.max(result, GameGlobals.levelHelper.getLevelMaxHazard(previousLevel, hazardType));
 			}
 			return result;
@@ -288,18 +294,18 @@ define([
 			
 			if (levelComponent.isCampable) {
 				if (level % 2 == 0) {
-					return "This level seems safe enough that it should be possible to find a spot for a camp.";
+					return "Tầng này có vẻ đủ an toàn để tìm một chỗ dựng trại.";
 				} else {
-					return "There are enough signs of life on this level that it should be possible to find a spot for a camp.";
+					return "Tầng này có đủ dấu hiệu sự sống để có thể tìm một chỗ dựng trại.";
 				}
 			} else {
 				switch (levelComponent.notCampableReason) {
 					case LevelConstants.UNCAMPABLE_LEVEL_TYPE_RADIATION:
-						return "This level is too radioactive for a permanent settlement.";
+						return "Tầng này có quá nhiều phóng xạ để định cư lâu dài.";
 					case LevelConstants.UNCAMPABLE_LEVEL_TYPE_POLLUTION:
-						return "This level is too polluted for a permanent settlement.";
+						return "Tầng này quá ô nhiễm để định cư lâu dài.";
 					default:
-						return "This level seems eerily devoid of any signs of recent human activity.";
+						return "Tầng này đáng sợ đến mức không có dấu hiệu hoạt động gần đây của con người.";
 				}
 			}
 			

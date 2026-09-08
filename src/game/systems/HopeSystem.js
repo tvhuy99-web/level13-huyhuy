@@ -59,10 +59,11 @@ define([
 			for (var campNode = this.campNodes.head; campNode; campNode = campNode.next) {
 				var improvementsComponent = campNode.entity.get(SectorImprovementsComponent);
 				
-				var accTemple = GameGlobals.campHelper.getTempleHopeGenerationPerSecond(improvementsComponent) * GameConstants.gameSpeedCamp;
-				var numClerics = campNode.camp.assignedWorkers.cleric || 0;
-				var accClerics = GameGlobals.campHelper.getHopeProductionPerSecond(numClerics, improvementsComponent);
-				var accCamp = accTemple + accClerics;
+				let accTemple = GameGlobals.campHelper.getTempleHopeGenerationPerSecond(improvementsComponent) * GameConstants.gameSpeedCamp;
+				let numClerics = campNode.camp.assignedWorkers.cleric || 0;
+				let workerFactors = GameGlobals.campHelper.getWorkerFactors(campNode.position.level);
+				let accClerics = GameGlobals.campHelper.getHopeProductionPerSecond(numClerics, improvementsComponent, workerFactors);
+				let accCamp = accTemple + accClerics;
 				let change = time * accCamp;
 				
 				hopeComponent.addChange("Temples", accTemple, campNode.position.level);
@@ -101,8 +102,8 @@ define([
 		showDeityNamePopup: function () {
 			let sys = this;
 			GameGlobals.uiFunctions.showInput(
-				"Name deity",
-				"Now that you've built a temple, you should choose a name by which to your people will call this deity.",
+				"Đặt tên thần linh",
+				"Bạn đã xây một ngôi đền. Hãy chọn tên để mọi người gọi vị thần này.",
 				"",
 				false,
 				function (input) {

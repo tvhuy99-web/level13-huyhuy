@@ -146,7 +146,7 @@ define([
 					if (!isScheduled) {
 						this.scheduleEvent(campNode, event);
 					} else if (campTimers.isTimeToStart(event)) {
-						var skipProbability = this.getEventSkipProbability(campNode, event);
+						let skipProbability = this.getEventSkipProbability(campNode, event);
 						if (Math.random() < skipProbability) {
 							this.skipEvent(campNode, event);
 						} else {
@@ -240,7 +240,7 @@ define([
 			
 			let improvements = campNode.entity.get(SectorImprovementsComponent);
 			let improvementType = GameGlobals.upgradeEffectsHelper.getImprovementForOccurrence(event);
-			let campOrdinal = GameGlobals.gameState.getCampOrdinal(campNode.position.level);
+			let campOrdinal = GameGlobals.worldState.getCampOrdinal(campNode.position.level);
 			
 			switch (event) {
 				case OccurrenceConstants.campOccurrenceTypes.accident:
@@ -405,19 +405,19 @@ define([
 					let lostCurrency = raidComponent.currencyLost;
 
 					if (raidComponent.victory) {
-						logMsg = "There has been a raid. We drove the attackers away.";
+						logMsg = "Đã xảy ra một cuộc đột kích. Chúng ta đã đẩy lùi kẻ tấn công.";
 					} else {
-						logMsg = "There has been a raid.";
+						logMsg = "Đã xảy ra một cuộc đột kích.";
 						if (lostResources.getTotal() > 0) {
-							logMsg += " We lost some resources.";
+							logMsg += " Chúng ta đã mất một số tài nguyên.";
 						} else if (currencyLost > 0) {
-							logMsg += " They stole some silver.";
+							logMsg += " Chúng đã lấy trộm bạc.";
 						} else {
-							logMsg += " There was nothing left to steal.";
+							logMsg += " Không còn gì để lấy trộm.";
 						}
 						
 						if (raidComponent.defendersLost > 0) {
-							logMsg += " " + raidComponent.defendersLost + " defenders were killed.";
+							logMsg += " " + raidComponent.defendersLost + " người phòng thủ đã bị giết.";
 						}
 
 						GameGlobals.gameState.increaseGameStatSimple("numRaidsLost");
@@ -426,7 +426,7 @@ define([
 					}
 					
 					if (raidComponent.damagedBuilding != null) {
-						logMsg += " A building was damaged.";
+						logMsg += " Một công trình đã bị hư hại.";
 					}
 
 					let raidEntry = { level: campNode.position.level, timeStamp: eventVO.timeStamp };
@@ -473,10 +473,10 @@ define([
 		},
 
 		startEvent: function (campNode, event) {
-			var campTimers = campNode.entity.get(CampEventTimersComponent);
-			var duration = OccurrenceConstants.getDuration(event);
-			var campPos = campNode.entity.get(PositionComponent);
-			let campOrdinal = GameGlobals.gameState.getCampOrdinal(campPos.level);
+			let campTimers = campNode.entity.get(CampEventTimersComponent);
+			let duration = OccurrenceConstants.getDuration(event);
+			let campPos = campNode.entity.get(PositionComponent);
+			let campOrdinal = GameGlobals.worldState.getCampOrdinal(campPos.level);
 
 			let logMsg = null;
 			switch (event) {
@@ -484,7 +484,7 @@ define([
 					let disasterType = MathUtils.randomElement(GameGlobals.campHelper.getValidDisasterTypes(campNode.entity));
 					campNode.entity.add(new DisasterComponent(disasterType));
 					if (this.isPlayerInCamp(campNode)) {
-						logMsg = "A " + disasterType + "!";
+						logMsg = "Một sự cố " + disasterType + "!";
 					}
 					break;
 
@@ -493,7 +493,7 @@ define([
 					let numUpdates = MathUtils.randomIntBetween(2, 8);
 					GameGlobals.campHelper.addDisabledPopulation(campNode.entity, num, null, CampConstants.DISABLED_POPULATION_REASON_DISEASE, -1);
 					campNode.entity.add(new DiseaseComponent("disease", numUpdates));
-					logMsg = "Disease outbreak!";
+					logMsg = "Dịch bệnh bùng phát!";
 					break;
 
 				case OccurrenceConstants.campOccurrenceTypes.trader:
@@ -505,7 +505,7 @@ define([
 					let traderLevel = GameGlobals.campHelper.getEventUpgradeLevel(OccurrenceConstants.campOccurrenceTypes.trader);
 					var caravan = GameGlobals.campHelper.getRandomIncomingCaravan(numCamps, GameGlobals.gameState.level, traderLevel, GameGlobals.gameState.getUnlockedResources(), neededIngredient);
 					campNode.entity.add(new TraderComponent(caravan));
-					logMsg = Text.capitalize(Text.addArticle(caravan.name)) + " arrives. ";
+					logMsg = caravan.name + " đã đến. ";
 					break;
 					
 				case OccurrenceConstants.campOccurrenceTypes.recruit:
@@ -517,8 +517,8 @@ define([
 					let isFoundAsReward = hasPendingExplorer && explorer.source != ExplorerConstants.explorerSource.EVENT;
 					campNode.entity.add(new RecruitComponent(explorer, isFoundAsReward));
 					
-					let building = hasInn ? "the inn" : "the camp";
-					logMsg = isFoundAsReward ? "Explorer met when exploring is waiting at " + building + "." : "An explorer arrives at " + building + ".";
+					let building = hasInn ? "nhà trọ" : "trại";
+					logMsg = isFoundAsReward ? "Một nhà thám hiểm gặp khi thám hiểm đang chờ ở " + building + "." : "Một nhà thám hiểm đã đến " + building + ".";
 					GameGlobals.playerActionFunctions.unlockFeature("explorers");
 					if (hasPendingExplorer) {
 						duration = OccurrenceConstants.EVENT_DURATION_INFINITE;
@@ -528,7 +528,7 @@ define([
 				case OccurrenceConstants.campOccurrenceTypes.raid:
 					campNode.entity.add(new RaidComponent());
 					if (this.isPlayerInCamp(campNode)) {
-						logMsg = "A raid! The camp is under attack.";
+						logMsg = "Đột kích! Trại đang bị tấn công.";
 					}
 					break;
 
@@ -538,7 +538,7 @@ define([
 					let isStoryRefugees = GameGlobals.gameState.getStoryFlag(StoryConstants.flags.APOCALYPSE_PENDING_REFUGEES);
 					let dialogueSource = isStoryRefugees ? "refugees_earthquake" : "refugees_default";
 					campNode.entity.add(new RefugeesComponent(refugeesNum, dialogueSource));
-					logMsg = "A group of refugees from the City arrives at the camp.";
+					logMsg = "Một nhóm người tị nạn từ Thành phố đã đến trại.";
 					break;
 
 				case OccurrenceConstants.campOccurrenceTypes.visitor:
@@ -546,7 +546,7 @@ define([
 					let isExpedition = GameGlobals.campHelper.isValidCampForExpeditionVisitors(campOrdinal);
 					let visitorDialogueSource = isExpedition ? "visitor_expedition" : CharacterConstants.getDialogueSourceID(visitorType);
 					campNode.entity.add(new VisitorComponent(visitorType, visitorDialogueSource));
-					logMsg = "A visitor arrives.";
+					logMsg = "Một vị khách đã đến.";
 					break;
 			}
 			
@@ -569,7 +569,7 @@ define([
 		skipEvent: function (campNode, event) {
 			var campTimers = campNode.entity.get(CampEventTimersComponent);
 			campTimers.onEventSkipped(event);
-			log.i("Skip " + event + " at " + campNode.camp.campName + " (" + campNode.position.level + ") (skip probability: " + this.getEventSkipProbability(campNode, event) + ")");
+			log.i("Skip " + event + " at " + campNode.camp.campName + " (" + campNode.position.level + ") (skip probability: " + this.getEventSkipProbability(campNode, event) + ")"), "camp events";
 			this.scheduleEvent(campNode, event);
 			GlobalSignals.saveGameSignal.dispatch(GameConstants.SAVE_SLOT_DEFAULT, false);
 		},
@@ -843,16 +843,32 @@ define([
 		getTimeToNext: function (campNode, event) {
 			let isNew = this.isNew(event);
 			let numCamps = GameGlobals.gameState.numCamps;
+			let levelComponent = GameGlobals.levelHelper.getLevelComponentForPosition(campNode.position.level);
 			let upgradeLevel = GameGlobals.campHelper.getEventUpgradeLevel(event);
+			let campFactor = 1;
 
 			// event upgrades are supposed to "improve" them so for negative ones they should not make them more frequent
 			switch (event) {
 				case OccurrenceConstants.campOccurrenceTypes.disaster:
-				upgradeLevel = 1;
+					upgradeLevel = 1;
+					if (levelComponent.signatureDisaster) campFactor = 0.5;
+					break;
+				case OccurrenceConstants.campOccurrenceTypes.disease:
+					upgradeLevel = 1;
+					campFactor = 1 / levelComponent.diseaseFrequecyFactor;
+					break;
+				case OccurrenceConstants.campOccurrenceTypes.recruit:
+				case OccurrenceConstants.campOccurrenceTypes.refugees:
+				case OccurrenceConstants.campOccurrenceTypes.visitor:
+					campFactor = 1 / levelComponent.habitability;
+					break;
+				case OccurrenceConstants.campOccurrenceTypes.trader:
+					campFactor = 1 / levelComponent.traderFrequencyFactor;
+					break;
 			}
 
 			let reputationComponent = campNode.reputation;
-			return OccurrenceConstants.getTimeToNext(event, isNew, upgradeLevel, reputationComponent.value, numCamps);
+			return OccurrenceConstants.getTimeToNext(event, isNew, upgradeLevel, campFactor, reputationComponent.value, numCamps);
 		},
 		
 		getFastTrackTimeToNext: function (campNode, event) {
@@ -898,6 +914,7 @@ define([
 				
 				case OccurrenceConstants.campOccurrenceTypes.recruit:
 					let explorerStats = GameGlobals.playerHelper.getExplorerStats();
+					if (explorerStats.minExplorersByType > 5) return 0.9;
 					if (explorerStats.minExplorersByType > 1) return 0.5;
 					if (explorerStats.minExplorersByType > 0) return 0.25;
 					break;

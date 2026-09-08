@@ -1,43 +1,113 @@
 // Helper functions for the WorldCreator - stuff that may be useful outside of world creation as well
 define([
 	'ash',
-	'game/GameGlobals',
 	'game/vos/ResourcesVO',
 	'worldcreator/WorldCreatorRandom',
 	'worldcreator/WorldCreatorConstants',
+	'game/constants/CampConstants',
 	'game/constants/LevelConstants',
 	'game/constants/PositionConstants',
 	'game/constants/SectorConstants',
-	'game/constants/UpgradeConstants',
 	'game/constants/WorldConstants',
-], function (Ash, GameGlobals, ResourcesVO, WorldCreatorRandom, WorldCreatorConstants, LevelConstants, PositionConstants, SectorConstants, UpgradeConstants, WorldConstants) {
+	'game/vos/PositionVO',
+], function (Ash, ResourcesVO, WorldCreatorRandom, WorldCreatorConstants, CampConstants, LevelConstants, PositionConstants, SectorConstants, WorldConstants, PositionVO) {
 
-	var WorldCreatorHelper = {
-		
-		camplessLevelOrdinals: {},
-		hardLevelOrdinals: {},
+	let WorldCreatorHelper = {
+
+		copyValueForAllSectors: function (levelTemplateVO, levelVO, key) {
+			if (!levelTemplateVO || !levelTemplateVO.sectors) return;
+
+			for (let i = 0; i < levelTemplateVO.sectors.length; i++) {
+				let sectorTemplateVO = levelTemplateVO.sectors[i];
+				if (sectorTemplateVO && sectorTemplateVO[key]) {
+					let sectorVO = levelVO.getSectorByPos(sectorTemplateVO.position);
+					if (sectorVO) sectorVO[key] = sectorTemplateVO[key];
+				}
+			}
+		},
+
+		getSectorsByTemplateFeature: function (levelTemplateVO, levelVO, feature) {
+			let result = [];
+			for (let i = 0; i < levelTemplateVO.sectors.length; i++) {
+				let sectorTemplateVO = levelTemplateVO.sectors[i];
+				if (sectorTemplateVO && sectorTemplateVO[feature]) {
+					let sectorVO = levelVO.getSectorByPos(sectorTemplateVO.position);
+					if (sectorVO) result.push(sectorVO);
+				}
+			}
+			return result;
+		},
+
+		getLocaleDataFromTemplate: function (levelTemplateVO, levelVO, localeType, filter) {
+			let result = [];
+			for (let i = 0; i < levelTemplateVO.sectors.length; i++) {
+				let sectorTemplateVO = levelTemplateVO.sectors[i];
+				if (sectorTemplateVO && sectorTemplateVO.locales) {
+					for (let j = 0; j < sectorTemplateVO.locales.length; j++) {
+						let localeVO = sectorTemplateVO.locales[j];
+						if (localeType && localeVO.type != localeType) continue;
+						if (filter && !filter(localeVO)) continue;
+						let sectorVO = levelVO.getSectorByPos(sectorTemplateVO.position);
+						if (sectorVO) {
+							result.push({ sectorVO: sectorVO, sectorTemplateVO: sectorTemplateVO, localeVO: localeVO });
+						}
+					}
+				}
+			}
+			return result;
+		},
+
+		getStashDataFromTemplate: function (levelTemplateVO, levelVO) {
+			let result = [];
+			for (let i = 0; i < levelTemplateVO.sectors.length; i++) {
+				let sectorTemplateVO = levelTemplateVO.sectors[i];
+				if (sectorTemplateVO && sectorTemplateVO.stashes && sectorTemplateVO.stashes.length > 0) {
+					let sectorVO = levelVO.getSectorByPos(sectorTemplateVO.position);
+					if (!sectorVO) continue;
+					for (let j = 0; j < sectorTemplateVO.stashes.length; j++) {
+						let stashVO = sectorTemplateVO.stashes[j];
+						result.push({ sectorVO: sectorVO, sectorTemplateVO: sectorTemplateVO, stashVO: stashVO });
+						break;
+					}
+				}
+			}
+			return result;
+		},
 		
 		addCriticalPath: function (worldVO, criticalPathVO) {
-			var path = WorldCreatorRandom.findPath(worldVO, criticalPathVO.startPos, criticalPathVO.endPos);
+			let path = WorldCreatorRandom.findPath(worldVO, criticalPathVO.startPos, criticalPathVO.endPos);
 			for (let j = 0; j < path.length; j++) {
-				var levelVO = worldVO.getLevel(path[j].level);
+				let levelVO = worldVO.getLevel(path[j].level);
 				levelVO.getSector(path[j].sectorX, path[j].sectorY).addToCriticalPath(criticalPathVO);
 			}
 		},
 		
-		getClosestPair: function (sectors1, sectors2, skip) {
+		getConnectionPair: function (levelVO, sectors1, sectors2, skip) {
 			skip = skip || 0;
-			let result = [null, null];
-			var resultDist = 9999;
-			var pairs = [];
+			let pairs = [];
 			for (let i = 0; i < sectors1.length; i++) {
 				for (let j = 0; j < sectors2.length; j++) {
 					pairs.push([sectors1[i], sectors2[j]]);
 				}
 			}
-			pairs.sort(function (a, b) {
-				return PositionConstants.getDistanceTo(a[0].position, a[1].position) - PositionConstants.getDistanceTo(b[0].position, b[1].position);
-			});
+
+			let getSectorScore = function (sectorVO) {
+				let score = 0;
+				let numNeighbours = levelVO.getNeighbourCount(sectorVO.position.sectorX, sectorVO.position.sectorY);
+				if (numNeighbours < 3) score++;
+				if (numNeighbours > 3) score--;
+				if (levelVO.hasConnectionPointAt(sectorVO.position.sectorX, sectorVO.position.sectorY)) score++;
+				return score;
+			};
+
+			let getPairScore = function (pair) {
+ 				let distance = PositionConstants.getDistanceTo(pair[0].position, pair[1].position);
+				let alignment = PositionConstants.getPositionAlignment(pair[0].position, pair[1].position);
+				return getSectorScore(pair[0]) + getSectorScore(pair[1]) + alignment - distance;
+			};
+
+			pairs.sort(function (a, b) { return getPairScore(b) - getPairScore(a); });
+			
 			return pairs[skip];
 		},
 		
@@ -61,6 +131,24 @@ define([
 					resultDist = dist;
 				}
 			}
+			return result;
+		},
+
+		getPositionsAtDistance: function (position, distance) {
+			let result = [];
+
+			if (distance == 0) position;
+
+			for (let dx = -distance; dx <= distance; dx++) {
+				let dy = distance - Math.abs(dx);
+
+				result.push(new PositionVO(position.level, position.sectorX + dx, position.sectorY + dy));
+
+				if (dy !== 0) {
+					result.push(new PositionVO(position.level, position.sectorX + dx, position.sectorY - dy));
+				}
+			}
+
 			return result;
 		},
 		
@@ -102,6 +190,21 @@ define([
 			}
 			return result;
 		},
+
+		getQuickMinDistanceToPassage: function (levelVO, sectorVO) {
+			let result = 9999;
+			let passagePositions = levelVO.passagePositions;
+			for (let i = 0; i < passagePositions.length; i++) {
+				let passagePos = passagePositions[i];
+				let dist = PositionConstants.getDistanceTo(sectorVO.position, passagePos);
+				result = Math.min(result, dist);
+			}
+			return result;
+		},
+
+		getQuickMinDistanceToCampOrPassage: function (levelVO, sectorVO) {
+			return Math.min(this.getQuickMinDistanceToCamp(levelVO, sectorVO), this.getQuickMinDistanceToPassage(levelVO, sectorVO));
+		},
 		
 		sortSectorsByPathLenTo: function (worldVO, sector) {
 			return function (a, b) {
@@ -111,11 +214,11 @@ define([
 			};
 		},
 		
-		sortSectorsByDistanceTo: function (position) {
+		sortSectorsByDistanceTo: function (position, invert) {
 			return function (a, b) {
 				var dista = PositionConstants.getDistanceTo(position, a.position);
 				var distb = PositionConstants.getDistanceTo(position, b.position);
-				return dista - distb;
+				return invert ? distb - dista : dista - distb;
 			};
 		},
 		
@@ -123,11 +226,11 @@ define([
 			let result = levelVO.getNeighbours(pos.sectorX, pos.sectorY);
 			if (pendingSectors) {
 				for (let i = 0; i < pendingSectors.length; i++) {
-					var pendingPos = pendingSectors[i];
+					let pendingPos = pendingSectors[i];
 					if (levelVO.hasSector(pendingPos.sectorX, pendingPos.sectorY)) continue;
-					var distance = PositionConstants.getDistanceTo(pos, pendingPos);
+					let distance = PositionConstants.getDistanceTo(pos, pendingPos);
 					if (distance >= 1 && distance < 2) {
-						var direction = PositionConstants.getDirectionFrom(pos, pendingPos);
+						let direction = PositionConstants.getDirectionFrom(pos, pendingPos);
 						result[direction] = { position: pendingPos };
 					}
 				}
@@ -149,8 +252,38 @@ define([
 			}
 			return result;
 		},
+
+		getUnconncetedNeighbourCount: function (levelVO, sectorX, sectorY, stage) {
+			let neighbours = levelVO.getNeighbours(sectorX, sectorY, stage);
+
+			let groups = [];
+			let options = { blockedPositions: [ { level: levelVO.level, sectorX: sectorX, sectorY: sectorY } ] };
+
+			for (let direction in neighbours) {
+				let neighbour = neighbours[direction];
+				let matchingGroup = null;
+
+				for (let i = 0; i < groups.length; i++) {
+					let otherNeighbour = groups[i][0];
+					let path = WorldCreatorRandom.findPathOnLevel(levelVO, neighbour.position, otherNeighbour.position, false, true, null, 3, options);
+					if (path && path.length > 0 && path.length < 3) {
+						matchingGroup = groups[i];
+						break;
+					}
+				}
+
+				if (matchingGroup) {
+					matchingGroup.push(neighbour);
+				} else {
+					groups.push([neighbour]);
+					continue;
+				}
+			}
+
+			return groups.length;
+		},
 		
-		getVornoiPoints: function (seed, worldVO, levelVO) {
+		getZoneVornoiPoints: function (seed, worldVO, levelVO) {
 			var level = levelVO.level;
 			var points = [];
 			var addPoint = function (position, zone, minDistance) {
@@ -193,29 +326,60 @@ define([
 		
 		getBorderSectorsForZone: function (levelVO, zone, includeAllPairs) {
 			let result = [];
-			var directions = PositionConstants.getLevelDirections();
+			let directions = PositionConstants.getLevelDirections();
 			for (let i = 0; i < levelVO.sectors.length; i++) {
-				var sector = levelVO.sectors[i];
+				let sector = levelVO.sectors[i];
 				if (sector.zone != zone) continue;
-				var neighbours = levelVO.getNeighbours(sector.position.sectorX, sector.position.sectorY);
-				for (var d in directions) {
-					var direction = directions[d];
-					var neighbour = neighbours[direction];
+				let neighbours = levelVO.getNeighbours(sector.position.sectorX, sector.position.sectorY);
+				for (let d in directions) {
+					let direction = directions[d];
+					let neighbour = neighbours[direction];
 					if (neighbour && neighbour.zone != zone) {
-						result.push({ sector: sector, neighbour: neighbour });
+						result.push({ sector: sector, neighbour: neighbour, zone: neighbour.zone });
 						if (!includeAllPairs) break;
 					}
 				}
 			}
 			return result;
 		},
+
+		getBorderSectorsForStages: function (levelVO, skipCrossings) {
+			let result = [];
+			let directions = PositionConstants.getLevelDirections();
+			for (let i = 0; i < levelVO.sectors.length; i++) {
+				let sector = levelVO.sectors[i];
+				let numNeighbours = levelVO.getNeighbourCount(sector.position.sectorX, sector.position.sectorY);
+				if (skipCrossings && numNeighbours > 3) continue;
+				let neighbours = levelVO.getNeighbours(sector.position.sectorX, sector.position.sectorY);
+				for (let d in directions) {
+					let direction = directions[d];
+					let neighbour = neighbours[direction];
+					if (neighbour && neighbour.stage != sector.stage) {
+						result.push({ sector: sector, neighbour: neighbour });
+					}
+				}
+			}
+			return result;
+		},	
+
+		getFeatureEdgePositions: function (featureVO, level) {
+			let result = [];
+
+			for (let i = 0; i < featureVO.areas.length; i++) {
+				let areaVO = featureVO.areas[i];
+				if (areaVO.level != level) continue;
+				result = result.concat(areaVO.getEdgePositions(level));
+			}
+
+			return result;
+		},
 		
 		getFeaturesSurrounding: function (worldVO, levelVO, pos) {
 			let result = [];
-			var candidates = PositionConstants.getAllPositionsInArea(pos, 5);
+			let candidates = PositionConstants.getAllPositionsInArea(pos, 5);
 			for (let i = 0; i < candidates.length; i++) {
 				var position = candidates[i];
-				var features = worldVO.getFeaturesByPos(position);
+				var features = worldVO.getFeatureTypesByPos(position);
 				for (let j = 0; j < features.length; j++) {
 					var feature = features[j];
 					if (result.indexOf(feature) >= 0) {
@@ -228,33 +392,15 @@ define([
 		},
 		
 		getBottomLevel: function (seed) {
-			switch (seed % 5) {
-				case 0: return 0;
-				case 1: return 1;
-				case 2: return -1;
-				case 3: return 1;
-				case 4: return 0;
-			}
+			return WorldCreatorConstants.getBottomLevel(seed);
 		},
 		
 		getHighestLevel: function (seed) {
-			switch (seed % 5) {
-				case 0: return 25;
-				case 1: return 26;
-				case 2: return 25;
-				case 3: return 26;
-				case 4: return 24;
-			}
+			return WorldCreatorConstants.getHighestLevel(seed);
 		},
 		
 		getLevelOrdinal: function(seed, level) {
-			if (level > 13) {
-				var bottomLevel = this.getBottomLevel(seed);
-				var bottomLevelOrdinal = this.getLevelOrdinal(seed, bottomLevel);
-				return bottomLevelOrdinal + (level - 13);
-			} else {
-				return -level + 14;
-			}
+			return WorldCreatorConstants.getLevelOrdinal(seed, level);
 		},
 		
 		getLevelForOrdinal: function (seed, levelOrdinal) {
@@ -267,7 +413,7 @@ define([
 		},
 		
 		getCampOrdinal: function (seed, level) {
-			var camplessLevelOrdinals = this.getCamplessLevelOrdinals(seed);
+			var camplessLevelOrdinals = WorldCreatorConstants.getCamplessLevelOrdinals(seed);
 			var levelOrdinal = this.getLevelOrdinal(seed, level);
 			var ordinal = 0;
 			for (let i = 1; i <= levelOrdinal; i++) {
@@ -282,7 +428,7 @@ define([
 			var mainLevel = this.getLevelForOrdinal(seed, mainLevelOrdinal);
 			result.push(mainLevel);
 			
-			var camplessLevelOrdinals = this.getCamplessLevelOrdinals(seed);
+			var camplessLevelOrdinals = WorldCreatorConstants.getCamplessLevelOrdinals(seed);
 			for (let i = 0; i < camplessLevelOrdinals.length; i++) {
 				var l = this.getLevelForOrdinal(seed, camplessLevelOrdinals[i]);
 				var co = this.getCampOrdinal(seed, l);
@@ -292,6 +438,11 @@ define([
 			}
 			
 			return result;
+		},
+
+		getFirstLevelForCamp: function (seed, campOrdinal) {
+			let levels = WorldCreatorHelper.getLevelsForCamp(seed, campOrdinal);
+			return levels[0];
 		},
 
 		getLastLevelForCamp: function (seed, campOrdinal) {
@@ -310,20 +461,28 @@ define([
 		},
 		
 		getNumSectorsForLevel: function (seed, level) {
-			let levelOrdinal = this.getLevelOrdinal(seed, level);
 			let campOrdinal = this.getCampOrdinal(seed, level);
-			let levels = this.getLevelsForCamp(seed, campOrdinal);
 			let numSectorsForCampOrdinal = WorldCreatorConstants.getNumSectors(campOrdinal);
-			if (levels.length == 1) return numSectorsForCampOrdinal;
-			
+			let ratio = 1;
+
 			let getSizeFactor = function (l) {
 				if (WorldCreatorHelper.isSmallLevel(seed, l))
 					return 0.5;
 				return 1;
 			};
-			let sizeFactor = getSizeFactor(level);
-			let totalSizeFactor = levels.map(level => getSizeFactor(level)).reduce((total, num) => total + num);
-			let ratio = sizeFactor / totalSizeFactor;
+			
+			let levels = this.getLevelsForCamp(seed, campOrdinal);
+			if (levels.length == 1) {
+				// only level: a little less than all sectors to avoid huge single levels (all sectors calculates with assumption of 2 levels for most camp ordinals)
+				ratio = getSizeFactor(levels[0]);
+				if (campOrdinal > 2 && campOrdinal < WorldConstants.CAMPS_TOTAL) ratio = 0.9;
+			} else {
+				// several levels: distribute on levels
+				let sizeFactor = getSizeFactor(level);
+				let totalSizeFactor = levels.map(level => getSizeFactor(level)).reduce((total, num) => total + num);
+				ratio = sizeFactor / totalSizeFactor;
+			}
+
 			return Math.round(numSectorsForCampOrdinal * ratio);
 		},
 		
@@ -345,7 +504,8 @@ define([
 		},
 		
 		getNumSectorsForLevelStage: function (seed, campOrdinal, level, stage) {
-			var isCampableLevel = this.isCampableLevel(seed, level);
+			let isCampableLevel = this.isCampableLevel(seed, level);
+
 			if (!isCampableLevel && stage == WorldConstants.CAMP_STAGE_EARLY)
 				return 0;
 			
@@ -354,7 +514,7 @@ define([
 				return numSectorsLevel;
 			}
 			
-			var campLevels = WorldCreatorHelper.getLevelsForCamp(seed, campOrdinal);
+			let campLevels = WorldCreatorHelper.getLevelsForCamp(seed, campOrdinal);
 			let earlyRatio = campLevels.length > 1 ? 0.6 : 0.5;
 			let numEarlySectors = Math.round(earlyRatio * numSectorsLevel);
 			if (stage == WorldConstants.CAMP_STAGE_EARLY) {
@@ -367,7 +527,7 @@ define([
 		getLevelOrdinalForCampOrdinal: function (seed, campOrdinal) {
 			// this assumes camplessLevelOrdinals are sorted from smallest to biggest
 			var levelOrdinal = campOrdinal;
-			var camplessLevelOrdinals = this.getCamplessLevelOrdinals(seed);
+			var camplessLevelOrdinals = WorldCreatorConstants.getCamplessLevelOrdinals(seed);
 			for (let i = 0; i < camplessLevelOrdinals.length; i++) {
 				if (camplessLevelOrdinals[i] <= levelOrdinal) {
 					levelOrdinal++;
@@ -377,16 +537,14 @@ define([
 		},
 		
 		isCampableLevel: function (seed, level) {
-			var camplessLevelOrdinals = this.getCamplessLevelOrdinals(seed);
+			var camplessLevelOrdinals = WorldCreatorConstants.getCamplessLevelOrdinals(seed);
 			var levelOrdinal = this.getLevelOrdinal(seed, level);
 			var campOrdinal = this.getCampOrdinal(seed, level);
 			return camplessLevelOrdinals.indexOf(levelOrdinal) < 0;
 		},
 		
 		isHardLevel: function (seed, level) {
-			var hardLevelOrdinals = this.getHardLevelOrdinals(seed);
-			var levelOrdinal = this.getLevelOrdinal(seed, level);
-			return hardLevelOrdinals.includes(levelOrdinal);
+			return WorldCreatorConstants.isHardLevel(seed, level);
 		},
 		
 		isSmallLevel: function (seed, level) {
@@ -398,7 +556,7 @@ define([
 		
 		getNextUncampableLevelOrdinalForCampOrdinal: function (seed, campOrdinal) {
 			var campLevelOrdinal = this.getLevelOrdinalForCampOrdinal(seed, campOrdinal);
-			var camplessLevelOrdinals = this.getCamplessLevelOrdinals(seed);
+			var camplessLevelOrdinals = WorldCreatorConstants.getCamplessLevelOrdinals(seed);
 			for (let i = 0; i < camplessLevelOrdinals.length; i++) {
 				if (camplessLevelOrdinals[i] > campLevelOrdinal) {
 					return camplessLevelOrdinals[i];
@@ -409,7 +567,7 @@ define([
 		
 		getNotCampableReason: function (seed, level) {
 			if (this.isCampableLevel(seed, level)) return null;
-			var bottomLevel = this.getBottomLevel(seed);
+			let bottomLevel = this.getBottomLevel(seed);
 			
 			if (level === 14) return LevelConstants.UNCAMPABLE_LEVEL_TYPE_RADIATION;
 			if (level == bottomLevel) return LevelConstants.UNCAMPABLE_LEVEL_TYPE_SUPERSTITION;
@@ -419,158 +577,92 @@ define([
 			let options = [];
 			let levelOrdinal = this.getLevelOrdinal(seed, level);
 			
-			let unlockToxicWasteCampOrdinal = GameGlobals.upgradeEffectsHelper.getMinimumCampOrdinalForUpgrade("unlock_action_clear_waste_t");
+			let unlockToxicWasteCampOrdinal = WorldCreatorHelper.progressionConfig.unlockCampOrdinals.actionClearWasteToxic;
 			if (levelOrdinal == this.getNextUncampableLevelOrdinalForCampOrdinal(seed, unlockToxicWasteCampOrdinal)) {
 				return LevelConstants.UNCAMPABLE_LEVEL_TYPE_POLLUTION;
 			}
 				
-			let unlockRadioactiveWasteCampOrdinal = GameGlobals.upgradeEffectsHelper.getMinimumCampOrdinalForUpgrade("unlock_action_clear_waste_r");
+			let unlockRadioactiveWasteCampOrdinal = WorldCreatorHelper.progressionConfig.unlockCampOrdinals.actionClearWasteRadioactive;
 			if (levelOrdinal == this.getNextUncampableLevelOrdinalForCampOrdinal(seed, unlockRadioactiveWasteCampOrdinal)) {
 				return LevelConstants.UNCAMPABLE_LEVEL_TYPE_RADIATION;
 			}
 			
-			if (campOrdinal >= WorldCreatorConstants.MIN_CAMP_ORDINAL_HAZARD_RADIATION && campOrdinal != 9)
+			if (campOrdinal >= WorldCreatorConstants.MIN_CAMP_ORDINAL_HAZARD_RADIATION && campOrdinal != 9) {
 				options.push(LevelConstants.UNCAMPABLE_LEVEL_TYPE_RADIATION);
-			if (campOrdinal >= WorldCreatorConstants.MIN_CAMP_ORDINAL_HAZARD_POISON)
-				options.push(LevelConstants.UNCAMPABLE_LEVEL_TYPE_POLLUTION);
-			if (campOrdinal != 8 && campOrdinal != 15 && campOrdinal != 14)
+			}
+			
+			if (campOrdinal >= WorldCreatorConstants.MIN_CAMP_ORDINAL_HAZARD_POISON) {
+				options.push(LevelConstants.UNCAMPABLE_LEVEL_TYPE_POLLUTION);				
+
+				if (WorldCreatorConstants.getDiseaseFrequencyFactor(campOrdinal) > 1) {
+					options.push(LevelConstants.UNCAMPABLE_LEVEL_TYPE_POLLUTION);
+				}
+			}
+			
+			if (campOrdinal != 8 && campOrdinal != 15 && campOrdinal != 14) {
 				options.push(LevelConstants.UNCAMPABLE_LEVEL_TYPE_FLOODED);
+
+				if (WorldCreatorConstants.getSignatureDisaster(campOrdinal) == CampConstants.DISASTER_TYPE_FLOOD) {
+					return LevelConstants.UNCAMPABLE_LEVEL_TYPE_FLOODED;
+				}
+			}
 				
 			if (options.length == 0)
 				return LevelConstants.UNCAMPABLE_LEVEL_TYPE_SUPERSTITION;
 				
-			return options[WorldCreatorRandom.randomInt(seed % 4 + level + level * 8 + 88, 0, options.length)];
+			return WorldCreatorRandom.randomItemFromArray(seed - level, options);
 		},
 		
 		getCamplessLevelOrdinals: function (seed) {
-			if (!this.camplessLevelOrdinals[seed]) {
-				var camplessLevelOrdinals = [];
-
-				switch (seed % 5) {
-					case 0:
-						camplessLevelOrdinals.push(25);
-						camplessLevelOrdinals.push(23);
-						camplessLevelOrdinals.push(20);
-						camplessLevelOrdinals.push(17);
-						camplessLevelOrdinals.push(14);
-						camplessLevelOrdinals.push(15);
-						camplessLevelOrdinals.push(12);
-						camplessLevelOrdinals.push(10);
-						camplessLevelOrdinals.push(8);
-						camplessLevelOrdinals.push(5);
-						camplessLevelOrdinals.push(3);
-						break;
-					case 1:
-						camplessLevelOrdinals.push(25);
-						camplessLevelOrdinals.push(23);
-						camplessLevelOrdinals.push(21);
-						camplessLevelOrdinals.push(19);
-						camplessLevelOrdinals.push(17);
-						camplessLevelOrdinals.push(14);
-						camplessLevelOrdinals.push(13);
-						camplessLevelOrdinals.push(11);
-						camplessLevelOrdinals.push(9);
-						camplessLevelOrdinals.push(6);
-						camplessLevelOrdinals.push(3);
-						break;
-					case 2:
-						camplessLevelOrdinals.push(26);
-						camplessLevelOrdinals.push(24);
-						camplessLevelOrdinals.push(22);
-						camplessLevelOrdinals.push(19);
-						camplessLevelOrdinals.push(16);
-						camplessLevelOrdinals.push(15);
-						camplessLevelOrdinals.push(13);
-						camplessLevelOrdinals.push(11);
-						camplessLevelOrdinals.push(9);
-						camplessLevelOrdinals.push(7);
-						camplessLevelOrdinals.push(5);
-						camplessLevelOrdinals.push(3);
-						break;
-					case 3:
-						camplessLevelOrdinals.push(25);
-						camplessLevelOrdinals.push(23);
-						camplessLevelOrdinals.push(21);
-						camplessLevelOrdinals.push(18);
-						camplessLevelOrdinals.push(16);
-						camplessLevelOrdinals.push(14);
-						camplessLevelOrdinals.push(13);
-						camplessLevelOrdinals.push(11);
-						camplessLevelOrdinals.push(8);
-						camplessLevelOrdinals.push(6);
-						camplessLevelOrdinals.push(3);
-						break;
-					case 4:
-						camplessLevelOrdinals.push(23);
-						camplessLevelOrdinals.push(20);
-						camplessLevelOrdinals.push(17);
-						camplessLevelOrdinals.push(15);
-						camplessLevelOrdinals.push(14);
-						camplessLevelOrdinals.push(12);
-						camplessLevelOrdinals.push(10);
-						camplessLevelOrdinals.push(7);
-						camplessLevelOrdinals.push(5);
-						camplessLevelOrdinals.push(3);
-						break;
-				}
-				
-				this.camplessLevelOrdinals[seed] = camplessLevelOrdinals.sort((a, b) => a - b);
-			}
-			return this.camplessLevelOrdinals[seed];
+			return WorldCreatorConstants.getCamplessLevelOrdinals(seed);
 		},
 		
 		getHardLevelOrdinals: function (seed) {
-			if (!this.hardLevelOrdinals[seed]) {
-				var hardLevelOrdinals = [];
-				var surfaceLevel = this.getHighestLevel(seed);
-				hardLevelOrdinals.push(this.getLevelOrdinal(seed, 14));
-				hardLevelOrdinals.push(this.getLevelOrdinal(seed, surfaceLevel));
-				switch (seed % 5) {
-					case 0:
-						hardLevelOrdinals.push(10);
-						hardLevelOrdinals.push(23);
-						break;
-					case 1:
-						hardLevelOrdinals.push(9);
-						hardLevelOrdinals.push(23);
-						break;
-					case 2:
-						hardLevelOrdinals.push(11);
-						hardLevelOrdinals.push(24);
-						break;
-					case 3:
-						hardLevelOrdinals.push(11);
-						hardLevelOrdinals.push(23);
-						break;
-					case 4:
-						hardLevelOrdinals.push(10);
-						hardLevelOrdinals.push(23);
-						break;
-				}
-				this.hardLevelOrdinals[seed] = hardLevelOrdinals.sort();
-			}
-			return this.hardLevelOrdinals[seed];
+			return WorldCreatorConstants.getHardLevelOrdinals(seed);
+		},
+
+		getWorkshopResource: function (seed, campOrdinal, level) {
+			let campOrdinalResource = WorldConstants.getWorkshopResourceForCampOrdinal(seed, campOrdinal);
+
+			if (!campOrdinalResource) return null;
+
+			let levelIndex = WorldCreatorHelper.getLevelIndexForCamp(seed, campOrdinal, level);
+			let maxLevelIndex = WorldCreatorHelper.getMaxLevelIndexForCamp(seed, campOrdinal, level);
+			let isMaxLevelIndex = levelIndex == maxLevelIndex;
+			let isMinLevelIndex = levelIndex == 0;
+			let bottomLevel = this.getBottomLevel(seed);
+
+			// by default workshop is on max level index, but for some it is the campable level
+
+			let isCorrectLevelCampable = campOrdinalResource == "fuel" || campOrdinal == WorldConstants.CAMP_ORDINAL_RUBBER_2;
+			let isCorrectLevel = false;
+			if (!isCorrectLevelCampable && isMaxLevelIndex) isCorrectLevel = true;
+			if (isCorrectLevelCampable && isMinLevelIndex) isCorrectLevel = true;
+
+			return isCorrectLevel ? campOrdinalResource : null;
 		},
 		
 		getRequiredPaths: function (worldVO, levelVO) {
-			var level = levelVO.level;
-			var campOrdinal = levelVO.campOrdinal;
-			var campPosition = levelVO.campPosition;
-			var passageUpPosition = levelVO.passageUpPosition;
-			var passageDownPosition = levelVO.passageDownPosition;
+			let level = levelVO.level;
+			let campOrdinal = levelVO.campOrdinal;
+			let campPosition = levelVO.campPosition;
+			let passageUpPosition = levelVO.passageUpPosition;
+			let passageDownPosition = levelVO.passageDownPosition;
+
+			let startPosition = levelVO.getExcursionStartPosition();
 			
-			var maxPathLenP2P = WorldCreatorConstants.getMaxPathLength(campOrdinal, WorldCreatorConstants.CRITICAL_PATH_TYPE_PASSAGE_TO_PASSAGE);
-			var maxPathLenC2P = WorldCreatorConstants.getMaxPathLength(campOrdinal, WorldCreatorConstants.CRITICAL_PATH_TYPE_CAMP_TO_PASSAGE);
+			let maxPathLenP2P = WorldCreatorConstants.getMaxPathLength(campOrdinal, WorldCreatorConstants.CRITICAL_PATH_TYPE_PASSAGE_TO_PASSAGE);
+			let maxPathLenC2P = WorldCreatorConstants.getMaxPathLength(campOrdinal, WorldCreatorConstants.CRITICAL_PATH_TYPE_CAMP_TO_PASSAGE);
 			
-			var requiredPaths = [];
+			let requiredPaths = [];
 			
 			if (campPosition) {
 				// passages up -> camps -> passages down
-				var isGoingDown = level <= 13 && level >= worldVO.bottomLevel;
-				var passageUpPathType = isGoingDown ? WorldCreatorConstants.CRITICAL_PATH_TYPE_PASSAGE_TO_CAMP : WorldCreatorConstants.CRITICAL_PATH_TYPE_CAMP_TO_PASSAGE;
-				var passageUpStage = isGoingDown ? WorldConstants.CAMP_STAGE_EARLY : null;
-				var passageDownPathType = isGoingDown ? WorldCreatorConstants.CRITICAL_PATH_TYPE_CAMP_TO_PASSAGE : WorldCreatorConstants.CRITICAL_PATH_TYPE_PASSAGE_TO_CAMP;
-				var passageDownStage = isGoingDown ? null : WorldConstants.CAMP_STAGE_EARLY;
+				let isGoingDown = level <= 13 && level >= worldVO.bottomLevel;
+				let passageUpPathType = isGoingDown ? WorldCreatorConstants.CRITICAL_PATH_TYPE_PASSAGE_TO_CAMP : WorldCreatorConstants.CRITICAL_PATH_TYPE_CAMP_TO_PASSAGE;
+				let passageUpStage = isGoingDown ? WorldConstants.CAMP_STAGE_EARLY : null;
+				let passageDownPathType = isGoingDown ? WorldCreatorConstants.CRITICAL_PATH_TYPE_CAMP_TO_PASSAGE : WorldCreatorConstants.CRITICAL_PATH_TYPE_PASSAGE_TO_CAMP;
+				let passageDownStage = isGoingDown ? null : WorldConstants.CAMP_STAGE_EARLY;
 				if (level == 13) {
 					passageUpPathType = WorldCreatorConstants.CRITICAL_PATH_TYPE_CAMP_TO_PASSAGE;
 					passageUpStage = null;
@@ -597,17 +689,46 @@ define([
 				// passage up -> passage down
 				requiredPaths.push({ start: passageUpPosition, end: passageDownPosition, maxlen: maxPathLenP2P, type: WorldCreatorConstants.CRITICAL_PATH_TYPE_PASSAGE_TO_PASSAGE, stage: WorldConstants.CAMP_STAGE_LATE });
 			}
+
+			if (levelVO.requiredPositions) {
+				for (let i = 0; i < levelVO.requiredPositions.length; i++) {
+					let requiredPosition = levelVO.requiredPositions[i];
+					requiredPaths.push({ start: startPosition, end: requiredPosition, maxlen: maxPathLenC2P, type: WorldCreatorConstants.REQUIRED_PATH_TYPE_CAMP_TO_POI_X });
+				}
+			}
+
 			return requiredPaths;
+		},
+
+		getPositionCentrality: function (position) {
+			let nearestZoneCenter = PositionConstants.getPositionOnGrid(position, WorldConstants.WORLD_ZONE_GRID_SIZE);
+			let worldZoneCenterDist = PositionConstants.getDistanceTo(position, nearestZoneCenter);
+			let maxDist = WorldConstants.WORLD_ZONE_GRID_SIZE / 2;
+			return Math.max(0, Math.round((1 - (worldZoneCenterDist / maxDist)) * 10)/10);
+		},
+
+		getPositionDistrictCentrality: function (levelVO, position, stage) {
+			let districtIndex = levelVO.getDistrictIndexByPosition(position, stage);
+			let districtVO = levelVO.districts[districtIndex];
+			let districtCenter = districtVO.adjustedPosition || districtVO.position;
+
+			let distance = PositionConstants.getDistanceTo(districtCenter, position);
+
+			let districtSectors = levelVO.sectors.filter(s => s.districtIndex == districtIndex);
+			let maxDistance = 0;
+			for (let i = 0; i < districtSectors.length; i++) {
+				maxDistance = Math.max(maxDistance, PositionConstants.getDistanceTo(districtCenter, districtSectors[i].position));
+			}
+
+			return Math.max(0, Math.round((1 - (distance / maxDistance)) * 10)/10);
 		},
 		
 		canSectorHaveGang: function (levelVO, sectorVO, direction) {
 			if (!sectorVO) return false;
 			if (sectorVO.isCamp) return false;
 			if (sectorVO.zone == WorldConstants.ZONE_ENTRANCE) return false;
-			if (direction && sectorVO.movementBlockers[direction]) return false;
-			if (levelVO.getNeighbourCount(sectorVO.position.sectorX, sectorVO.position.sectorY) <= 1) return false;
-			
-			var minDist = levelVO.level == 13 ? 4 : 2;
+			if (sectorVO.hasMovementBlockers()) return false;
+			if (levelVO.getNeighbourCount(sectorVO.position.sectorX, sectorVO.position.sectorY) <= 1) return false;			
 			if (this.getQuickMinDistanceToCamp(levelVO, sectorVO) < 3) return false;
 			return true;
 		},
@@ -620,27 +741,106 @@ define([
 			if (sectorVO1.possibleEnemies.length == 0 && sectorVO2.possibleEnemies.length == 0) {
 				return false;
 			}
+			if (!this.canPairHaveBlocker(levelVO, sectorVO1, sectorVO2)) {
+				return false;
+			}
+			return true;
+		},
+
+		canSectorHaveMovementBlocker: function (levelVO, sectorVO) {
+			if (sectorVO.isCamp) return false;
+			if (sectorVO.isPassageUp && levelVO.level >= 13) return false;
+			if (sectorVO.isPassageDown && levelVO.level <= 13) return false;
+			if (levelVO.getNeighbourCount(sectorVO.position.sectorX, sectorVO.position.sectorY) < 2) return false;
+			if (levelVO.getUnblockedNeighbourCount(sectorVO.position.sectorX, sectorVO.position.sectorY) < 2) return false;
+			if (this.getUnconncetedNeighbourCount(levelVO, sectorVO.position.sectorX, sectorVO.position.sectorY) < 2) return false;
+
 			return true;
 		},
 		
-		canHaveBlocker: function (levelVO, sectorVO1, sectorVO2, allowedCriticalPaths) {
-			var distanceToCamp = Math.min(
+		canHaveBlocker: function (levelVO, sectorVO1, sectorVO2, allowedCriticalPathTypes) {
+			let distanceToCamp = Math.min(
 				WorldCreatorHelper.getQuickMinDistanceToCamp(levelVO, sectorVO1),
 				WorldCreatorHelper.getQuickMinDistanceToCamp(levelVO, sectorVO2)
 			);
 			if (distanceToCamp <= 1) return false;
+
+			if (sectorVO1.hasMovementBlockers()) return false;
+			if (sectorVO2.hasMovementBlockers()) return false;
 			
-			for (let i = 0; i < sectorVO1.criticalPaths.length; i++) {
-				var pathType = sectorVO1.criticalPaths[i].type;
-				if (allowedCriticalPaths && allowedCriticalPaths.indexOf(pathType) >= 0) continue;
-				for (let j = 0; j < sectorVO2.criticalPaths.length; j++) {
-					if (pathType === sectorVO2.criticalPaths[j].type) {
+			for (let i = 0; i < sectorVO1.criticalPathTypes.length; i++) {
+				var pathType = sectorVO1.criticalPathTypes[i];
+				if (allowedCriticalPathTypes && allowedCriticalPathTypes.indexOf(pathType) >= 0) continue;
+				for (let j = 0; j < sectorVO2.criticalPathTypes.length; j++) {
+					if (pathType === sectorVO2.criticalPathTypes[j]) {
 						return false;
 					}
 				}
 			}
+
+			if (!this.canSectorHaveMovementBlocker(levelVO, sectorVO1)) return false;
+			if (!this.canSectorHaveMovementBlocker(levelVO, sectorVO2)) return false;
+
+			let direction12 = PositionConstants.getDirectionFrom(sectorVO1.position, sectorVO2.position);
+			if (sectorVO2.movementBlockers[direction12]) return false;
+
+			let direction21 = PositionConstants.getDirectionFrom(sectorVO2.position, sectorVO1.position);
+			if (sectorVO1.movementBlockers[direction21]) return false;
 			
 			return true;
+		},
+
+		canPairHaveBlocker: function (levelVO, sectorVO1, sectorVO2) {
+			if (!this.canSectorHaveMovementBlocker(levelVO, sectorVO1)) return false;
+			if (!this.canSectorHaveMovementBlocker(levelVO, sectorVO2)) return false;
+
+			if (!this.hasOtherUnblockedPaths(levelVO, sectorVO1, sectorVO2, 2)) {
+				return false;
+			}
+
+			if (!this.hasOtherUnblockedPaths(levelVO, sectorVO2, sectorVO1, 2)) {
+				return false;
+			}
+			
+			if (sectorVO1.zone == sectorVO2.zone && sectorVO1.zone == WorldConstants.ZONE_ENTRANCE) {
+				return false;
+			}
+
+			return true;
+		},
+
+		hasOtherUnblockedPaths: function (levelVO, s1, s2, minLen) {
+			// checks if there are unblocked paths to SOMEWHERE from s1 excluding via s2 or if it's a dead end
+
+			let frontier = [ { sectorVO: s1, distance: 0 } ];
+
+			let visited = [];
+
+			while (frontier.length > 0) {
+				let current = frontier.pop();
+				let currentSector = current.sectorVO;
+
+				visited.push(currentSector);
+
+				let neighbours = levelVO.getNeighbourList(currentSector.position.sectorX, currentSector.position.sectorY); 
+
+				for (let i in neighbours) {
+					let neighbour = neighbours[i];
+					if (neighbour == s2) continue;
+					if (visited.indexOf(neighbour) >= 0) continue;
+
+					let direction = PositionConstants.getDirectionFrom(currentSector.position, neighbour.position);
+					if (currentSector.getBlockerByDirection(direction)) continue;
+
+					let newLen = current.distance + 1;
+
+					if (newLen > minLen) return true;
+
+					frontier.push({ sectorVO: neighbour, distance: newLen });
+				}
+			}
+
+			return false;
 		},
 		
 		isDarkLevel: function (seed, level) {
@@ -656,15 +856,105 @@ define([
 			var highest = this.getHighestLevel(seed, level);
 			return level >= highest - 5;
 		},
-		
-		containsBlockingFeature: function (pos, features, allowNonBuilt) {
-			for (let i = 0; i < features.length; i++) {
-				var feature = features[i];
-				if (allowNonBuilt && !feature.isBuilt()) continue;
-				if (feature.containsPosition(pos)) {
-					return true;
+
+		getShortestDistanceToMatchingSector: function (worldVO, levelVO, position, filter, minDistance, maxDistance) {
+			minDistance = minDistance || 0;
+			maxDistance = maxDistance || 999;
+			
+			let result = 999;
+
+			if (levelVO.hasSector(position.secotX, position.sectorY) && filter(levelVO.getSector(position.secotX, position.sectorY))) return 0;
+
+			for (let i = 0; i < levelVO.sectors.length; i++) {
+				let candidate = levelVO.sectors[i];
+				if (!filter(candidate)) continue;
+
+				let distance = PositionConstants.getDistanceTo(position, candidate.position);
+
+				// too far to matter
+				if (distance > maxDistance) continue;
+
+				if (distance < result) {
+					result = distance;
+
+					// found short enough
+					if (result <= minDistance) break;
 				}
 			}
+
+			return result;
+		},
+
+		getShortestPathToMatchingSector: function (worldVO, levelVO, position, filter, minDistance, maxDistance) {
+			let result = null;
+
+			minDistance = minDistance || 0;
+			maxDistance = maxDistance || 999;
+
+			if (filter(position)) return [];
+
+			for (let i = 0; i < levelVO.sectors.length; i++) {
+				let candidate = levelVO.sectors[i];
+				if (!filter(candidate.position)) continue;
+
+				let distance = PositionConstants.getDistanceTo(position, candidate.position);
+
+				// further than current best
+				if (result && result.length > 0 && result.length < distance) continue;
+
+				// too far to matter
+				if (distance > maxDistance) continue;
+
+				let maxPathLength = result ? result.length : null;
+				let path = WorldCreatorRandom.findPath(worldVO, position, candidate.position, false, true, null, true, maxPathLength);
+
+				if (!path) continue;
+				
+				if (!result || path.length < result.length) {
+					result = path;
+
+					// found short enough
+					if (result.length <= minDistance) break;
+				}
+			}
+
+			return result;
+		},
+		
+		containsBlockingFeature: function (worldVO, pos) {
+			let features = worldVO.getFeatureTypesByPos(pos);
+
+			for (let i = 0; i < features.length; i++) {
+				let featureType = features[i];
+				if (!WorldCreatorConstants.isFeatureBlockingSectors(featureType)) continue;
+				return true;
+			}
+
+			return false;
+		},
+
+		containsDeterringFeature: function (worldVO, pos) {
+			let features = worldVO.getFeatureTypesByPos(pos);
+
+			for (let i = 0; i < features.length; i++) {
+				let featureType = features[i];
+				if (WorldCreatorConstants.isFeatureBlockingSectors(featureType)) return true;
+				if (WorldCreatorConstants.isFeatureDeterringSectors(featureType)) return true;
+				return true;
+			}
+
+			return false;
+		},
+		
+		containsSectorFeature: function (worldVO, pos) {
+			let features = worldVO.getFeatureTypesByPos(pos);
+			
+			for (let i = 0; i < features.length; i++) {
+				let featureType = features[i];
+				if (!WorldCreatorConstants.isFeaturePreferredForSectors(featureType)) continue;
+				return true;
+			}
+
 			return false;
 		},
 		

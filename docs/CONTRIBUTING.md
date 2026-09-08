@@ -19,7 +19,7 @@ If you've found a bug and know how to fix it, you can use pull requests to submi
 
 ## Translations
 
-There is currently no system in place for translating Level 13, but the work is in progress to eventually make this possible. If you're interested in translating, check back later!
+Level 13 now includes a Vietnamese translation. The source strings are kept in `strings/strings-vi.json`; if you find an unclear translation or add new player-facing text, please update the Vietnamese strings as well.
 
 ## Other
 

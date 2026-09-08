@@ -4,8 +4,8 @@ define(['ash', 'game/constants/OccurrenceConstants', 'game/constants/UIConstants
 		
 		milestones: [
 			{
-				name: "lone camp",
-				description: "A shelter for a few rugged outcasts with sparse belongings",
+				name: "trại cô độc",
+				description: "Nơi trú ẩn của vài người sống sót với rất ít tài sản",
 				maxRumours: 100,
 				maxEvidence: 100,
 				maxHope: 0,
@@ -13,8 +13,8 @@ define(['ash', 'game/constants/OccurrenceConstants', 'game/constants/UIConstants
 				baseReputation: 0,
 			},
 			{
-				name: "small settlement",
-				description: "A safe place that several people call home and is starting to accumulate some resources",
+				name: "khu định cư nhỏ",
+				description: "Một nơi an toàn được vài người gọi là nhà và bắt đầu tích lũy tài nguyên",
 				maxRumours: 500,
 				maxEvidence: 500,
 				maxHope: 1,
@@ -23,8 +23,8 @@ define(['ash', 'game/constants/OccurrenceConstants', 'game/constants/UIConstants
 				unlockedEvents: [ OccurrenceConstants.campOccurrenceTypes.raid ],
 			},
 			{
-				name: "multi-level collective",
-				description: "The start of something that spans multiple levels",
+				name: "cộng đồng đa tầng",
+				description: "Khởi đầu của một cộng đồng trải rộng qua nhiều tầng",
 				maxRumours: 800,
 				maxEvidence: 500,
 				maxHope: 10,
@@ -32,8 +32,8 @@ define(['ash', 'game/constants/OccurrenceConstants', 'game/constants/UIConstants
 				baseReputation: 2,
 			},
 			{
-				name: "sanguine tribe",
-				description: "Enough people to call it a tribe",
+				name: "bộ lạc hưng thịnh",
+				description: "Đủ đông để được gọi là một bộ lạc",
 				maxRumours: 2000,
 				maxEvidence: 1000,
 				maxHope: 100,
@@ -41,8 +41,8 @@ define(['ash', 'game/constants/OccurrenceConstants', 'game/constants/UIConstants
 				baseReputation: 3,
 			},
 			{
-				name: "city within the City",
-				description: "An organized society with specialized labour and reliable means of food production",
+				name: "thành phố trong Thành phố",
+				description: "Một xã hội có tổ chức, lao động chuyên môn hóa và nguồn sản xuất lương thực ổn định",
 				maxRumours: 3000,
 				maxEvidence: 1500,
 				maxHope: 300,
@@ -51,8 +51,8 @@ define(['ash', 'game/constants/OccurrenceConstants', 'game/constants/UIConstants
 				unlockedFeatures: [ UIConstants.UNLOCKABLE_FEATURE_WORKER_AUTO_ASSIGNMENT ],
 			},
 			{
-				name: "multiplex society",
-				description: "A tribe that spans multiple levels",
+				name: "xã hội đa tầng",
+				description: "Một bộ lạc trải rộng qua nhiều tầng",
 				maxRumours: 8000,
 				maxEvidence: 2000,
 				maxHope: 600,
@@ -60,8 +60,8 @@ define(['ash', 'game/constants/OccurrenceConstants', 'game/constants/UIConstants
 				baseReputation: 5,
 			},
 			{
-				name: "dominant state",
-				description: "A society that has shown it can not only survive, but progress",
+				name: "nhà nước hùng mạnh",
+				description: "Một xã hội đã chứng minh có thể không chỉ sinh tồn mà còn phát triển",
 				maxRumours: 15000,
 				maxEvidence: 3000,
 				maxHope: 1000,
@@ -69,8 +69,8 @@ define(['ash', 'game/constants/OccurrenceConstants', 'game/constants/UIConstants
 				baseReputation: 6,
 			},
 			{
-				name: "civilization rebuilt",
-				description: "A new civilization born from the ruins of the old one",
+				name: "nền văn minh tái thiết",
+				description: "Một nền văn minh mới sinh ra từ đống đổ nát của nền văn minh cũ",
 				maxRumours: 20000,
 				maxEvidence: 4000,
 				maxHope: 1500,
@@ -157,23 +157,23 @@ define(['ash', 'game/constants/OccurrenceConstants', 'game/constants/UIConstants
 		
 		getLuxuryDisplayName: function (luxuryType) {
 			switch (luxuryType) {
-				case TribeConstants.luxuryType.HONEY: return "honey";
-				case TribeConstants.luxuryType.OLIVES: return "olives";
-				case TribeConstants.luxuryType.TRUFFLES: return "truffles";
-				case TribeConstants.luxuryType.CHOCOLATE: return "chocolate";
-				case TribeConstants.luxuryType.COFFEE: return "coffee";
-				case TribeConstants.luxuryType.SPICES: return "spices";
-				case TribeConstants.luxuryType.TOBACCO: return "tobacco";
-				case TribeConstants.luxuryType.TEA: return "tea";
-				case TribeConstants.luxuryType.AMBER: return "amber";
-				case TribeConstants.luxuryType.PEARLS: return "pearls";
-				case TribeConstants.luxuryType.IVORY: return "ivory";
-				case TribeConstants.luxuryType.SALT: return "salt";
-				case TribeConstants.luxuryType.DIAMONDS: return "diamonds";
-				case TribeConstants.luxuryType.EMERALDS: return "emeralds";
-				case TribeConstants.luxuryType.GOLD: return "gold";
-				case TribeConstants.luxuryType.JADE: return "jade";
-				case TribeConstants.luxuryType.SILVER: return "silver";
+				case TribeConstants.luxuryType.HONEY: return "mật ong";
+				case TribeConstants.luxuryType.OLIVES: return "ô liu";
+				case TribeConstants.luxuryType.TRUFFLES: return "nấm cục";
+				case TribeConstants.luxuryType.CHOCOLATE: return "sô-cô-la";
+				case TribeConstants.luxuryType.COFFEE: return "cà phê";
+				case TribeConstants.luxuryType.SPICES: return "gia vị";
+				case TribeConstants.luxuryType.TOBACCO: return "thuốc lá";
+				case TribeConstants.luxuryType.TEA: return "trà";
+				case TribeConstants.luxuryType.AMBER: return "hổ phách";
+				case TribeConstants.luxuryType.PEARLS: return "ngọc trai";
+				case TribeConstants.luxuryType.IVORY: return "ngà voi";
+				case TribeConstants.luxuryType.SALT: return "muối";
+				case TribeConstants.luxuryType.DIAMONDS: return "kim cương";
+				case TribeConstants.luxuryType.EMERALDS: return "ngọc lục bảo";
+				case TribeConstants.luxuryType.GOLD: return "vàng";
+				case TribeConstants.luxuryType.JADE: return "ngọc bích";
+				case TribeConstants.luxuryType.SILVER: return "bạc";
 				
 				default:
 					log.w("unknown luxury resource type: " + luxuryType);

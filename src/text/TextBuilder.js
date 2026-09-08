@@ -6,7 +6,8 @@
 // result: "A former industrial sector wheere factories and warehouses lie in ruins"
 
 define(function () {
-	var TextBuilder = {
+
+	let TextBuilder = {
 		
 		// predefined variables
 		VAR_INDEFINITE_ARTICLE: "a",
@@ -16,7 +17,7 @@ define(function () {
 		
 		build: function (template, params) {
 			let result = template;
-			let vars = template.match(/\[\S*\]/g);
+			let vars = template.match(/\{\S*\}/g);
 			if (vars) {
 				// 1dt pass: replace custom variables
 				let replacedVars = {};
@@ -107,5 +108,6 @@ define(function () {
 		}
 		
 	};
+	
 	return TextBuilder;
 });

@@ -120,7 +120,7 @@ define([], function () {
 		let parts = [baseLabel];
 		if (isDetailedAction) {
 			let costText = this.getActionCostText(callout);
-			if (costText) parts.push("Cost: " + costText);
+			if (costText) parts.push("Chi phí: " + costText);
 
 			let descriptionText = this.getActionDescriptionText(callout);
 			if (descriptionText) parts.push(descriptionText);
@@ -131,14 +131,14 @@ define([], function () {
 				button.setAttribute("data-a11y-disabled-label", "1");
 				button.setAttribute("data-a11y-action-original-aria-label", existingLabel);
 			}
-			parts.push("Unavailable");
+			parts.push("Không khả dụng");
 			let disabledReason = this.getDisabledReasonText(callout);
 			if (disabledReason) {
 				parts.push(disabledReason);
 			} else {
 				let blockedCostText = this.getBlockedCostText(callout);
-				if (blockedCostText) parts.push("Missing resources or requirements: " + blockedCostText);
-				else parts.push("Requirements not met");
+				if (blockedCostText) parts.push("Thiếu tài nguyên hoặc chưa đáp ứng yêu cầu: " + blockedCostText);
+				else parts.push("Chưa đáp ứng yêu cầu");
 			}
 		}
 
@@ -216,7 +216,7 @@ define([], function () {
 			return;
 		}
 
-		let proxyLabel = label || this.normalize(button.getAttribute("aria-label")) || this.normalize(button.textContent) || "Action unavailable";
+		let proxyLabel = label || this.normalize(button.getAttribute("aria-label")) || this.normalize(button.textContent) || "Hành động không khả dụng";
 		buttonContainer.setAttribute("data-a11y-disabled-proxy", "1");
 		buttonContainer.setAttribute("role", "button");
 		buttonContainer.setAttribute("tabindex", "0");
@@ -276,7 +276,7 @@ define([], function () {
 	AccessibilityActionCalloutHelper.prototype.announceDisabledAction = function (buttonContainer) {
 		let region = this.ensureFeedbackRegion();
 		if (!region || !buttonContainer) return;
-		let text = this.normalize(buttonContainer.getAttribute("aria-label")) || "Action unavailable. Requirements not met.";
+		let text = this.normalize(buttonContainer.getAttribute("aria-label")) || "Hành động không khả dụng. Chưa đáp ứng yêu cầu.";
 		region.textContent = "";
 		window.setTimeout(function () {
 			region.textContent = text;

@@ -53,14 +53,14 @@ define([
 				GlobalSignals.triggerSoundSignal.dispatch(UIConstants.soundTriggerIDs.buttonClicked);
 				GameGlobals.uiFunctions.popupManager.closePopup("incoming-caravan-popup");
 			});
-			this.multiplierSelect = HorizontalSelect.init("incoming-caravan-popup-multiplier", "Selection");
+			this.multiplierSelect = HorizontalSelect.init("incoming-caravan-popup-multiplier", "Lựa chọn");
 		},
 
 		setupPopup: function () {
 			var traderComponent = this.playerLocationNodes.head.entity.get(TraderComponent);
 			var caravan = traderComponent.caravan;
 			$("#incoming-caravan-popup h3").text(caravan.name);
-			$("#incoming-caravan-popup-markup").text((TradeConstants.VALUE_MARKUP_INCOMING_CARAVANS * 100) + "% markup");
+			$("#incoming-caravan-popup-markup").text((TradeConstants.VALUE_MARKUP_INCOMING_CARAVANS * 100) + "% phụ phí");
 		},
 
 		createLists: function () {
@@ -251,11 +251,13 @@ define([
 			};
 
 			var onLiClicked = function (e) {
+				if (GameGlobals.uiFunctions.shouldIgnoreClick(e)) return;
 				GlobalSignals.triggerSoundSignal.dispatch(UIConstants.soundTriggerIDs.buttonClicked);
 				moveItem($(this), "click");
 			};
 
 			var onLiLongTap = function (e) {
+				if (GameGlobals.uiFunctions.shouldIgnoreClick(e)) return;
 				moveItem($(this), "longtap");
 			};
 
@@ -374,8 +376,8 @@ define([
 			campOfferValue = Math.round(campOfferValue * 100) / 100;
 			caravan.traderOfferValue = traderOfferValue;
 			caravan.campOfferValue = campOfferValue;
-			$("#inventorylist-incoming-caravan-trader-offer .value").text("Value: " + traderOfferValue);
-			$("#inventorylist-incoming-caravan-camp-offer .value").text("Value: " + campOfferValue);
+			$("#inventorylist-incoming-caravan-trader-offer .value").text("Giá trị: " + traderOfferValue);
+			$("#inventorylist-incoming-caravan-camp-offer .value").text("Giá trị: " + campOfferValue);
 
 			GameGlobals.uiFunctions.toggle("#inventorylist-incoming-caravan-trader-inventory .msg-empty", visibleLisTraderInventory === 0);
 			GameGlobals.uiFunctions.toggle("#inventorylist-incoming-caravan-trader-offer .msg-empty", visibleLisTraderOffer === 0);

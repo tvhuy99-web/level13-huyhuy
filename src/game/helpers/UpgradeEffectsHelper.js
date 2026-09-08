@@ -24,6 +24,25 @@ define([
 			this.improvementsByOccurrence[OccurrenceConstants.campOccurrenceTypes.refugees] = improvementNames.inn;
 			this.improvementsByOccurrence[OccurrenceConstants.campOccurrenceTypes.visitor] = improvementNames.inn;
 		},
+
+		getProgressionConfig: function () {
+			let config = {};
+
+			config.unlockCampOrdinals = {};
+			config.unlockCampOrdinals.actionClearWasteToxic = GameGlobals.upgradeEffectsHelper.getMinimumCampOrdinalForUpgrade("unlock_action_clear_waste_t");
+			config.unlockCampOrdinals.actionClearWasteRadioactive = GameGlobals.upgradeEffectsHelper.getMinimumCampOrdinalForUpgrade("unlock_action_clear_waste_r");
+			config.unlockCampOrdinals.passageElevator = GameGlobals.upgradeEffectsHelper.getMinimumCampOrdinalForUpgrade("unlock_building_passage_elevator");
+			config.unlockCampOrdinals.passageHole = GameGlobals.upgradeEffectsHelper.getMinimumCampOrdinalForUpgrade("unlock_building_passage_hole");
+			config.unlockCampOrdinals.inn = GameGlobals.upgradeEffectsHelper.getCampOrdinalToUnlockBuilding(improvementNames.inn);
+
+			config.unlockCampOrdinalAndSteps = {};
+			config.unlockCampOrdinalAndSteps.staminaPerk1 = GameGlobals.upgradeEffectsHelper.getExpectedCampAndStepForUpgrade("improve_building_hospital");
+			config.unlockCampOrdinalAndSteps.staminaPerk2 = GameGlobals.upgradeEffectsHelper.getExpectedCampAndStepForUpgrade("improve_building_hospital_3");
+
+			config.blueprintPiecesByCampOrdinal = UpgradeConstants.getAllBlueprintPiecesByCampOrdinal();
+
+			return config;
+		},
 		
 		getEffectDescription: function (upgradeID, showMultiline) {
 			let effects = "";
@@ -41,35 +60,35 @@ define([
 			}
 			
 			let unlockedBuildings = GameGlobals.upgradeEffectsHelper.getUnlockedBuildings(upgradeID);
-			addGroup("unlocked camp buildings", unlockedBuildings, this.getImprovementDisplayName);
+			addGroup("công trình trại đã mở khóa", unlockedBuildings, this.getImprovementDisplayName);
 			
 			let unlockedProjects = GameGlobals.upgradeEffectsHelper.getUnlockedProjects(upgradeID);
-			addGroup("unlocked building projects", unlockedProjects, this.getImprovementDisplayName);
+			addGroup("dự án xây dựng đã mở khóa", unlockedProjects, this.getImprovementDisplayName);
 			
 			let unlockedOtherImprovements = GameGlobals.upgradeEffectsHelper.getUnlockedImprovements(upgradeID);
 			unlockedOtherImprovements = unlockedOtherImprovements.filter(improvementName => unlockedBuildings.indexOf(improvementName) < 0 && unlockedProjects.indexOf(improvementName) < 0);
-			addGroup("unlocked other buildings", unlockedOtherImprovements, this.getImprovementDisplayName);
+			addGroup("công trình khác đã mở khóa", unlockedOtherImprovements, this.getImprovementDisplayName);
 
 			let improvedBuildings = GameGlobals.upgradeEffectsHelper.getImprovedBuildings(upgradeID);
-			addGroup("improved buildings", improvedBuildings, this.getImprovementDisplayName);
+			addGroup("công trình được cải thiện", improvedBuildings, this.getImprovementDisplayName);
 
 			let unlockedWorkers = GameGlobals.upgradeEffectsHelper.getUnlockedWorkers(upgradeID);
-			addGroup("unlocked workers", unlockedWorkers, CampConstants.getWorkerDisplayName);
+			addGroup("nhân công đã mở khóa", unlockedWorkers, CampConstants.getWorkerDisplayName);
 
 			let improvedWorkers = GameGlobals.upgradeEffectsHelper.getImprovedWorkers(upgradeID);
-			addGroup("improved workers", improvedWorkers, CampConstants.getWorkerDisplayName);
+			addGroup("nhân công được cải thiện", improvedWorkers, CampConstants.getWorkerDisplayName);
 
 			let unlockedItems = GameGlobals.upgradeEffectsHelper.getUnlockedItems(upgradeID);
-			addGroup("unlocked items", unlockedItems, ItemConstants.getItemDisplayName);
+			addGroup("vật phẩm đã mở khóa", unlockedItems, ItemConstants.getItemDisplayName);
 			
 			let unlockedOccurrences = GameGlobals.upgradeEffectsHelper.getUnlockedOccurrences(upgradeID);
-			addGroup("new events", unlockedOccurrences, (e) => e);
+			addGroup("sự kiện mới", unlockedOccurrences, (e) => e);
 
 			let improvedOccurrences = GameGlobals.upgradeEffectsHelper.getImprovedOccurrences(upgradeID);
 			addGroup("", improvedOccurrences, (e) => GameGlobals.upgradeEffectsHelper.getImproveOccurrenceText(e));
 
 			let unlockedActions = GameGlobals.upgradeEffectsHelper.getUnlockedGeneralActions(upgradeID);
-			addGroup("new actions", unlockedActions, (action) => {
+			addGroup("hành động mới", unlockedActions, (action) => {
 				let baseActionID = GameGlobals.playerActionsHelper.getBaseActionID(action)
 				return TextConstants.getActionName(baseActionID);
 			});
@@ -85,9 +104,9 @@ define([
 		getImproveOccurrenceText: function (event) {
 			switch (event) {
 				case OccurrenceConstants.campOccurrenceTypes.disaster: 
-					return "migitated " + event;
+					return "đã giảm nhẹ " + event;
 			}
-			return "improved " + event;
+			return "đã cải thiện " + event;
 		},
 
 		getUnlockedResearchIDs: function (upgradeID) {
@@ -101,19 +120,19 @@ define([
 			let improvedOccurrences = GameGlobals.upgradeEffectsHelper.getImprovedOccurrences(upgradeID);
 			
 			if (unlockedActions.indexOf("clear_waste_t") >= 0) {
-				result += "Workers cannot clear toxic waste. You must go to the sector yourself. ";
+				result += "Người lao động không thể dọn chất thải độc hại. Bạn phải tự đến khu vực đó. ";
 			}
 			
 			if (unlockedActions.indexOf("investigate") >= 0) {
-				result += "Investigation is now available on certain sectors. Use the map to find them. ";
+				result += "Giờ có thể điều tra một số khu vực. Hãy dùng bản đồ để tìm chúng. ";
 			}
 			
 			if (unlockedProjects.indexOf(improvementNames.greenhouse) >= 0) {
-				result += "Greenhouses can only be built at certain locations with good conditions. If you've found those locations they will appear in the projects tab. ";
+				result += "Nhà kính chỉ có thể xây ở một số vị trí có điều kiện phù hợp. Khi tìm thấy, chúng sẽ xuất hiện trong tab dự án. ";
 			}
 
 			if (improvedOccurrences.indexOf(OccurrenceConstants.campOccurrenceTypes.disaster) >= 0) {
-				result += "Disasters like earthquakes and floods are now less likely to damage buildings. ";
+				result += "Các thảm họa như động đất và lũ lụt giờ ít có khả năng làm hư hại công trình hơn. ";
 			}
 			
 			return result;

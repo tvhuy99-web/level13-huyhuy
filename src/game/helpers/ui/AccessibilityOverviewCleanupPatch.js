@@ -31,22 +31,22 @@ define([
 
 		let playerParts = [];
 		let player = this.overviewPlayerStatusText();
-		if (player) playerParts.push("Player status. " + player);
+		if (player) playerParts.push("Trạng thái người chơi. " + player);
 		let statuses = this.statusText();
-		if (statuses) playerParts.push("Status effects. " + statuses);
+		if (statuses) playerParts.push("Hiệu ứng trạng thái. " + statuses);
 		let equipment = this.overviewEquipmentText();
-		if (equipment) playerParts.push("Equipment stats. " + equipment);
+		if (equipment) playerParts.push("Chỉ số trang bị. " + equipment);
 
 		let inventoryParts = [];
 		let bag = this.overviewInventoryText();
-		if (bag) inventoryParts.push("Inventory. " + bag);
+		if (bag) inventoryParts.push("Túi đồ. " + bag);
 		let tribe = this.overviewNonZeroStatText(".statsbar-tribe-stats");
-		if (tribe) inventoryParts.push("Tribe stats. " + tribe);
+		if (tribe) inventoryParts.push("Chỉ số bộ lạc. " + tribe);
 		let camp = this.overviewCampText();
-		if (camp) inventoryParts.push("Camp. " + camp);
+		if (camp) inventoryParts.push("Trại. " + camp);
 
-		let playerText = "Player overview. " + (playerParts.length ? playerParts.join(". ") : "No player status information available yet.");
-		let inventoryText = "Inventory and camp overview. " + (inventoryParts.length ? inventoryParts.join(". ") : "No inventory or camp information available yet.");
+		let playerText = "Tổng quan người chơi. " + (playerParts.length ? playerParts.join(". ") : "Chưa có thông tin trạng thái người chơi.");
+		let inventoryText = "Tổng quan túi đồ và trại. " + (inventoryParts.length ? inventoryParts.join(". ") : "Chưa có thông tin về túi đồ hoặc trại.");
 		if (summary.textContent !== playerText) summary.textContent = playerText;
 		if (inventorySummary.textContent !== inventoryText) inventorySummary.textContent = inventoryText;
 
@@ -148,7 +148,7 @@ define([
 			if (requireNonZeroValue && !this.overviewHasNonZeroNumber(valueText)) continue;
 			if (requireAnyNonZero && !this.overviewHasNonZeroNumber(valueText + " " + totalText)) continue;
 			let text = this.unique(name, valueText);
-			if (totalText) text = this.unique(text, "total " + totalText);
+			if (totalText) text = this.unique(text, "tổng " + totalText);
 			return text;
 		}
 		return "";

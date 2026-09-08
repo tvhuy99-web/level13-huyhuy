@@ -121,7 +121,7 @@ function (Ash, Text, UIList, MathUtils, GameGlobals, GlobalSignals, LogConstants
 
 			for (let i = 0; i < shownMessages.length; i++) {
 				if (!shownMessages[i].hasBeenShown) {
-					log.i("mark as shown: " + shownMessages[i].message);
+					log.i("mark as shown: " + shownMessages[i].message, "log");
 					shownMessages[i].hasBeenShown = true;
 					hasNewMessages = true;
 				}
@@ -156,7 +156,7 @@ function (Ash, Text, UIList, MathUtils, GameGlobals, GlobalSignals, LogConstants
 			if (visibility == LogConstants.MSG_VISIBILITY_GLOBAL) {
 				positionText = "";
 			} else if (visibility == LogConstants.MGS_VISIBILITY_LEVEL) {
-				positionText = " (level " + data.position.level + ")";
+				positionText = " (tầng " + data.position.level + ")";
 			} else if (visibility == LogConstants.MSG_VISIBILITY_CAMP) {
 				positionText += "";
 			} else if (hasPosition) {
@@ -188,7 +188,7 @@ function (Ash, Text, UIList, MathUtils, GameGlobals, GlobalSignals, LogConstants
 			li.$root.attr("data-hasBeenShown", data.hasBeenShown);
 			li.$root.attr("data-markedAsSeen", data.markedAsSeen);
 			li.$spanMsg.text(message);
-			li.$spanTime.text(UIConstants.getTimeSinceText(timestamp) + " ago");
+			li.$spanTime.text(UIConstants.getTimeSinceText(timestamp));
 			li.$spanLevel.toggle(hasPosition);
 			if (hasPosition) li.$spanLevel.text(positionText);
 		},

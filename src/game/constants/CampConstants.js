@@ -88,6 +88,8 @@ define(['ash', 'text/Text', 'game/vos/ResourcesVO'], function (Ash, Text, Resour
 		REPUTATION_SOURCE_LUXURY_RESOURCES: "luxury-resources",
 		REPUTATION_SOURCE_LEVEL_POP: "level-population",
 		MAX_REPUTATION: 30,
+
+		WORKER_LEVEL_FACTOR_POSITIVE: 1.2,
 		
 		// raids
 		CAMP_BASE_DEFENCE: 7,
@@ -139,58 +141,58 @@ define(['ash', 'text/Text', 'game/vos/ResourcesVO'], function (Ash, Text, Resour
 				id: "chemist",
 				resourceProduced: resourceNames.fuel,
 				getLimitNum: function (improvements, workshops) { return workshops.fuel || 0; },
-				getLimitText: function (num) { return num + " refineries cleared"; },
+				getLimitText: function (num) { return num + " nhà máy lọc đã dọn sạch"; },
 			},
 			rubbermaker: {
 				id: "rubbermaker",
 				resourceProduced: resourceNames.rubber,
 				getLimitNum: function (improvements, workshops) { return workshops.rubber || 0; },
-				getLimitText: function (num) { return num + " plantations found"; },
+				getLimitText: function (num) { return num + " đồn điền đã tìm thấy"; },
 			},
 			gardener: {
 				id: "gardener",
 				resourceProduced: resourceNames.herbs,
 				getLimitNum: function (improvements, workshops) { return workshops.herbs || 0; },
-				getLimitText: function (num) { return num + " greenhouses"; },
+				getLimitText: function (num) { return num + " nhà kính"; },
 			},
 			apothecary: {
 				id: "apothecary",
 				resourceProduced: resourceNames.medicine,
 				getLimitNum: function (improvements, workshops) { return improvements.getCount(improvementNames.apothecary); },
-				getLimitText: function (num) { return num + " apothecaries built"; },
+				getLimitText: function (num) { return num + " hiệu thuốc đã xây"; },
 			},
 			toolsmith: {
 				id: "toolsmith",
 				resourceProduced: resourceNames.tools,
 				getLimitNum: function (improvements, workshops) { return improvements.getCount(improvementNames.smithy); },
-				getLimitText: function (num) { return num + " smithies built"; },
+				getLimitText: function (num) { return num + " lò rèn đã xây"; },
 			},
 			concrete: {
 				id: "concrete",
 				resourceProduced: resourceNames.concrete,
 				getLimitNum: function (improvements, workshops) { return improvements.getCount(improvementNames.cementmill); },
-				getLimitText: function (num) { return num + " cement mills built"; },
+				getLimitText: function (num) { return num + " nhà máy xi măng đã xây"; },
 			},
 			robotmaker: {
 				id: "robotmaker",
 				resourceProduced: resourceNames.robots,
 				getLimitNum: function (improvements, workshops) { return improvements.getCount(improvementNames.robotFactory); },
-				getLimitText: function (num) { return num + " robot factories built"; },
+				getLimitText: function (num) { return num + " nhà máy robot đã xây"; },
 			},
 			scientist: {
 				id: "scientist",
 				getLimitNum: function (improvements, workshops) { return improvements.getCount(improvementNames.library); },
-				getLimitText: function (num) { return num + " libraries built"; },
+				getLimitText: function (num) { return num + " thư viện đã xây"; },
 			},
 			soldier: {
 				id: "soldier",
 				getLimitNum: function (improvements, workshops) { return improvements.getCount(improvementNames.barracks); },
-				getLimitText: function (num) { return num + " barracks built"; },
+				getLimitText: function (num) { return num + " doanh trại đã xây"; },
 			},
 			cleric: {
 				id: "cleric",
 				getLimitNum: function (improvements, workshops) { return improvements.getCount(improvementNames.temple); },
-				getLimitText: function (num) { return num + " temples built"; },
+				getLimitText: function (num) { return num + " đền thờ đã xây"; },
 			},
 		},
 		

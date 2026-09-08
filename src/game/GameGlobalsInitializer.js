@@ -4,6 +4,7 @@ define([
 	'game/GameState',
 	'game/GameFlowLogger',
 	'game/MetaState',
+	'game/WorldState',
 	'game/PlayerActionFunctions',
 	'game/UIFunctions',
 	'game/helpers/CampHelper',
@@ -27,6 +28,7 @@ define([
 	'game/helpers/TribeHelper',
 	'game/helpers/UpgradeEffectsHelper',
 	'game/helpers/ButtonHelper',
+	'game/helpers/WorldHelper',
 	'game/helpers/ui/AccessibilityOverviewCleanupPatch',
 	'game/helpers/ui/AccessibilityFocusStabilityPatch',
 	'game/helpers/ui/AccessibilityActionCalloutHelper',
@@ -57,6 +59,7 @@ define([
 	GameState,
 	GameFlowLogger,
 	MetaState,
+	WorldState,
 	PlayerActionFunctions,
 	UIFunctions,
 	CampHelper,
@@ -80,6 +83,7 @@ define([
 	TribeHelper,
 	UpgradeEffectsHelper,
 	ButtonHelper,
+	WorldHelper,
 	AccessibilityOverviewCleanupPatch,
 	AccessibilityFocusStabilityPatch,
 	AccessibilityActionCalloutHelper,
@@ -105,12 +109,16 @@ define([
 	UIMapHelper,
 	UITechTreeHelper,
 ) {
-	var GameGlobalsInitializer = {
+	let GameGlobalsInitializer = {
 		
-		init: function (engine) {
+		init: function (engine, gameManager, headless) {
 			GameGlobals.engine = engine;
+			GameGlobals.gameManager = gameManager;
+
 			GameGlobals.gameState = new GameState();
 			GameGlobals.metaState = new MetaState();
+			GameGlobals.worldState = new WorldState();
+			
 			GameGlobals.playerActionsHelper = new PlayerActionsHelper(engine);
 
 			if (engine) {
@@ -123,6 +131,7 @@ define([
 			GameGlobals.campHelper = new CampHelper(engine);
 			GameGlobals.campBalancingHelper = new CampBalancingHelper();
 			GameGlobals.dialogueHelper = new DialogueHelper(engine);
+			GameGlobals.worldHelper = new WorldHelper();
 			GameGlobals.tribeBalancingHelper = new TribeBalancingHelper();
 			GameGlobals.textLoader = new TextLoader();
 			
@@ -146,48 +155,51 @@ define([
 				GameGlobals.uiMapHelper = new UIMapHelper(engine);
 				GameGlobals.uiTechTreeHelper = new UITechTreeHelper(engine);
 				GameGlobals.buttonHelper = new ButtonHelper();
-				GameGlobals.uiFunctions = new UIFunctions();
 				GameGlobals.campVisHelper = new CampVisHelper();
 			}
+			
+			if (!headless) {
+				GameGlobals.uiFunctions = new UIFunctions();
 
-			var safeInitAccessibility = function (propertyName, factory) {
-				try {
-					GameGlobals[propertyName] = factory();
-				} catch (error) {
-					console.error("Accessibility helper failed to initialize: " + propertyName, error);
-				}
-			};
+				let safeInitAccessibility = function (propertyName, factory) {
+					try {
+						GameGlobals[propertyName] = factory();
+					} catch (error) {
+						console.error("Accessibility helper failed to initialize: " + propertyName, error);
+					}
+				};
 
-			safeInitAccessibility("accessibilityHelper", function () { return new AccessibilityHelper(); });
-			safeInitAccessibility("accessibilityActionCalloutHelper", function () { return new AccessibilityActionCalloutHelper(); });
-			safeInitAccessibility("accessibilityB1Helper", function () { return new AccessibilityB1Helper(GameGlobals.accessibilityHelper); });
-			safeInitAccessibility("accessibilityB2Helper", function () { return new AccessibilityB2Helper(GameGlobals.accessibilityHelper); });
-			safeInitAccessibility("accessibilityControlHelper", function () { return new AccessibilityControlHelper(); });
-			safeInitAccessibility("accessibilityIndicatorHelper", function () { return new AccessibilityIndicatorHelper(); });
-			safeInitAccessibility("accessibilityMapHelper", function () { return new AccessibilityMapHelper(GameGlobals.accessibilityHelper); });
-			safeInitAccessibility("accessibilityMobileOverlayHelper", function () { return new AccessibilityMobileOverlayHelper(); });
-			safeInitAccessibility("accessibilityNavigationHelper", function () { return new AccessibilityNavigationHelper(GameGlobals.accessibilityHelper); });
-			safeInitAccessibility("accessibilityPopupHelper", function () { return new AccessibilityPopupHelper(); });
-			safeInitAccessibility("accessibilityDialogueHelper", function () { return new AccessibilityDialogueHelper(); });
-			safeInitAccessibility("accessibilityFightHelper", function () { return new AccessibilityFightHelper(GameGlobals.accessibilityHelper); });
-			safeInitAccessibility("accessibilityProgressHelper", function () { return new AccessibilityProgressHelper(); });
-			safeInitAccessibility("accessibilityCollapsibleHelper", function () { return new AccessibilityCollapsibleHelper(); });
-			safeInitAccessibility("accessibilityStructureHelper", function () { return new AccessibilityStructureHelper(); });
-			safeInitAccessibility("accessibilityTabStatusHelper", function () { return new AccessibilityTabStatusHelper(); });
-			safeInitAccessibility("accessibilityTechTreeHelper", function () { return new AccessibilityTechTreeHelper(); });
-			safeInitAccessibility("accessibilityFinalAuditHelper", function () { return new AccessibilityFinalAuditHelper(GameGlobals.accessibilityHelper); });
+				safeInitAccessibility("accessibilityHelper", function () { return new AccessibilityHelper(); });
+				safeInitAccessibility("accessibilityActionCalloutHelper", function () { return new AccessibilityActionCalloutHelper(); });
+				safeInitAccessibility("accessibilityB1Helper", function () { return new AccessibilityB1Helper(GameGlobals.accessibilityHelper); });
+				safeInitAccessibility("accessibilityB2Helper", function () { return new AccessibilityB2Helper(GameGlobals.accessibilityHelper); });
+				safeInitAccessibility("accessibilityControlHelper", function () { return new AccessibilityControlHelper(); });
+				safeInitAccessibility("accessibilityIndicatorHelper", function () { return new AccessibilityIndicatorHelper(); });
+				safeInitAccessibility("accessibilityMapHelper", function () { return new AccessibilityMapHelper(GameGlobals.accessibilityHelper); });
+				safeInitAccessibility("accessibilityMobileOverlayHelper", function () { return new AccessibilityMobileOverlayHelper(); });
+				safeInitAccessibility("accessibilityNavigationHelper", function () { return new AccessibilityNavigationHelper(GameGlobals.accessibilityHelper); });
+				safeInitAccessibility("accessibilityPopupHelper", function () { return new AccessibilityPopupHelper(); });
+				safeInitAccessibility("accessibilityDialogueHelper", function () { return new AccessibilityDialogueHelper(); });
+				safeInitAccessibility("accessibilityFightHelper", function () { return new AccessibilityFightHelper(GameGlobals.accessibilityHelper); });
+				safeInitAccessibility("accessibilityProgressHelper", function () { return new AccessibilityProgressHelper(); });
+				safeInitAccessibility("accessibilityCollapsibleHelper", function () { return new AccessibilityCollapsibleHelper(); });
+				safeInitAccessibility("accessibilityStructureHelper", function () { return new AccessibilityStructureHelper(); });
+				safeInitAccessibility("accessibilityTabStatusHelper", function () { return new AccessibilityTabStatusHelper(); });
+				safeInitAccessibility("accessibilityTechTreeHelper", function () { return new AccessibilityTechTreeHelper(); });
+				safeInitAccessibility("accessibilityFinalAuditHelper", function () { return new AccessibilityFinalAuditHelper(GameGlobals.accessibilityHelper); });
 
-			var initScreenAccessibilityWhenReady = function () {
-				if (GameGlobals.accessibilityScreenHelper) return;
-				var tribeHelper = GameGlobals.tribeHelper;
-				var upgradesReady = tribeHelper && tribeHelper.tribeUpgradesNodes && tribeHelper.tribeUpgradesNodes.head && tribeHelper.tribeUpgradesNodes.head.upgrades;
-				if (upgradesReady) {
-					safeInitAccessibility("accessibilityScreenHelper", function () { return new AccessibilityScreenHelper(); });
-					return;
-				}
-				if (typeof window !== "undefined") window.setTimeout(initScreenAccessibilityWhenReady, 250);
-			};
-			initScreenAccessibilityWhenReady();
+				let initScreenAccessibilityWhenReady = function () {
+					if (GameGlobals.accessibilityScreenHelper) return;
+					let tribeHelper = GameGlobals.tribeHelper;
+					let upgradesReady = tribeHelper && tribeHelper.tribeUpgradesNodes && tribeHelper.tribeUpgradesNodes.head && tribeHelper.tribeUpgradesNodes.head.upgrades;
+					if (upgradesReady) {
+						safeInitAccessibility("accessibilityScreenHelper", function () { return new AccessibilityScreenHelper(); });
+						return;
+					}
+					if (typeof window !== "undefined") window.setTimeout(initScreenAccessibilityWhenReady, 250);
+				};
+				initScreenAccessibilityWhenReady();
+			}
 		}
 		
 	};

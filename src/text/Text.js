@@ -40,7 +40,7 @@ define(function () {
 
 		// key: string or TextVO
 		// options: (optional) Object with textParams, or single wildcard textParam value
-		t: function (key, options) {
+		t: function (key, options, fallbackKey) {
 			if (!key) {
 				if (this.isDebugMode) log.w("no key provided for Text.t");
 				return "";
@@ -51,7 +51,7 @@ define(function () {
 				key = key.textKey;
 			}
 
-			let fallbackKey = key.replace(/_\d*_/, "_")
+			fallbackKey || key.replace(/_\d*_/, "_");
 
 			if (!this.hasKey(key) && this.hasKey(fallbackKey)) {
 				key = fallbackKey;
@@ -233,6 +233,7 @@ define(function () {
 		},
 		
 		pluralify: function (s) {
+			if (this.currentLanguage == "VI_VN") return s;
 			let irregular = this.getIrregularPlural(s);
 			if (irregular) return irregular;
 			
@@ -246,6 +247,7 @@ define(function () {
 		},
 		
 		depluralify: function (s) {
+			if (this.currentLanguage == "VI_VN") return s;
 			if (s[s.length - 1] === "s") {
 				return s.substr(0, s.length - 1);
 			}
@@ -254,6 +256,7 @@ define(function () {
 		},
 		
 		addArticle: function (s) {
+			if (this.currentLanguage == "VI_VN") return s;
 			if (this.isPlural(s)) return s;
 			return this.getArticle(s) + " " + s;
 		},

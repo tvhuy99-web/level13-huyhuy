@@ -1,54 +1,78 @@
 define(['ash', 'game/constants/WorldConstants', 'worldcreator/WorldCreatorConstants', 'worldcreator/WorldCreatorLogger', 'game/vos/ResourcesVO', 'game/vos/EnvironmentalHazardsVO'],
 function (Ash, WorldConstants, WorldCreatorConstants, WorldCreatorLogger, ResourcesVO, EnvironmentalHazardsVO) {
 
-	var SectorVO = Ash.Class.extend({
+	let SectorVO = Ash.Class.extend({
 	
-		constructor: function (position, isCampableLevel, notCampableReason) {
+		constructor: function (position) {
 			this.id = Math.floor(Math.random() * 100000);
 			this.position = position;
 			this.level = position.level;
-			this.campableLevel = isCampableLevel;
-			this.notCampableReason = notCampableReason;
 
-			this.sectorType = null;
-			
-			this.isCamp = false;
-			this.isPassageUp = false;
-			this.isPassageDown = false;
-			
-			this.requiredResources = new ResourcesVO();
-			this.criticalPaths = [];
+			this.activity = 0; // 0-10
+			this.buildingDensity = 0; // 0-10
 			this.criticalPathTypes = [];
-			this.criticalPathIndices = [];
+			this.damage = 0; // 0-10
+			this.districtIndex = 0;
+			this.examineSpots = [];
+			this.features = []; // list of type
+			this.graffiti = 0;
+			this.hasBuildableWorkshop = false;
+			this.hasClearableWorkshop = false;
+			this.hasHeap = false;
+			this.hasRegularEnemies = false;
+			this.hasSpring = false;
+			this.hasTradeConnectorSpot = false;
+			this.hasWorkshop = false;
+			this.hazards = new EnvironmentalHazardsVO();
+			this.heapResource = null;
+			this.isCamp = false;
+			this.isInvestigatable = false;
+			this.isPassageDown = false;
+			this.isPassageUp = false;
+			this.itemsScavengeable = [];
 			this.locales = [];
 			this.movementBlockers = {};
-			this.passageUpType = null;
+			this.numLocaleEnemies = {}; // localeID -> int
 			this.passageDownType = null;
-			this.sunlit = false;
-			this.hazards = new EnvironmentalHazardsVO();
-			this.hasSpring = false;
-			this.hasWorkshop = false;
-			this.hasHeap = false;
-			this.hasTradeConnectorSpot = false;
-			this.isInvestigatable = false;
-			this.scavengeDifficulty = 5;
-			this.resourcesScavengable = new ResourcesVO();
-			this.resourcesCollectable = new ResourcesVO();
-			this.itemsScavengeable = [];
-			this.numLocaleEnemies = {};
+			this.passageUpType = null;
 			this.possibleEnemies = [];
+			this.resourcesCollectable = new ResourcesVO();
+			this.resourcesScavengable = new ResourcesVO();
+			this.scavengeDifficulty = 5;
+			this.sectorStyle = null;
+			this.sectorType = null;
+			this.stage = null;
 			this.stashes = [];
+			this.sunlit = 0;
+			this.sunlitReason = null;
 			this.waymarks = [];
-			this.examineSpots = [];
-
+			this.wealth = 0; // 0-10
+			this.wear = 0; // 0-10
 			this.workshopResource = null;
-			this.heapResource = null;
+			this.zone = null;
 			
+			this.resetCaches();
+		},
+		
+		resetInternalData: function () {
+			this.id = 0;
+			delete this.campPosScore;
+		},
+
+		resetCaches: function () {
 			this.distanceToCamp = -1;
+			this.isConnectionPoint = false;
+			delete this.pathID;
+			this.requiredFeatures = {};
+			this.requiredResources = new ResourcesVO();
 		},
 		
 		isOnCriticalPath: function (type) {
-			return this.criticalPathTypes.indexOf(type) >= 0;
+			if (type) {
+				return this.criticalPathTypes.indexOf(type) >= 0;
+			} else{
+				return this.criticalPathTypes.length > 0;
+			}
 		},
 		
 		isOnEarlyCriticalPath: function () {
@@ -65,24 +89,8 @@ function (Ash, WorldConstants, WorldCreatorConstants, WorldCreatorLogger, Resour
 			return false;
 		},
 		
-		updateCriticalPath: function () {
-			this.criticalPath = "-";
-			for (let i = 0; i < this.criticalPathTypes.length; i++) {
-				if (this.getCriticalPathPriority(this.criticalPathTypes[i] < this.getCriticalPathPriority(this.criticalPath))) {
-					var split = this.criticalPathTypes[i].split("_");
-					this.criticalPath = split[split.length - 1][0];
-				}
-			}
-		},
-		
 		addToCriticalPath: function (path) {
-			if (this.criticalPaths.indexOf(path) >= 0) return;
-			let index = path.length;
-			this.criticalPaths.push(path);
-			this.criticalPathTypes.push(path.type);
-			this.criticalPathIndices.push(index);
-			path.length++;
-			this.updateCriticalPath();
+			if (this.criticalPathTypes.indexOf(path.type) < 0) this.criticalPathTypes.push(path.type);
 		},
 		
 		addBlocker: function (direction, blockerType, canOverride) {
@@ -98,6 +106,10 @@ function (Ash, WorldConstants, WorldCreatorConstants, WorldCreatorLogger, Resour
 		getBlockerByDirection: function (direction) {
 			return this.movementBlockers[direction];
 		},
+
+		hasMovementBlockers() {
+			return Object.keys(this.movementBlockers).length > 0;	
+		},
 		
 		hasWater: function () {
 			return this.hasSpring || this.resourcesScavengable.getResource(resourceNames.water) > 0 || this.resourcesCollectable.getResource(resourceNames.water) > 0;
@@ -110,11 +122,19 @@ function (Ash, WorldConstants, WorldCreatorConstants, WorldCreatorLogger, Resour
 			return false;
 		},
 
+		hasPassage: function () {
+			return this.isPassageDown || this.isPassageUp;
+		},
+
 		hasStashWithLocaleType: function (localeType) {
 			for (let i = 0; i < this.stashes.length; i++) {
 				if (this.stashes[i].localeType == localeType) return true;
 			}
 			return false;
+		},
+
+		hasFeature: function (featureType) {
+			return this.features.indexOf(featureType) >= 0;
 		},
 		
 		getCriticalPathPriority: function (pathType) {

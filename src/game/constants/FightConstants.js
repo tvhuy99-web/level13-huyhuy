@@ -1,15 +1,12 @@
-define(['ash',
-	'game/GameGlobals',
+define([
 	'game/constants/ItemConstants',
 	'game/constants/PerkConstants',
 	'game/constants/LocaleConstants',
 	'game/constants/PositionConstants',
 	'game/constants/UpgradeConstants',
-	'game/constants/WorldConstants',
-	'game/vos/ResourcesVO'],
-function (Ash, GameGlobals, ItemConstants, PerkConstants, LocaleConstants, PositionConstants, UpgradeConstants, WorldConstants, ResourcesVO) {
+], function (ItemConstants, PerkConstants, LocaleConstants, PositionConstants, UpgradeConstants) {
 
-	var FightConstants = {
+	let FightConstants = {
 	
 		FIGHT_PLAYER_BASE_ATT: 3,
 		FIGHT_PLAYER_BASE_DEF: 0,
@@ -100,10 +97,10 @@ function (Ash, GameGlobals, ItemConstants, PerkConstants, LocaleConstants, Posit
 			var healthFactor = (playerStamina.health/100);
 			var explorerBonus = explorersComponent.getCurrentBonus(ItemConstants.itemBonusTypes.fight_att);
 			var desc = "";
-			if (itemBonus <= 0) desc += "player: " + this.FIGHT_PLAYER_BASE_ATT;
-			if (itemBonus > 0) desc += "equipment: " + itemBonus;
-			if (healthFactor < 1) desc += "<br/>health: -" + Math.round((1-healthFactor) * 1000) / 10 + "%";
-			if (explorerBonus > 0) desc += "<br/>explorers: " + explorerBonus;
+			if (itemBonus <= 0) desc += "bạn: " + this.FIGHT_PLAYER_BASE_ATT;
+			if (itemBonus > 0) desc += "trang bị: " + itemBonus;
+			if (healthFactor < 1) desc += "<br/>sinh lực: -" + Math.round((1-healthFactor) * 1000) / 10 + "%";
+			if (explorerBonus > 0) desc += "<br/>nhà thám hiểm: " + explorerBonus;
 			return desc;
 		},
 		
@@ -119,10 +116,10 @@ function (Ash, GameGlobals, ItemConstants, PerkConstants, LocaleConstants, Posit
 		getPlayerDefDesc: function (playerStamina, itemsComponent, explorersComponent) {
 			let itemBonus = itemsComponent.getCurrentBonus(ItemConstants.itemBonusTypes.fight_def);
 			let desc = "";
-			if (itemBonus > 0) desc += "equipment: " + itemBonus;
-			else desc += "player: " + this.FIGHT_PLAYER_BASE_DEF;
+			if (itemBonus > 0) desc += "trang bị: " + itemBonus;
+			else desc += "bạn: " + this.FIGHT_PLAYER_BASE_DEF;
 			var explorerBonus = explorersComponent.getCurrentBonus(ItemConstants.itemBonusTypes.fight_def);
-			if (explorerBonus > 0) desc += "<br/>explorers: " + explorerBonus;
+			if (explorerBonus > 0) desc += "<br/>nhà thám hiểm: " + explorerBonus;
 			return desc;
 		},
 		
@@ -131,7 +128,7 @@ function (Ash, GameGlobals, ItemConstants, PerkConstants, LocaleConstants, Posit
 		},
 		
 		getPlayerShieldDesc: function (playerStamina, itemsComponent) {
-			return "equipment: " + itemsComponent.getCurrentBonus(ItemConstants.itemBonusTypes.fight_shield);
+			return "trang bị: " + itemsComponent.getCurrentBonus(ItemConstants.itemBonusTypes.fight_shield);
 		},
 		
 		getPlayerSpeed: function (itemsComponent) {

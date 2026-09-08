@@ -14,10 +14,20 @@ define(['ash'], function (Ash) {
 
 		canBeScoutedAgain: function (localeType) {
 			switch (localeType) {
+				case localeTypes.butcher: return true;
 				case localeTypes.clinic: return true;
+				case localeTypes.shortcut: return true;
+				case localeTypes.repairshop: return true;
 			}
 			return false;
-		}
+		},
+
+		isLocaleScoutActionMovement: function (localeType) {
+			switch (localeType) {
+				case localeTypes.shortcut: return true;
+			}
+			return false;
+		},
 	
 	};
 	

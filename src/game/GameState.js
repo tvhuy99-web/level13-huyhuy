@@ -1,14 +1,14 @@
 // persistent data related to the current playthrough
 
-define(['ash', 'worldcreator/WorldCreatorHelper'], function (Ash, WorldCreatorHelper) {
-	var GameState = Ash.Class.extend({
+define(['ash'], function (Ash) {
+	let GameState = Ash.Class.extend({
 
 		constructor: function () {
 			this.reset();
 		},
 
 		reset: function () {
-			this.level = 0;
+			this.level = 0; // highest level ordinal visited
 			this.worldSeed = 0;
 			this.gameStartTimeStamp = 0;
 			this.gameTime = 0; // total tick time passed
@@ -41,11 +41,13 @@ define(['ash', 'worldcreator/WorldCreatorHelper'], function (Ash, WorldCreatorHe
 				sequenceTitleKey: null,
 				seenTabs: [],
 				hiddenProjects: [],
+				seenCamps: [],
 				leaveCampRes: {},
 				leaveCampItems: {},
 				lastSelection: {},
 			};
 			
+			// TODO move to meta state
 			this.settings = {
 				hotkeysEnabled: false,
 				hotkeysNumpad: false,
@@ -141,7 +143,6 @@ define(['ash', 'worldcreator/WorldCreatorHelper'], function (Ash, WorldCreatorHe
 			this.initHighScoreStat("longestExcrusion");
 			this.initHighScoreStat("longestSurvivedExcrusion");
 			this.initHighScoreStat("mostDistantSectorFromCampVisited"); // currently only counts when there is camp on level
-			this.initHighScoreStat("mostDistantSectorFromCenterVisited");
 			this.initHighScoreStat("mostResourcesLostInRaid");
 			this.initHighScoreStat("mostFightsWithExplorer");
 			this.initHighScoreStat("mostStepsWithExplorer");
@@ -171,6 +172,7 @@ define(['ash', 'worldcreator/WorldCreatorHelper'], function (Ash, WorldCreatorHe
 			this.uiStatus.isTransitioning = false;
 			if (!this.uiStatus.lastSelection) this.uiStatus.lastSelection = {};
 			if (!this.uiStatus.seenTabs) this.uiStatus.seenTabs = [];
+			if (!this.uiStatus.seenCamps) this.uiStatus.seenCamps = [];
 
 			// init stats in case new ones added
 			this.initStats();
@@ -251,7 +253,7 @@ define(['ash', 'worldcreator/WorldCreatorHelper'], function (Ash, WorldCreatorHe
 			if (this.playedVersions.indexOf(version) < 0) {
 				this.playedVersions.push(version);
 			}
-			log.i("played versions: " + this.playedVersions.join(","));
+			log.i("played versions: " + this.playedVersions.join(","), this);
 		},
 
 		isSimpleStat: function (name) {
@@ -448,66 +450,6 @@ define(['ash', 'worldcreator/WorldCreatorHelper'], function (Ash, WorldCreatorHe
 			let list = this.stats[name] || this[name];
 			if (list) return list.length;
 			return 0;
-		},
-
-		getLevelOrdinal: function (level) {
-			return WorldCreatorHelper.getLevelOrdinal(this.worldSeed, level);
-		},
-
-		getLevelForOrdinal: function (levelOrdinal) {
-			return WorldCreatorHelper.getLevelForOrdinal(this.worldSeed, levelOrdinal);
-		},
-
-		getCampOrdinal: function (level) {
-			return WorldCreatorHelper.getCampOrdinal(this.worldSeed, level);
-		},
-		
-		getCampOrdinalForLevelOrdinal: function (levelOrdinal) {
-			let level = this.getLevelForOrdinal(levelOrdinal);
-			return this.getCampOrdinal(level);
-		},
-		
-		getLevelsForCamp: function (campOrdinal) {
-			return WorldCreatorHelper.getLevelsForCamp(this.worldSeed, campOrdinal);
-		},
-		
-		getLevelForCamp: function (campOrdinal) {
-			let levelOrdinal = this.getLevelOrdinalForCampOrdinal(campOrdinal);
-			return this.getLevelForOrdinal(levelOrdinal);
-		},
-
-		getLevelOrdinalForCampOrdinal: function (campOrdinal) {
-			return WorldCreatorHelper.getLevelOrdinalForCampOrdinal(this.worldSeed, campOrdinal);
-		},
-		
-		getLevelIndex: function (level) {
-			var campOrdinal = this.getCampOrdinal(level);
-			return WorldCreatorHelper.getLevelIndexForCamp(this.worldSeed, campOrdinal, level);
-		},
-		
-		getMaxLevelIndex: function (level) {
-			var campOrdinal = this.getCampOrdinal(level);
-			return WorldCreatorHelper.getMaxLevelIndexForCamp(this.worldSeed, campOrdinal, level);
-		},
-
-		getTotalLevels: function () {
-			return WorldCreatorHelper.getHighestLevel(this.worldSeed) - WorldCreatorHelper.getBottomLevel(this.worldSeed) + 1;
-		},
-
-		getGroundLevel: function () {
-			return WorldCreatorHelper.getBottomLevel(this.worldSeed);
-		},
-
-		getGroundLevelOrdinal: function () {
-			return WorldCreatorHelper.getLevelOrdinal(this.worldSeed, WorldCreatorHelper.getBottomLevel(this.worldSeed));
-		},
-
-		getSurfaceLevel: function () {
-			return WorldCreatorHelper.getHighestLevel(this.worldSeed);
-		},
-
-		getSurfaceLevelOrdinal: function () {
-			return WorldCreatorHelper.getLevelOrdinal(this.worldSeed, WorldCreatorHelper.getHighestLevel(this.worldSeed));
 		},
 
 		isPlayerInputAccepted: function () {

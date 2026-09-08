@@ -18,10 +18,14 @@ define(['ash',
 	CharacterConstants, ColorConstants, GameConstants, StoryConstants, ExplorerConstants, ItemConstants, BagConstants, PerkConstants, UpgradeConstants, PlayerActionConstants, TextConstants,
 	UIAnimations) {
 
-	var UIConstants = {
+	let UIConstants = {
 
-		FEATURE_MISSING_TITLE: "Missing feature",
-		FEATURE_MISSING_COPY: "This feature is not yet implemented. Come back later!",
+		THEME_SUNLIT: "sunlit",
+		THEME_DUSKY: "dusky",
+		THEME_DARK: "dark",
+
+		FEATURE_MISSING_TITLE: "Thiếu tính năng",
+		FEATURE_MISSING_COPY: "Tính năng này chưa được triển khai. Hãy quay lại sau!",
 
 		MAP_MINIMAP_SIZE: 7,
 		SCROLL_INDICATOR_SIZE: 5,
@@ -40,6 +44,35 @@ define(['ash',
 		POPUP_OVERLAY_FADE_OUT_DURATION: 50,
 		POPUP_FADE_IN_DURATION: 100,
 		POPUP_FADE_OUT_DURATION: 50,
+
+		ASCII_MAP_SYMBOL_PLAYER: "P",
+		ASCII_MAP_SYMBOL_UNVISITED: "?",
+		ASCII_MAP_SYMBOL_HAZARD_AFFECTED: "H",
+		ASCII_MAP_SYMBOL_HAZARD_LOW: "h",
+		ASCII_MAP_SYMBOL_VISITED: "0",
+		ASCII_MAP_SYMBOL_CLEARED: "X",
+		ASCII_MAP_SYMBOL_GENERIC_SECTOR: "x",
+		ASCII_MAP_SYMBOL_CAMP: "C",
+		ASCII_MAP_SYMBOL_PASSAGE_UP: "U",
+		ASCII_MAP_SYMBOL_PASSAGE_DOWN: "D",
+		ASCII_MAP_SYMBOL_POINT_OF_INTEREST: "!",
+		ASCII_MAP_SYMBOL_RES_WATER: "W",
+		ASCII_MAP_SYMBOL_RES_FOOD: "F",
+		ASCII_MAP_SYMBOL_RES_METAL: "M",
+		ASCII_MAP_SYMBOL_RES_INGREDIENT: "I",
+
+		CAMP_UNIQUE_FEATURE_HABITABILITY: "habitability",
+		CAMP_UNIQUE_FEATURE_RAID_DANGER_FACTOR: "raid_danger",
+		CAMP_UNIQUE_FEATURE_TRADER_FACTOR: "trader_freq",
+		CAMP_UNIQUE_FEATURE_DISEASE_FACTOR: "disease_factor",
+		CAMP_UNIQUE_FEATURE_DISASTER: "disaster",
+		CAMP_UNIQUE_FEATURE_WORKER_METAL: "worker_metal",
+		CAMP_UNIQUE_FEATURE_WORKER_FOOD: "worker_food",
+		CAMP_UNIQUE_FEATURE_WORKER_WATER: "worker_water",
+		CAMP_UNIQUE_FEATURE_WORKER_ARTISAN: "worker_artisan",
+		CAMP_UNIQUE_FEATURE_WORKER_ACADEMIC: "worker_academic",
+		CAMP_UNIQUE_FEATURE_WORKER_HOPE: "worker_hope",
+		CAMP_UNIQUE_FEATURE_WORKSHOP: "workshop",
 
 		names: {
 			resources: {
@@ -71,6 +104,39 @@ define(['ash',
 			logMessage: "logMessage",
 			openPopup: "openPopup",
 			closePopup: "closePopup",
+		},
+
+		getCurrentTheme: function ($body) {
+			if ($body.hasClass("sunlit")) return UIConstants.THEME_SUNLIT;
+			if ($body.hasClass("dark")) return UIConstants.THEME_DARK;
+			if ($body.hasClass("dusky")) return UIConstants.THEME_DUSKY;
+			return null;
+		},
+
+		getThemedIcon: function (src, alt, tooltip, classes) {
+			let result = "<img ";
+
+			let srcD = src.replace(/(\.[^/.]+)$/, "-dark$1");
+			let srcS = src;
+
+			result += "src='" + srcD + "' ";
+			result += "data-src-dark='" + srcD + "' ";
+			result += "data-src-sunlit='" + srcS + "' ";
+
+			classes = classes || [];
+			if (typeof classes == "string") classes = [ classes ];
+			classes.push("img-themed");
+			if (tooltip) classes.push("info-callout-target");
+			if (tooltip) classes.push("info-callout-target-small");
+
+			result += "class='" + classes.join(" ") + "' ";
+
+			if (alt) result += "alt='" + alt + "' ";
+			if (tooltip) result += "description='" + tooltip + "' ";
+			
+			result += "/>";
+
+			return result;
 		},
 		
 		getIconOrFallback: function (icon) {
@@ -150,13 +216,13 @@ define(['ash',
 			if (detail.length < 5) detail = "";
 			var weight = BagConstants.getItemCapacity(item);
 			let itemName = ItemConstants.getItemDisplayName(item);
-			var itemCalloutContent = "<b>" + itemName + "</b><br/>Type: " + ItemConstants.getItemTypeDisplayName(item.type, false) + " " + detail;
-			itemCalloutContent += "</br>Weight: " + weight;
+			var itemCalloutContent = "<b>" + itemName + "</b><br/>Loại: " + ItemConstants.getItemTypeDisplayName(item.type, false) + " " + detail;
+			itemCalloutContent += "</br>Khối lượng: " + weight;
 			if (ItemConstants.hasItemTypeQualityLevels(item.type)) {
 				let quality = ItemConstants.getItemQuality(item);
-				itemCalloutContent += "</br>Quality: " + ItemConstants.getQualityDisplayName(quality);
+				itemCalloutContent += "</br>Chất lượng: " + ItemConstants.getQualityDisplayName(quality);
 			}
-			if (item.broken) itemCalloutContent += "<br><span class='warning'>Broken</span>";
+			if (item.broken) itemCalloutContent += "<br><span class='warning'>Hỏng</span>";
 			itemCalloutContent += "</br>" + ItemConstants.getItemDescription(item);
 			if (smallCallout) itemCalloutContent = itemName + (detail.length > 0 ? " " + detail : "");
 			
@@ -178,20 +244,20 @@ define(['ash',
 
 				if (bagOptions.canRepair) {
 					var action = "repair_item_" + item.itemID;
-					options += makeButton(action, "Repair");
+					options += makeButton(action, "Sửa chữa");
 				}
 
 				if (bagOptions.canEquip) {
 					var action = "equip_" + item.itemID;
-					options += makeButton(action, "Equip");
+					options += makeButton(action, "Trang bị");
 				} else if (bagOptions.canUnequip) {
 					var action = "unequip_" + item.id;
-					options += makeButton(action, "Unequip");
+					options += makeButton(action, "Tháo trang bị");
 				}
 
 				if (bagOptions.canDiscard) {
 					var action = "discard_" + item.itemID;
-					options += makeButton(action, "Discard");
+					options += makeButton(action, "Bỏ");
 				}
 
 				options += "</div>";
@@ -276,13 +342,13 @@ define(['ash',
 			div += "<div class='interaction-options'>";
 			div += "<button class='action btn-narrow' action='" + talkAction + "'>" + talkLabel + "</button>";
 			div += "<table class='button-row-2'><tr>";
-			div += "<td><button class='action btn-mini' action='" + switchAction + "' aria-label='switch'>" + switchLabel + "</button></td>";
-			div += "<td><button class='action btn-mini' action='" + dismissAction + "' aria-label='dismiss'>" + dismissLabel + "</button></td>";
+			div += "<td><button class='action btn-mini' action='" + switchAction + "' aria-label='đổi thành viên'>" + switchLabel + "</button></td>";
+			div += "<td><button class='action btn-mini' action='" + dismissAction + "' aria-label='cho thôi'>" + dismissLabel + "</button></td>";
 			div += "</tr></table>";
 
 			// hack to avoid temporary empty space in layout when changing to explorers tab
 			// this assumes an explorer never gets injured while this div is active (explorers tab open)
-			if (!isInCamp && explorerVO.injuredTimer > 0) div += "<button class='action btn-narrow btn-heal-explorer' action='" + healAction + "' style='display:none'>heal</button>";
+			if (!isInCamp && explorerVO.injuredTimer > 0) div += "<button class='action btn-narrow btn-heal-explorer' action='" + healAction + "' style='display:none'>Chữa trị</button>";
 			div += "</div>";
 
 			div += "</div>";
@@ -315,30 +381,30 @@ define(['ash',
 			let explorerType = ExplorerConstants.getExplorerTypeForAbilityType(explorer.abilityType);
 			let result = "<b>" + explorer.name + "</b>";
 			if (isRecruited) {
-				result += "<br/>In party: " + (explorer.inParty ? "yes" : "no");
+				result += "<br/>Trong đội: " + (explorer.inParty ? "có" : "không");
 			}
-			result += "<br/>Type: " + ExplorerConstants.getExplorerTypeDisplayName(explorerType);
-			result += "<br/>Ability: " + Text.t(ExplorerConstants.getAbilityTypeDisplayNameKey(explorer.abilityType))
+			result += "<br/>Loại: " + ExplorerConstants.getExplorerTypeDisplayName(explorerType);
+			result += "<br/>Khả năng: " + Text.t(ExplorerConstants.getAbilityTypeDisplayNameKey(explorer.abilityType))
 				+ " (" + Text.t(UIConstants.getExplorerAbilityDescriptionTextVO(explorer, [])) + ")";
 
 			if (questTextKey) {
-				result += "<br/>Quest: " + Text.t(questTextKey);
+				result += "<br/>Nhiệm vụ: " + Text.t(questTextKey);
 			}
 
 			if (explorer.injuredTimer >= 0) {
 				if (explorer.inParty) {
-					result += "<br/>Status: " + this.warning("Injured");
+					result += "<br/>Trạng thái: " + this.warning("Bị thương");
 				} else {
-					result += "<br/>Status: " + this.warning("Injured (recovering)");
+					result += "<br/>Trạng thái: " + this.warning("Bị thương (đang hồi phục)");
 				}
 			} else if (explorer.hasUrgentDialogue) {
-				result += "<br/>Status: Wants to talk";
+				result += "<br/>Trạng thái: Muốn nói chuyện";
 			} else if (isForced) {
-				result += "<br/>Status: Wants to go exploring";
+				result += "<br/>Trạng thái: Muốn đi khám phá";
 			}
 
 			if (GameConstants.isCheatsEnabled) {
-				result += "<br/>" + "<span class='debug-info'>" + this.meta("Trust: " + explorer.trust) + "</span>";;
+				result += "<br/>" + "<span class='debug-info'>" + this.meta("Mức tin cậy: " + explorer.trust) + "</span>";;
 			}
 			
 			if (isRecruited && isInCamp && !hideButtons) {
@@ -347,11 +413,11 @@ define(['ash',
 				};
 
 				var options = "<div class='item-bag-options'>";
-				options += makeButton("dismiss_explorer_" + explorer.id, "Dismiss");
+				options += makeButton("dismiss_explorer_" + explorer.id, "Sa thải");
 				if (!explorer.inParty) {
-					options += makeButton("select_explorer_" + explorer.id, "Add to party");
+					options += makeButton("select_explorer_" + explorer.id, "Thêm vào đội");
 				} else {
-					options += makeButton("deselect_explorer_" + explorer.id, "Switch out");
+					options += makeButton("deselect_explorer_" + explorer.id, "Đổi ra");
 				}
 				options += "</div>";
 				result += options;
@@ -421,10 +487,10 @@ define(['ash',
 
 		createNPCDiv: function () {
 			let div = "<div class='npc-container'>";
-			let calloutContent = "Visitor";
+			let calloutContent = "Khách";
 			
 			div += "<div class='npc-type-indicator'><img src='img/eldorado/icon_time-dark.png'/></div>";
-			div += "<div class='info-callout-target info-callout-target-small' description='" + this.cleanupText(calloutContent) + "'>";
+			div += "<div class='info-callout-target info-callout-target-small fullwidth' description='" + this.cleanupText(calloutContent) + "'>";
 			div += this.createNPCPortrait();
 			div += "</div>";
 
@@ -444,14 +510,16 @@ define(['ash',
 			options.isTemporary = options.isTemporary || false;
 
 			let showName = options.showName || false;
+			let displayName = Text.t(this.getNPCDisplayNameKey(characterType));
 
-			let name = showName ? Text.t(this.getNPCDisplayNameKey(characterType)) : "";
+			let name = showName ? displayName : "";
 
 			$div.toggleClass("npc-visitor", options.isTemporary);
 			$div.attr("data-characterType", characterType);
 			$div.find(".npc-portrait").find("img").attr("src", icon);
 			$div.find(".npc-name").text(name);
 			$div.find("button").attr("action", action);
+			$div.find(".info-callout-target").attr("description", displayName);
 			
 			$div.find(".npc-type-indicator").toggleClass("hidden", !options.isTemporary);
 		},
@@ -489,7 +557,8 @@ define(['ash',
 		getResourceLi: function (name, amount, isLost, simple) {
 			var divclasses = "res item-with-count";
 			var div = "<div class='" + divclasses + "' data-resourcename='" + name + "'>";
-			div += "<div class='info-callout-target info-callout-target-small' description='" + name + "'>";
+			let displayName = TextConstants.getResourceDisplayName(name);
+			div += "<div class='info-callout-target info-callout-target-small' description='" + displayName + "'>";
 			div += this.getResourceImg(name);
 			if (amount || amount === 0)
 				div += "<div class='item-count lvl13-box-1'>" + Math.floor(amount) + "x</div>";
@@ -513,7 +582,7 @@ define(['ash',
 		getCurrencyLi: function (amount, simple) {
 			var classes = "res item-with-count";
 			var div = "<div class='" + classes + "' data-resourcename='currency'>";
-			div += "<div class='info-callout-target info-callout-target-small' description='silver'>";
+			div += "<div class='info-callout-target info-callout-target-small' description='" + TextConstants.getResourceDisplayName("currency") + "'>";
 			div += this.getResourceImg("currency");
 			div += "<div class='item-count lvl13-box-1'>" + Math.floor(amount) + "x </div>";
 			div += "</div>";
@@ -533,8 +602,8 @@ define(['ash',
 		},
 
 		getBlueprintPieceLI: function (upgradeID) {
-			let name = Text.t(UpgradeConstants.getDisplayNameTextKey(upgradeID));
-			return "<li><div class='info-callout-target' description='Blueprint (" + name + ")'>" + this.getBlueprintPieceIcon(upgradeID) + " blueprint</li>";
+			let name = TextConstants.getUpgradeDisplayName(upgradeID);
+			return "<li><div class='info-callout-target' description='Bản thiết kế (" + name + ")'>" + this.getBlueprintPieceIcon(upgradeID) + " bản thiết kế</li>";
 		},
 
 		getResourceList: function (resourceVO) {
@@ -581,30 +650,30 @@ define(['ash',
 
 		getItemBonusName: function (bonusType, short) {
 			switch (bonusType) {
-				case ItemConstants.itemBonusTypes.light: return "max vision";
-				case ItemConstants.itemBonusTypes.fight_att: return "attack";
-				case ItemConstants.itemBonusTypes.fight_def: return "defence";
-				case ItemConstants.itemBonusTypes.fight_shield: return "shield";
-				case ItemConstants.itemBonusTypes.fight_speed: return "attack speed";
-				case ItemConstants.itemBonusTypes.movement: return "movement cost";
-				case ItemConstants.itemBonusTypes.scavenge_cost: return "scavenge cost";
-				case ItemConstants.itemBonusTypes.scavenge_general: return "scavenge bonus";
-				case ItemConstants.itemBonusTypes.scavenge_supplies: return "scavenge bonus";
-				case ItemConstants.itemBonusTypes.scavenge_ingredients: return "scavenge bonus";
-				case ItemConstants.itemBonusTypes.scavenge_blueprints: return "scavenge bonus";
-				case ItemConstants.itemBonusTypes.scavenge_valuables: return "scavenge bonus";
-				case ItemConstants.itemBonusTypes.scout_cost: return "scouting cost";
-				case ItemConstants.itemBonusTypes.collector_cost: return "trap/bucket cost";
-				case ItemConstants.itemBonusTypes.bag: return "bag size";
-				case ItemConstants.itemBonusTypes.res_cold: return "warmth";
-				case ItemConstants.itemBonusTypes.res_radiation: return short ? "radiation prot" : "radiation protection";
-				case ItemConstants.itemBonusTypes.res_poison: return short ? "poison prot" : "poison protection";
-				case ItemConstants.itemBonusTypes.res_water: return short ? "water prot" : "water protection";
-				case ItemConstants.itemBonusTypes.shade: return short ? "sun prot" : "sunblindness protection";
-				case ItemConstants.itemBonusTypes.detect_hazards: return short ? "hazards" : "surveying (hazards)";
-				case ItemConstants.itemBonusTypes.detect_supplies: return short ? "supplies" : "surveying (supplies)";
-				case ItemConstants.itemBonusTypes.detect_ingredients: return short ? "ingredients" : "surveying (ingredients)";
-				case ItemConstants.itemBonusTypes.detect_poi: return short ? "poi" : "surveying (poi)";
+				case ItemConstants.itemBonusTypes.light: return "ánh sáng";
+				case ItemConstants.itemBonusTypes.fight_att: return "tấn công";
+				case ItemConstants.itemBonusTypes.fight_def: return "phòng thủ";
+				case ItemConstants.itemBonusTypes.fight_shield: return "khiên";
+				case ItemConstants.itemBonusTypes.fight_speed: return "tốc độ tấn công";
+				case ItemConstants.itemBonusTypes.movement: return "chi phí di chuyển";
+				case ItemConstants.itemBonusTypes.scavenge_cost: return "chi phí lục soát";
+				case ItemConstants.itemBonusTypes.scavenge_general: return "thưởng lục soát";
+				case ItemConstants.itemBonusTypes.scavenge_supplies: return "thưởng lục soát";
+				case ItemConstants.itemBonusTypes.scavenge_ingredients: return "thưởng lục soát";
+				case ItemConstants.itemBonusTypes.scavenge_blueprints: return "thưởng lục soát";
+				case ItemConstants.itemBonusTypes.scavenge_valuables: return "thưởng lục soát";
+				case ItemConstants.itemBonusTypes.scout_cost: return "chi phí trinh sát";
+				case ItemConstants.itemBonusTypes.collector_cost: return "chi phí bẫy/xô";
+				case ItemConstants.itemBonusTypes.bag: return "sức chứa túi";
+				case ItemConstants.itemBonusTypes.res_cold: return "giữ ấm";
+				case ItemConstants.itemBonusTypes.res_radiation: return short ? "kháng phóng xạ" : "khả năng kháng phóng xạ";
+				case ItemConstants.itemBonusTypes.res_poison: return short ? "kháng độc" : "khả năng kháng độc";
+				case ItemConstants.itemBonusTypes.res_water: return short ? "kháng nước" : "khả năng kháng nước";
+				case ItemConstants.itemBonusTypes.shade: return short ? "kháng nắng" : "khả năng chống chói nắng";
+				case ItemConstants.itemBonusTypes.detect_hazards: return short ? "mối nguy" : "khảo sát (mối nguy)";
+				case ItemConstants.itemBonusTypes.detect_supplies: return short ? "vật tư" : "khảo sát (vật tư)";
+				case ItemConstants.itemBonusTypes.detect_ingredients: return short ? "nguyên liệu" : "khảo sát (nguyên liệu)";
+				case ItemConstants.itemBonusTypes.detect_poi: return short ? "điểm đáng chú ý" : "khảo sát (điểm đáng chú ý)";
 				default:
 					log.w("no display name defined for item bonus type: " + bonusType);
 					return "";
@@ -649,9 +718,9 @@ define(['ash',
 			if (perk.removeTimer >= 0) {
 				var factor = PerkConstants.getRemoveTimeFactor(perk, isResting);
 				var timeleft = perk.removeTimer / factor;
-				return "time left: " + this.getTimeToNum(timeleft);
+				return "thời gian còn lại: " + this.getTimeToNum(timeleft);
 			} else if (perk.startTimer >= 0) {
-				return "time to full: " + this.getTimeToNum(perk.startTimer);
+				return "thời gian đến khi hồi đầy: " + this.getTimeToNum(perk.startTimer);
 			} else {
 				return null;
 			}
@@ -674,17 +743,27 @@ define(['ash',
 			let effect = perk.type;
 			switch (perk.type) {
 				case PerkConstants.perkTypes.movement:
-					effect = "movement cost";
+					effect = "chi phí di chuyển";
 					break;
 				case PerkConstants.perkTypes.injury:
 				case PerkConstants.perkTypes.health:
-					effect = "health";
+					effect = "sức khỏe";
+					break;
+				case PerkConstants.perkTypes.stamina:
+					effect = "thể lực";
+					break;
+				case PerkConstants.perkTypes.light:
+					effect = "ánh sáng";
+					break;
+				case PerkConstants.perkTypes.visualNegative:
+				case PerkConstants.perkTypes.visualPositive:
+					effect = "tầm nhìn";
 					break;
 				case PerkConstants.perkTypes.luck:
 					if (perk.effect > 0) {
-						return "Lower probability of negative random events when exploring";
+						return "Giảm khả năng gặp sự kiện ngẫu nhiên tiêu cực khi thám hiểm";
 					} else { 
-						return "Higher probability of negative random events when exploring";
+						return "Tăng khả năng gặp sự kiện ngẫu nhiên tiêu cực khi thám hiểm";
 					}
 			}
 
@@ -701,7 +780,7 @@ define(['ash',
 					result += "<span class='action-cost action-cost-" + key + "'>" + name + ": <span class='action-cost-value'>" + UIConstants.getDisplayValue(value) + "</span><br/></span>";
 				}
 			} else if (this.isActionFreeCostShown(action)) {
-				result += "<span class='action-cost p-meta'>free</span><br />";
+				result += "<span class='action-cost p-meta'>miễn phí</span><br />";
 			}
 			return result;
 		},
@@ -731,8 +810,11 @@ define(['ash',
 			return true;
 		},
 		
-		getMultiplierBonusDisplayValue: function (value) {
-			return Math.round(Math.abs(1 - value) * 100) + "%";
+		getMultiplierBonusDisplayValue: function (value, includeSign) {
+			let result = Math.round(Math.abs(1 - value) * 100) + "%";
+			if (includeSign && value < 1) result = "-" + result;
+			if (includeSign && value > 1) result = "+" + result;
+			return result;
 		},
 
 		sortItemsByType: function (a, b) {
@@ -867,11 +949,11 @@ define(['ash',
 				
 				if (showDetails) {
 					if (change > 0 && (storage - value > 0)) {
-						$indicator.children(".forecast").text("(" + this.getTimeToNum((storage - value) / change) + " to cap)");
+						$indicator.children(".forecast").text("(còn " + this.getTimeToNum((storage - value) / change) + " để đầy)");
 					} else if (change < 0 && value > 0) {
-						$indicator.children(".forecast").text("(" + this.getTimeToNum(value / change) + " to 0)");
+						$indicator.children(".forecast").text("(còn " + this.getTimeToNum(value / change) + " để hết)");
 					} else if (value >= storage) {
-						$indicator.children(".forecast").text("(full)");
+						$indicator.children(".forecast").text("(đầy)");
 					} else {
 						$indicator.children(".forecast").text("");
 					}
@@ -905,7 +987,7 @@ define(['ash',
 			let displayName = TextConstants.getResourceDisplayName(name);
 
 			if (content.length <= 0) {
-				content = displayName + " (no change)";
+				content = displayName + " (không thay đổi)";
 			} else {
 				content = displayName + "<br/>" + content;
 			}
@@ -963,7 +1045,7 @@ define(['ash',
 			let baseReputation = Math.max(milestone.baseReputation || 0, previousMilestone.baseReputation || 0);
 			
 			let addValue = function (label, value) {
-				html += "<span class='unlocks-list-entry'>";
+				html += "<span class='text-list-entry'>";
 				html += label;
 				if (value || value === 0) {
 					html += ": ";
@@ -983,37 +1065,157 @@ define(['ash',
 				html += "<br/>";
 			};
 			
-			addValue("Base reputation", baseReputation);
-			
-			addValue("Max evidence", milestone.maxEvidence);
-			addValue("Max rumours", milestone.maxRumours);
+			addValue("Uy tín cơ bản", baseReputation);
+
+			addValue("Bằng chứng tối đa", milestone.maxEvidence);
+			addValue("Tin đồn tối đa", milestone.maxRumours);
 			
 			if (milestone.maxHope && hasDeity) {
-				addValue("Max hope", milestone.maxHope);
+				addValue("Hy vọng tối đa", milestone.maxHope);
 			}
 			
 			if (milestone.maxInsight && hasInvestigate) {
-				addValue("Max insight", milestone.maxInsight);
+				addValue("Sáng tỏ tối đa", milestone.maxInsight);
 			}
 			
 			if (isNew) {
 				addGroup("", milestone.unlockedFeatures, UIConstants.getUnlockedFeatureDisplayName);
-				addGroup("New events", milestone.unlockedEvents);
+				addGroup("Sự kiện mới", milestone.unlockedEvents);
 				
 				let unlockedUpgrades = GameGlobals.milestoneEffectsHelper.getUnlockedUpgrades(milestone.index);
-				addGroup("Unlocked upgrades", unlockedUpgrades, (upgradeID) => {
+				addGroup("Nâng cấp đã mở", unlockedUpgrades, (upgradeID) => {
 					let upgrade = UpgradeConstants.upgradeDefinitions[upgradeID];
-					let name = Text.t(UpgradeConstants.getDisplayNameTextKey(upgradeID));
+					let name = TextConstants.getUpgradeDisplayName(upgradeID);
 					let isOtherRequirementsMet = GameGlobals.playerActionsHelper.isRequirementsMet(upgradeID, null, [ PlayerActionConstants.DISABLED_REASON_MILESTONE ]);
 					let c = isOtherRequirementsMet ? "" : "strike-through";
 					return "<span class='" + c + "'>" + name + "</span>";
 				});
 				
 				let unlockedActions = GameGlobals.milestoneEffectsHelper.getUnlockedGeneralActions(milestone.index);
-				addGroup("Other", unlockedActions);
+				addGroup("Khác", unlockedActions);
 			}
 			
 			return html;
+		},
+
+		getCampUniqueFeatureIcon: function (type, value, isNegative, options, context) {
+			options = options || {};
+			let classes = [ "camp-unique-feature-icon-container" ];
+			if (isNegative) classes.push("camp-unique-feature-icon-negative");
+			if (!isNegative) classes.push("camp-unique-feature-icon-positive");
+
+			let getIconPath = (id) => "/img/eldorado/camp_feature_" + id + ".png";
+			let iconID = type;
+
+			let displayValue = typeof value == "number" ? UIConstants.getMultiplierBonusDisplayValue(value, true) : value;
+
+			let textKeyBase = "ui.camp.unique_feature_" + type;
+			let textKeySuffix = (isNegative ? "_negative" : "_positive");
+
+			let flavourDescription = Text.t(textKeyBase + textKeySuffix + "_description", displayValue, textKeyBase + "_description");
+			let functionalDescription = Text.t(textKeyBase + textKeySuffix + "_summary", displayValue, textKeyBase + "_summary");
+
+			switch (type) {
+				case UIConstants.CAMP_UNIQUE_FEATURE_HABITABILITY: 
+					iconID = value < 1 ? "habitability_negative" : "habitability_positive";
+					break;
+				case UIConstants.CAMP_UNIQUE_FEATURE_RAID_DANGER_FACTOR: 
+					break;
+				case UIConstants.CAMP_UNIQUE_FEATURE_TRADER_FACTOR: 
+					break;
+				case UIConstants.CAMP_UNIQUE_FEATURE_DISEASE_FACTOR: 
+					iconID = "disease_freq";
+					break;
+				case UIConstants.CAMP_UNIQUE_FEATURE_DISASTER:
+					iconID = "disaster_" + value;
+					flavourDescription = Text.t(textKeyBase + "_" + value + "_description");
+					break;
+				case UIConstants.CAMP_UNIQUE_FEATURE_WORKER_METAL: 
+					break;
+				case UIConstants.CAMP_UNIQUE_FEATURE_WORKER_FOOD: 
+					if (context.campOrdinal == 8) flavourDescription = Text.t(textKeyBase + "_ground_description");
+					break;
+				case UIConstants.CAMP_UNIQUE_FEATURE_WORKER_WATER: 
+					break;
+				case UIConstants.CAMP_UNIQUE_FEATURE_WORKER_ARTISAN: 
+					break;
+				case UIConstants.CAMP_UNIQUE_FEATURE_WORKER_ACADEMIC: 
+					break;
+				case UIConstants.CAMP_UNIQUE_FEATURE_WORKER_HOPE: 
+					break;
+				case UIConstants.CAMP_UNIQUE_FEATURE_WORKSHOP:
+					iconID = "worker_generic";
+					break;
+			}
+			
+			let tooltip = functionalDescription.toLowerCase();
+			
+			let span = "<div class='" + classes.join(" ") + "'>";
+			if (!options.hideIcons) span += this.getThemedIcon(getIconPath(iconID), tooltip, tooltip, "camp-unique-feature-icon");
+			if (options.showText && !options.shortText) span += "<div class='camp-unique-feature-label'>" + flavourDescription + "</div>";
+			if (options.showText && options.shortText) span += "<div class='camp-unique-feature-label'>" + functionalDescription + "</div>";
+
+			span += "</div>"
+			
+			return span;
+		},
+
+		// options: hideWorkshop, showText, hideIcons, shortText
+		getCampUniqueFeaturesDiv: function (features, options) {
+			let divClasses = [ "camp-unique-feature-icon-list" ];
+			if (options.showText) divClasses.push("camp-unique-feature-icon-list-detailed");
+			let div = "<div class='" + divClasses.join(" ") + "'>";
+
+			let items = [];
+
+			if (features.habitability && features.habitability != 1)
+				items.push({ type: UIConstants.CAMP_UNIQUE_FEATURE_HABITABILITY, value: features.habitability, isNegative: features.habitability < 1 });
+
+			if (features.raidDangerFactor && features.raidDangerFactor != 1)
+				items.push({ type: UIConstants.CAMP_UNIQUE_FEATURE_RAID_DANGER_FACTOR, value: features.raidDangerFactor, isNegative: features.raidDangerFactor > 1 });
+
+			if (features.traderFactor && features.traderFactor != 1)
+				items.push({ type: UIConstants.CAMP_UNIQUE_FEATURE_TRADER_FACTOR, value: features.traderFactor, isNegative: features.traderFactor < 1 });
+
+			if (features.diseaseFactor && features.diseaseFactor != 1)
+				items.push({ type: UIConstants.CAMP_UNIQUE_FEATURE_DISEASE_FACTOR, value: features.diseaseFactor, isNegative: features.diseaseFactor > 1 });
+
+			if (features.signatureDisaster)
+				items.push({ type: UIConstants.CAMP_UNIQUE_FEATURE_DISASTER, value: features.signatureDisaster, isNegative: true });
+
+			if (features.workerMetalFactor != 1)
+				items.push({ type: UIConstants.CAMP_UNIQUE_FEATURE_WORKER_METAL, value: features.workerMetalFactor, isNegative: features.workerMetalFactor < 1 });
+
+			if (features.workerFoodFactor != 1)
+				items.push({ type: UIConstants.CAMP_UNIQUE_FEATURE_WORKER_FOOD, value: features.workerFoodFactor, isNegative: features.workerFoodFactor < 1 });
+
+			if (features.workerWaterFactor != 1)
+				items.push({ type: UIConstants.CAMP_UNIQUE_FEATURE_WORKER_WATER, value: features.workerWaterFactor, isNegative: features.workerWaterFactor < 1 });
+
+			if (features.workerArtisanFactor != 1)
+				items.push({ type: UIConstants.CAMP_UNIQUE_FEATURE_WORKER_ARTISAN, value: features.workerArtisanFactor, isNegative: features.workerArtisanFactor < 1 });
+
+			if (features.workerAcademicFactor != 1)
+				items.push({ type: UIConstants.CAMP_UNIQUE_FEATURE_WORKER_ACADEMIC, value: features.workerAcademicFactor, isNegative: features.workerAcademicFactor < 1 });
+
+			if (features.workerHopeFactor != 1)
+				items.push({ type: UIConstants.CAMP_UNIQUE_FEATURE_WORKER_HOPE, value: features.workerHopeFactor, isNegative: features.workerHopeFactor < 1 });
+
+			if (features.workshopResource && !options.hideWorkshop) 
+				items.push({ type: UIConstants.CAMP_UNIQUE_FEATURE_WORKSHOP, value: features.workshopResource, isNegative: false });
+
+			if (items.length == 0) return "";
+
+			// negative first
+			items = items.sort((a, b) => { return b.isNegative - a.isNegative });
+
+			for (let i = 0; i < items.length; i++) {
+				div += this.getCampUniqueFeatureIcon(items[i].type, items[i].value, items[i].isNegative, options, features);
+			}
+
+			div += "</div>";
+
+			return div;
 		},
 
 		getTimeToNum: function (seconds, hideSeconds) {
@@ -1024,15 +1226,15 @@ define(['ash',
 			var days = hours / 24;
 
 			if (days > 2) {
-				return Math.floor(days) + "days";
+				return Math.floor(days) + " ngày";
 			} else if (hours > 2) {
-				return Math.floor(hours) + "h";
+				return Math.floor(hours) + " giờ";
 			} else if (minutes > 2) {
-				return Math.floor(minutes) + "min";
+				return Math.floor(minutes) + " phút";
 			} else if (hideSeconds) {
-				return "very soon";
+				return "sắp xong";
 			} else {
-				return Math.round(seconds) + "s";
+				return Math.round(seconds) + " giây";
 			}
 		},
 
@@ -1043,32 +1245,32 @@ define(['ash',
 
 			var interval = Math.floor(seconds / 31536000);
 			if (interval > 1) {
-				return interval + " years";
+				return interval + " năm trước";
 			}
 			interval = Math.floor(seconds / 2592000);
 			if (interval > 1) {
-				return interval + " months";
+				return interval + " tháng trước";
 			}
 			interval = Math.floor(seconds / 86400);
 			if (interval > 1) {
-				return interval + " days";
+				return interval + " ngày trước";
 			}
 			interval = Math.floor(seconds / 3600);
 			if (interval > 1) {
-				return interval + " hours";
+				return interval + " giờ trước";
 			}
 			interval = Math.floor(seconds / 60);
 			if (interval > 1) {
-				return interval + " minutes";
+				return interval + " phút trước";
 			}
 			if (interval === 1) {
-				return interval + " minute";
+				return interval + " phút trước";
 			}
 			if (seconds < 10) {
-				return "a few seconds";
+				return "vài giây trước";
 			}
 
-			return "less than a minute";
+			return "chưa đến một phút trước";
 		},
 
 		getInGameDate: function (gameTime) {
@@ -1094,34 +1296,34 @@ define(['ash',
 
 		getFactorLabel: function (factor) {
 			if (factor < 0.5) {
-				return "very low";
+				return "rất thấp";
 			}
 
 			if (factor < 1) {
-				return "low";
+				return "thấp";
 			}
 
 			if (factor == 1) {
-				return "average";
+				return "trung bình";
 			}
 
 			if (factor < 1.5) {
-				return "high";
+				return "cao";
 			}
 
-			return "very high";
+			return "rất cao";
 		},
 
 		getUnlockedFeatureDisplayName: function (featureID) {
 			switch (featureID) {
-				case UIConstants.UNLOCKABLE_FEATURE_MAP_MODES: return "map modes";
-				case UIConstants.UNLOCKABLE_FEATURE_WORKER_AUTO_ASSIGNMENT: return "worker auto-assignment";
+				case UIConstants.UNLOCKABLE_FEATURE_MAP_MODES: return "chế độ bản đồ";
+				case UIConstants.UNLOCKABLE_FEATURE_WORKER_AUTO_ASSIGNMENT: return "tự động phân công người lao động";
 			}
 			return featureID;
 		},
 
 		getCampDisplayName: function (campNode, short) {
-			return "camp on level " + campNode.position.level;
+			return "trại ở tầng " + campNode.position.level;
 		},
 
 		getCostDisplayName: function (name) {
@@ -1152,8 +1354,30 @@ define(['ash',
 				return Text.t("game.stats.evidence_name");
 			}
 
+			if (name == "explorer_animal") {
+				return Text.t("ui.actions.action_cost_explorer_animal_name");
+			}
+
+			if (name == "item_disassemblable") {
+				return Text.t("ui.actions.action_cost_item_disassemblable_name");
+			}
+
 			log.w("no cost display name defined for cost [" + name + "]");
 			return name;
+		},
+
+		getDropdown: function (id, options) {
+			let result = "<select id='" + id + "'>";
+
+			for (let i = 0; i < options.length; i++) {
+				let option = options[i];
+				let label = option.label;
+				result += "<option value='" + option.id + "'>" + label + "</option>";
+			}
+			
+			result += "</select>";
+			
+			return result;
 		},
 
 		roundValue: function (value, showDecimalsWhenSmall, showDecimalsAlways, decimalDivisor) {
@@ -1225,7 +1449,8 @@ define(['ash',
 		},
 
 		getResourceImg: function (name) {
-			return "<img src='img/res-" + name + ".png' alt='" + name + "'/>"
+			let alt = name == "currency" ? Text.t("game.resources.currency_name") : Text.t("game.resources." + name + "_name");
+			return "<img src='img/res-" + name + ".png' alt='" + alt + "'/>"
 		},
 		
 		getRangeText: function (range, count) {
@@ -1238,10 +1463,10 @@ define(['ash',
 					return min + "-" + max;
 				}
 				if (min >= 0) {
-					return "min " + min;
+					return "tối thiểu " + min;
 				}
 				if (max >= 0) {
-					return "max " + max;
+					return "tối đa " + max;
 				}
 			} else {
 				// text with current count

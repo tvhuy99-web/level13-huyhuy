@@ -1,11 +1,12 @@
 define([
 	'ash', 
 	'json!game/data/StoryData.json',
+	'text/Text',
 	'game/vos/StoryVO',
 	'game/vos/StorySegmentVO',
 	'game/vos/StoryEffectVO',
 ], function (
-	Ash, StoryData, StoryVO, StorySegmentVO, StoryEffectVO
+	Ash, StoryData, Text, StoryVO, StorySegmentVO, StoryEffectVO
 ) {
 	
 	let StoryConstants = {
@@ -15,126 +16,7 @@ define([
 		GAME_START_YEAR: 783,
 		GAME_START_WEEK: 17,
 
-		sectorExamineSpots: [
-			{
-				id: "story_apocalypse_cracks_01",
-				positionParams: {
-					campOrdinal: 2
-				}
-			},
-			{
-				id: "world_monument_dictatorship",
-				positionParams: {
-					campOrdinal: 4,
-					sectorType: "public"
-				}
-			},
-			{
-				id: "story_apocalypse_settlement",
-				positionParams: {
-					campOrdinal: 5,
-				}
-			},
-			{
-				id: "story_spirits_shrine_01",
-				positionParams: {
-					campOrdinal: 5,
-					sectorType: "industrial"
-				}
-			},
-			{
-				id: "story_apocalypse_solar_panels_01",
-				positionParams: {
-					campOrdinal: 6,
-					sunlit: true
-				}
-			},
-			{
-				id: "story_earthquake_pillars_01",
-				positionParams: {
-					campOrdinal: 6,
-					levelIndex: 0,
-				}
-			},
-			{
-				id: "story_apocalypse_solar_panels_02",
-				positionParams: {
-					campOrdinal: 7,
-					sunlit: true
-				}
-			},
-			{
-				id: "story_earthquake_pillars_02",
-				positionParams: {
-					campOrdinal: 7,
-					levelIndex: 1,
-				}
-			},
-			{
-				id: "story_spirits_shrine_02",
-				positionParams: {
-					campOrdinal: 7
-				}
-			},
-			{
-				id: "story_apocalypse_measuring_station",
-				positionParams: {
-					campOrdinal: 8,
-					levelIndex: 0
-				}
-			},
-			{
-				id: "story_apocalypse_cracks_02",
-				positionParams: {
-					campOrdinal: 9
-				}
-			},
-			{
-				id: "story_spirits_shrine_03",
-				positionParams: {
-					campOrdinal: 11,
-					sectorType: "slum"
-				}
-			},
-			{
-				id: "world_fall_tent_village",
-				positionParams: {
-					campOrdinal: 13
-				}
-			},
-			{
-				id: "world_fall_supply_truck",
-				positionParams: {
-					campOrdinal: 14
-				}
-			},
-			{
-				id: "story_fall_escape_pod",
-				positionParams: {
-					campOrdinal: 15
-				},
-				storyTag: "spaceDebris"
-			},
-			{
-				id: "story_fall_hull_wreckage",
-				positionParams: {
-					campOrdinal: 15
-				},
-				storyTag: "spaceDebris"
-			},
-			{
-				id: "story_fall_sundome_shards_01",
-				positionParams: {
-					campOrdinal: 15
-				}
-			},
-			{
-				id: "story_fall_sundome_shards_02",
-				positionParams: {
-					campOrdinal: 15
-				}
-			}
-		],
+		sectorExamineSpots: [],
 
 		storyStashes: [
 			{
@@ -248,7 +130,7 @@ define([
 			RESCUE_SISTER_INTRODUCED: "RESCUE_SISTER_INTRODUCED",
 			RESCUE_PASSAGE_UP_BUILT: "RESCUE_PASSAGE_UP_BUILT",
 			RESCUE_LEVEL_14_HAZARD_FOUND: "RESCUE_LEVEL_14_HAZARD_FOUND",
-			RESCUE_EXPLORER_LEFT: "RESCUE_LEVEL_14_HAZARD_FOUND",
+			RESCUE_EXPLORER_LEFT: "RESCUE_EXPLORER_LEFT",
 			RESCUE_EXPLORER_FOUND: "RESCUE_EXPLORER_FOUND",
 			SPIRITS_MAGIC_PENDING: "SPIRITS_MAGIC_PENDING",
 			SPIRITS_MAGIC_SEEN: "SPIRITS_MAGIC_SEEN",
@@ -273,6 +155,8 @@ define([
 
 				this.stories[storyVO.storyID] = storyVO;
 			}
+
+			this.sectorExamineSpots = data.examineSpots;
 		},
 
 		parseStoryTrigger: function (data) {
@@ -340,6 +224,7 @@ define([
 					let spotVO =  this.sectorExamineSpots[i];
 					spotVO.nameKey = spotVO.nameKey || "story.spots." + id + "_name";
 					spotVO.shortNameKey = spotVO.shortNameKey || "story.spots." + id + "_name_short";
+					if (!Text.hasKey(spotVO.shortNameKey)) spotVO.shortNameKey = spotVO.nameKey;
 					spotVO.descriptionKey = spotVO.descriptionKey || "story.spots." + id + "_message";
 					spotVO.logMessageKey = spotVO.logMessageKey || "story.spots." + id + "_log_message";
 					return spotVO;

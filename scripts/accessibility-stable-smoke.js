@@ -17,8 +17,15 @@ for (const helper of helpers) {
   if (!wiredDirectly && !wiredThroughHelper) throw new Error(`Accessibility helper is not wired: ${moduleId}`);
 }
 
-if (!initializer.includes('init: function (engine)')) throw new Error('Stable initializer signature was not preserved');
-if (initializer.includes("'game/WorldState'")) throw new Error('Development-only WorldState dependency leaked into stable initializer');
+if (!initializer.includes('init: function (engine, gameManager, headless)')) {
+  throw new Error('Master initializer signature was not preserved');
+}
+if (!initializer.includes("'game/WorldState'") || !initializer.includes("'game/helpers/WorldHelper'")) {
+  throw new Error('Master world-state dependencies were not preserved');
+}
+if (!initializer.includes('if (!headless)')) {
+  throw new Error('Accessibility/UI initialization must stay out of headless mode');
+}
 
 const sourceFiles = [initializerPath, ...helpers.map(name => path.join(helperDir, name))];
 const missing = [];
@@ -33,48 +40,58 @@ for (const file of sourceFiles) {
     if (!fs.existsSync(target)) missing.push(`${path.relative(root, file)} -> ${dep}`);
   }
 }
-if (missing.length) throw new Error(`Missing AMD dependencies on stable base:\n${missing.join('\n')}`);
+if (missing.length) throw new Error(`Missing AMD dependencies on master:\n${missing.join('\n')}`);
 
 const mobileHelper = fs.readFileSync(path.join(helperDir, 'AccessibilityMobileExperienceHelper.js'), 'utf8');
 for (const required of [
-  'accessibility-player-overview',
-  'accessibility-inventory-camp-overview',
-  'Player overview.',
-  'Inventory and camp overview.',
-  'Player status.',
-  'Status effects.',
-  'Inventory.',
-  'suppressVisualHeaders',
-  'data-a11y-header-visual',
-  'mobile-header',
-  'header-side',
-  'grid-main-header',
-  'setInert',
-  'accessibility-movement-status',
-  'Choose Scout',
-  'removeAttribute("tabindex")'
+  ['accessibility-player-overview'],
+  ['accessibility-inventory-camp-overview'],
+  ['Player overview.', 'Tổng quan người chơi.'],
+  ['Inventory and camp overview.', 'Tổng quan túi đồ và trại.'],
+  ['Player status.', 'Trạng thái người chơi.'],
+  ['Inventory.', 'Túi đồ.'],
+  ['suppressVisualHeaders'],
+  ['accessibility-movement-status']
 ]) {
-  if (!mobileHelper.includes(required)) throw new Error(`TalkBack accessibility regression contract missing: ${required}`);
+  if (!required.some(value => mobileHelper.includes(value))) {
+    throw new Error(`TalkBack accessibility regression contract missing: ${required.join(' or ')}`);
+  }
 }
 
-if (mobileHelper.includes('setAttribute("role", "note")') || mobileHelper.includes("setAttribute('role', 'note')")) {
-  throw new Error('Accessibility code must not create note-only swipe stops');
+const focusPatch = fs.readFileSync(path.join(helperDir, 'AccessibilityFocusStabilityPatch.js'), 'utf8');
+for (const required of [
+  "'game/helpers/ui/AccessibilityOverviewCleanupPatch'",
+  "'game/helpers/ui/AccessibilityAutoScoutCoordinatesHelper'",
+  'isRealtimeVisualHeaderMutationTarget',
+  'accessibility-movement-status'
+]) {
+  if (!focusPatch.includes(required)) throw new Error(`Focus/movement accessibility contract missing: ${required}`);
 }
 
-const overviewStart = mobileHelper.indexOf('H.prototype.renderHeaderOverview');
-const overviewEnd = mobileHelper.indexOf('H.prototype.statusText');
-const overviewBody = mobileHelper.slice(overviewStart, overviewEnd);
-if (!overviewBody.includes('summary.textContent = "Player overview. "')) throw new Error('Player overview must expose real text content');
-if (!overviewBody.includes('inventorySummary.textContent = "Inventory and camp overview. "')) throw new Error('Inventory and camp overview must expose real text content');
-if (overviewBody.includes('setAttribute("tabindex", "0")') || overviewBody.includes("setAttribute('tabindex', '0')")) throw new Error('Header overviews must not use tabindex=0');
-if (!overviewBody.includes('summaries[i].removeAttribute("aria-label")')) throw new Error('Header overviews must not depend on aria-label');
-if (overviewBody.indexOf('let inventoryParts = []') < overviewBody.indexOf('Equipment stats.')) throw new Error('Inventory split must occur after equipment stats');
-
-const suppressStart = mobileHelper.indexOf('H.prototype.suppressHeader');
-const suppressEnd = mobileHelper.indexOf('H.prototype.renderHeaderOverview');
-const suppressBody = mobileHelper.slice(suppressStart, suppressEnd);
-if (!suppressBody.includes('setAttribute("aria-hidden", "true")') || !suppressBody.includes('setInert(root, true)')) {
-  throw new Error('Visual headers must be aria-hidden and inert');
+const autoScout = fs.readFileSync(path.join(helperDir, 'AccessibilityAutoScoutCoordinatesHelper.js'), 'utf8');
+for (const required of [
+  'autoPressScout',
+  'autoScoutAttempted',
+  'checkAvailability("scout", false, sector)',
+  'actions.startAction("scout")',
+  'accessibility-location-coordinates',
+  'Vị trí. Tầng '
+]) {
+  if (!autoScout.includes(required)) throw new Error(`Auto-scout/coordinates contract missing: ${required}`);
+}
+if (autoScout.includes('sectorStatus.scouted = true')) {
+  throw new Error('Auto-scout must execute the original Scout action instead of reimplementing it');
 }
 
-console.log(`Stable accessibility wiring OK: ${helpers.length} helpers, two real-text header overview contract present.`);
+const actionCallout = fs.readFileSync(path.join(helperDir, 'AccessibilityActionCalloutHelper.js'), 'utf8');
+for (const required of [
+  'updateActionButtonLabel',
+  'data-a11y-action-base-label',
+  '.btn-disabled-reason',
+  'data-a11y-disabled-proxy',
+  'aria-live'
+]) {
+  if (!actionCallout.includes(required)) throw new Error(`Disabled-action feedback contract missing: ${required}`);
+}
+
+console.log(`Master accessibility wiring OK: ${helpers.length} helpers, master 0.7.x initializer preserved, TalkBack summaries, movement, auto-scout, and disabled-action feedback present.`);

@@ -56,11 +56,11 @@ define([
 			let msg = "";
 			let sys = this;
 			
-			msg += "<p>The Colony Ship launches successfully and heads out into space.</p>";
-			msg += "<p>Into a new unimaginably vast darkness.";
-			msg += "<p>The ship is crowded. We brought as many as we could. More will follow. Somehow, we will find another home.</p>";
+			msg += "<p>Con tàu Thuộc địa đã phóng thành công và hướng vào vũ trụ.</p>";
+			msg += "<p>Hướng vào một bóng tối mới rộng lớn đến không tưởng.</p>";
+			msg += "<p>Con tàu chật kín người. Chúng ta đã đưa theo được nhiều người nhất có thể. Sẽ còn những người khác nối bước. Bằng cách nào đó, chúng ta sẽ tìm được một mái nhà mới.</p>";
 			
-			GameGlobals.uiFunctions.showInfoPopup("Launch", msg, "Continue", null,
+			GameGlobals.uiFunctions.showInfoPopup("Phóng tàu", msg, "Tiếp tục", null,
 				function () {
 					setTimeout(function () {
 						sys.showMetaPopup();
@@ -75,11 +75,11 @@ define([
 			
 			let msg = "";
 			
-			msg += "<p>Congratulations! You've completed Level 13.</p>";
-			msg += "<p><span class='p-meta'>Thank you for playing all the way to the end. If you'd like to share your thoughts or feedback, you can use any of these channels:</span></p>";
+			msg += "<p>Chúc mừng! Bạn đã hoàn thành Level 13.</p>";
+			msg += "<p><span class='p-meta'>Cảm ơn bạn đã chơi đến cuối. Nếu muốn chia sẻ cảm nghĩ hoặc phản hồi, bạn có thể dùng một trong các kênh sau:</span></p>";
 			msg += "<p>" + GameConstants.getFeedbackLinksHTML() + "</p>";
 			
-			GameGlobals.uiFunctions.showQuestionPopup("The End", msg, "Restart", "Stats",
+			GameGlobals.uiFunctions.showQuestionPopup("Kết thúc", msg, "Chơi lại", "Thống kê",
 				function () {
 					GameGlobals.uiFunctions.restart();
 				},
