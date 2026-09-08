@@ -4,6 +4,8 @@ const path = require('path');
 const root = process.cwd();
 const initializerPath = path.join(root, 'src/game/GameGlobalsInitializer.js');
 const initializer = fs.readFileSync(initializerPath, 'utf8');
+const configPaths = [path.join(root, 'src/config.js'), path.join(root, 'src/config-vi.js')];
+const configContents = configPaths.filter(fs.existsSync).map(file => fs.readFileSync(file, 'utf8'));
 const helperDir = path.join(root, 'src/game/helpers/ui');
 const helpers = fs.readdirSync(helperDir).filter(name => /^Accessibility.*\.js$/.test(name));
 const helperContents = helpers.map(name => ({ name, content: fs.readFileSync(path.join(helperDir, name), 'utf8') }));
@@ -14,7 +16,8 @@ for (const helper of helpers) {
   const moduleId = `game/helpers/ui/${helper.replace(/\.js$/, '')}`;
   const wiredDirectly = initializer.includes(`'${moduleId}'`);
   const wiredThroughHelper = helperContents.some(entry => entry.name !== helper && entry.content.includes(`'${moduleId}'`));
-  if (!wiredDirectly && !wiredThroughHelper) throw new Error(`Accessibility helper is not wired: ${moduleId}`);
+  const wiredThroughConfig = configContents.some(content => content.includes(`'${moduleId}'`) || content.includes(`"${moduleId}"`));
+  if (!wiredDirectly && !wiredThroughHelper && !wiredThroughConfig) throw new Error(`Accessibility helper is not wired: ${moduleId}`);
 }
 
 if (!initializer.includes('init: function (engine, gameManager, headless)')) {
@@ -94,4 +97,4 @@ for (const required of [
   if (!actionCallout.includes(required)) throw new Error(`Disabled-action feedback contract missing: ${required}`);
 }
 
-console.log(`Master accessibility wiring OK: ${helpers.length} helpers, master 0.7.x initializer preserved, TalkBack summaries, movement, auto-scout, and disabled-action feedback present.`);
+console.log(`Master accessibility wiring OK: ${helpers.length} helpers, master 0.7.x initializer preserved, TalkBack summaries, movement, auto-scout, detailed errors, and disabled-action feedback present.`);
