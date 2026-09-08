@@ -6,10 +6,10 @@ define(['ash', 'text/Text', 'text/TextBuilder', 'text/lang/LangEnglish', 'text/l
             constructor: function () { },
 
             textSources: {
-                default: { language: "default", source: "/strings/strings.json", name: "Default" },
-                EN_GB: { language: "EN_GB", source: "/strings/strings.json", name: "English" },
-                FI_FI: { language: "FI_FI", source: "/strings/strings-fi.json", name: "suomi" },
-                VI_VN: { language: "VI_VN", source: "/strings/strings-vi.json", name: "Tiếng Việt" },
+                default: { language: "default", source: "strings/strings.json", name: "Default" },
+                EN_GB: { language: "EN_GB", source: "strings/strings.json", name: "English" },
+                FI_FI: { language: "FI_FI", source: "strings/strings-fi.json", name: "suomi" },
+                VI_VN: { language: "VI_VN", source: "strings/strings-vi.json", name: "Tiếng Việt" },
             },
     
             isSupportedLanguage: function (language) {
