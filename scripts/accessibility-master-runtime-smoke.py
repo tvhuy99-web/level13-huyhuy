@@ -35,6 +35,11 @@ def snapshot(driver):
             mapElements = req && req.defined('utils/MapElements') ? req('utils/MapElements') : null;
         } catch (e) {}
         const iconEntries = mapElements ? Object.entries(mapElements.icons || {}) : [];
+        const visibleButtons = Array.from(document.querySelectorAll('button')).filter(b => {
+            const s = getComputedStyle(b);
+            const r = b.getBoundingClientRect();
+            return s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0;
+        }).map(b => ((b.getAttribute('aria-label') || b.textContent || '').replace(/\\s+/g, ' ').trim())).filter(Boolean);
         return {
             requirejs: !!req,
             initializer: !!(req && req.defined('game/GameGlobalsInitializer')),
@@ -54,6 +59,7 @@ def snapshot(driver):
             loadingDisplay: loading ? getComputedStyle(loading).display : 'missing',
             mainDisplay: main ? getComputedStyle(main).display : 'missing',
             visiblePopupText,
+            visibleButtons,
             mapIconUrls: iconEntries.slice(0, 8).map(([key, img]) => [key, img && img.src ? img.src : '']),
             brokenMapIcons: iconEntries.filter(([key, img]) => img && img.complete && img.naturalWidth === 0).map(([key]) => key),
             loadedMapIcons: iconEntries.filter(([key, img]) => img && img.complete && img.naturalWidth > 0).length,
@@ -78,26 +84,23 @@ def is_inventory_overview_ready(text):
     return text.startswith('Inventory and camp overview.') or text.startswith('Tổng quan túi đồ và trại.')
 
 
-def click_popup_button(driver, labels):
+def click_visible_button(driver, labels):
     return driver.execute_script("""
         const labels = arguments[0];
-        const popups = Array.from(document.querySelectorAll('.popup')).filter(p => {
-            const s = getComputedStyle(p);
-            return s.display !== 'none' && s.visibility !== 'hidden';
+        const buttons = Array.from(document.querySelectorAll('button')).filter(b => {
+            if (b.disabled) return false;
+            const s = getComputedStyle(b);
+            const r = b.getBoundingClientRect();
+            return s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0;
         });
-        for (const popup of popups) {
-            const button = Array.from(popup.querySelectorAll('button')).find(b => {
-                if (b.disabled) return false;
-                const label = (b.textContent || '').replace(/\\s+/g, ' ').trim();
-                const aria = (b.getAttribute('aria-label') || '').replace(/\\s+/g, ' ').trim();
-                return labels.includes(label) || labels.includes(aria);
-            });
-            if (button) {
-                button.click();
-                return true;
-            }
-        }
-        return false;
+        const button = buttons.find(b => {
+            const label = (b.textContent || '').replace(/\\s+/g, ' ').trim();
+            const aria = (b.getAttribute('aria-label') || '').replace(/\\s+/g, ' ').trim();
+            return labels.includes(label) || labels.includes(aria);
+        });
+        if (!button) return false;
+        button.click();
+        return true;
     """, labels)
 
 
@@ -146,11 +149,11 @@ def run_case(width, height):
         if state['silentTabStops'] != 0:
             raise RuntimeError(f"Silent tabindex=0 stops remain: {state['silentTabStops']}")
 
-        WebDriverWait(driver, 20).until(lambda d: click_popup_button(d, ['Tiếp tục', 'Continue']))
+        WebDriverWait(driver, 20).until(lambda d: click_visible_button(d, ['Tiếp tục', 'Continue']))
         time.sleep(1)
         assert_no_fatal(driver, f'after intro Continue {width}x{height}')
 
-        WebDriverWait(driver, 20).until(lambda d: click_popup_button(d, ['Đứng dậy', 'Đứng lên', 'Stand up', 'Get up']))
+        WebDriverWait(driver, 20).until(lambda d: click_visible_button(d, ['Đứng dậy', 'Đứng lên', 'Stand up', 'Get up']))
         time.sleep(3)
 
         post_state = assert_no_fatal(driver, f'after intro Stand up {width}x{height}')
