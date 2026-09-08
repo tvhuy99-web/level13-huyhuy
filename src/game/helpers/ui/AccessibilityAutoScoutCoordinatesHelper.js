@@ -27,6 +27,9 @@ define([
 		GlobalSignals.add(this, GlobalSignals.featureUnlockedSignal, this.scheduleRefresh);
 		GlobalSignals.add(this, GlobalSignals.visionChangedSignal, this.scheduleRefresh);
 		GlobalSignals.add(this, GlobalSignals.actionCompletedSignal, this.scheduleRefresh);
+		if (typeof window !== "undefined" && typeof document !== "undefined" && document.readyState !== "complete") {
+			window.addEventListener("load", () => this.scheduleRefresh(), { once: true });
+		}
 		this.scheduleRefresh();
 	};
 
@@ -58,6 +61,7 @@ define([
 	// inventory-loss rolls, discoveries, story flags, result popup, logs, signals,
 	// rewards, completion bookkeeping, UI rebuild, and save behaviour stay intact.
 	AccessibilityAutoScoutCoordinatesHelper.prototype.autoPressScout = function (sector) {
+		if (typeof document !== "undefined" && document.readyState !== "complete") return;
 		if (!sector || !GameGlobals.gameState || !GameGlobals.playerActionFunctions || !GameGlobals.playerActionsHelper) return;
 		let sectorStatus = sector.get(SectorStatusComponent);
 		if (!sectorStatus || sectorStatus.scouted) return;
