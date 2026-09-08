@@ -17,7 +17,7 @@ def make_driver():
 
 
 def click_visible_button(driver, labels):
-    return driver.execute_script("""
+    return driver.execute_script(r"""
         const labels = arguments[0];
         const buttons = Array.from(document.querySelectorAll('button')).filter(b => {
             if (b.disabled) return false;
@@ -37,7 +37,7 @@ def click_visible_button(driver, labels):
 
 
 def scout_state(driver):
-    return driver.execute_script("""
+    return driver.execute_script(r"""
         const scout = document.querySelector("button[action='scout']");
         const scoutContainer = scout ? scout.closest('.container-btn-action') : null;
         const build = document.querySelector("button[action='build_out_collector_water']");
@@ -58,6 +58,7 @@ def scout_state(driver):
 
 driver = make_driver()
 try:
+    driver.set_script_timeout(15)
     driver.get(BASE_URL)
     WebDriverWait(driver, 45).until(lambda d: d.execute_script("return !!(window.requirejs && window.requirejs.defined('game/GameGlobals'));"))
     WebDriverWait(driver, 45).until(lambda d: d.execute_script("return getComputedStyle(document.getElementById('unit-main')).display !== 'none';"))
@@ -66,26 +67,45 @@ try:
     WebDriverWait(driver, 20).until(lambda d: click_visible_button(d, ['Đứng dậy', 'Đứng lên', 'Stand up', 'Get up']))
     time.sleep(1)
 
-    prepared = driver.execute_script("""
+    prepared = driver.execute_async_script(r"""
+        const done = arguments[arguments.length - 1];
         const req = window.requirejs;
-        if (!req || !req.defined('game/GameGlobals') || !req.defined('game/GlobalSignals') || !req.defined('game/components/sector/SectorStatusComponent')) return false;
-        const GameGlobals = req('game/GameGlobals');
-        const GlobalSignals = req('game/GlobalSignals');
-        const SectorStatusComponent = req('game/components/sector/SectorStatusComponent');
-        const node = GameGlobals.playerActionFunctions && GameGlobals.playerActionFunctions.playerLocationNodes ? GameGlobals.playerActionFunctions.playerLocationNodes.head : null;
-        if (!node || !node.entity) return false;
-        const status = node.entity.get(SectorStatusComponent);
-        if (!status) return false;
-        if (GameGlobals.playerActionFunctions.playerStatsNodes && GameGlobals.playerActionFunctions.playerStatsNodes.head && GameGlobals.playerActionFunctions.playerStatsNodes.head.vision) {
-            GameGlobals.playerActionFunctions.playerStatsNodes.head.vision.value = 100;
+        if (!req) {
+            done({ ok: false, reason: 'requirejs missing' });
+            return;
         }
-        status.scouted = true;
-        if (GlobalSignals.visionChangedSignal) GlobalSignals.visionChangedSignal.dispatch();
-        GlobalSignals.sectorScoutedSignal.dispatch();
-        return true;
+        req([
+            'game/GameGlobals',
+            'game/GlobalSignals',
+            'game/components/sector/SectorStatusComponent'
+        ], function (GameGlobals, GlobalSignals, SectorStatusComponent) {
+            try {
+                const actions = GameGlobals.playerActionFunctions;
+                const node = actions && actions.playerLocationNodes ? actions.playerLocationNodes.head : null;
+                const sector = node && node.entity ? node.entity : null;
+                if (!sector || typeof sector.get !== 'function') {
+                    done({ ok: false, reason: 'current sector missing' });
+                    return;
+                }
+                const status = sector.get(SectorStatusComponent);
+                if (!status) {
+                    done({ ok: false, reason: 'SectorStatusComponent missing from current sector' });
+                    return;
+                }
+                status.scouted = true;
+                if (GlobalSignals.visionChangedSignal) GlobalSignals.visionChangedSignal.dispatch();
+                if (GlobalSignals.sectorScoutedSignal) GlobalSignals.sectorScoutedSignal.dispatch();
+                done({ ok: true });
+            } catch (error) {
+                done({ ok: false, reason: String(error && (error.stack || error.message || error)) });
+            }
+        }, function (error) {
+            done({ ok: false, reason: 'RequireJS load failed: ' + String(error) });
+        });
     """)
-    if not prepared:
-        raise RuntimeError('Could not prepare scouted-sector state for Scout accessibility test')
+    if not prepared or not prepared.get('ok'):
+        reason = prepared.get('reason') if isinstance(prepared, dict) else str(prepared)
+        raise RuntimeError('Could not prepare scouted-sector state for Scout accessibility test: ' + reason)
 
     def state_is_fixed(d):
         state = scout_state(d)
