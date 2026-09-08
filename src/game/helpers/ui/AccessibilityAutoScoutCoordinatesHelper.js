@@ -8,7 +8,7 @@ define([
 	let AccessibilityAutoScoutCoordinatesHelper = function () {
 		this.started = false;
 		this.retryTimer = null;
-		this.ensureScoutHiddenStyle();
+		this.autoScoutAttempted = Object.create(null);
 		this.startWhenReady();
 	};
 
@@ -45,7 +45,6 @@ define([
 		}
 
 		this.renderCoordinates(sector);
-		this.hideScoutButton();
 		this.autoPressScout(sector);
 	};
 
@@ -55,22 +54,53 @@ define([
 		return nodes && nodes.head ? nodes.head.entity : null;
 	};
 
-	// Remove only the manual button press. When the original Scout action becomes
-	// available, execute that exact action automatically. This deliberately goes
-	// through startAction("scout") so the original requirements, costs, injury /
-	// inventory-loss rolls, discoveries, story flags, result popup, logs, signals,
-	// rewards, completion bookkeeping, UI rebuild, and save behaviour stay intact.
+	AccessibilityAutoScoutCoordinatesHelper.prototype.getSectorKey = function (sector) {
+		if (!sector) return "";
+		let position = sector.get(PositionComponent);
+		if (!position) return "";
+		return position.level + "." + position.sectorX + "." + position.sectorY;
+	};
+
+	// Automatically execute the original Scout action once per sector when it is
+	// genuinely available. The manual Scout button remains untouched and can still
+	// be used if automatic scouting was unavailable or failed. For the automatic
+	// press only, suppress the routine Scout result popup so the action completes
+	// without requiring an extra confirmation tap. Reward-selection popups that the
+	// core reward system considers mandatory can still appear.
 	AccessibilityAutoScoutCoordinatesHelper.prototype.autoPressScout = function (sector) {
 		if (typeof document !== "undefined" && document.readyState !== "complete") return;
 		if (!sector || !GameGlobals.gameState || !GameGlobals.playerActionFunctions || !GameGlobals.playerActionsHelper) return;
 		let sectorStatus = sector.get(SectorStatusComponent);
 		if (!sectorStatus || sectorStatus.scouted) return;
 
+		let sectorKey = this.getSectorKey(sector);
+		if (!sectorKey || this.autoScoutAttempted[sectorKey]) return;
+
 		let actions = GameGlobals.playerActionFunctions;
 		if (actions.currentAction) return;
 		if (!GameGlobals.playerActionsHelper.checkAvailability("scout", false, sector)) return;
 
-		actions.startAction("scout");
+		// Mark before starting so refresh signals fired during the action cannot
+		// trigger the same automatic press again on this sector.
+		this.autoScoutAttempted[sectorKey] = true;
+
+		let originalHandleOutActionResults = actions.handleOutActionResults;
+		let started = false;
+		actions.handleOutActionResults = function (action, messages, showResultPopup, hasCustomReward, successCallback, failCallback) {
+			if (action === "scout") showResultPopup = false;
+			return originalHandleOutActionResults.call(this, action, messages, showResultPopup, hasCustomReward, successCallback, failCallback);
+		};
+
+		try {
+			started = actions.startAction("scout") === true;
+		} finally {
+			actions.handleOutActionResults = originalHandleOutActionResults;
+		}
+
+		// If the original action did not actually start because state changed between
+		// availability check and startAction, allow a later retry. Once it starts,
+		// this sector will never be auto-pressed again in this session.
+		if (!started) delete this.autoScoutAttempted[sectorKey];
 	};
 
 	AccessibilityAutoScoutCoordinatesHelper.prototype.renderCoordinates = function (sector) {
@@ -102,23 +132,6 @@ define([
 	AccessibilityAutoScoutCoordinatesHelper.prototype.formatCoordinate = function (value) {
 		let number = Number(value) || 0;
 		return number < 0 ? "âm " + Math.abs(number) : String(number);
-	};
-
-	AccessibilityAutoScoutCoordinatesHelper.prototype.ensureScoutHiddenStyle = function () {
-		if (typeof document === "undefined") return;
-		if (document.getElementById("accessibility-auto-scout-style")) return;
-		let style = document.createElement("style");
-		style.id = "accessibility-auto-scout-style";
-		style.textContent = "#out-action-scout{display:none !important;}";
-		(document.head || document.documentElement).appendChild(style);
-	};
-
-	AccessibilityAutoScoutCoordinatesHelper.prototype.hideScoutButton = function () {
-		if (typeof document === "undefined") return;
-		let scout = document.getElementById("out-action-scout");
-		if (!scout) return;
-		scout.setAttribute("aria-hidden", "true");
-		scout.setAttribute("tabindex", "-1");
 	};
 
 	let instance = new AccessibilityAutoScoutCoordinatesHelper();
