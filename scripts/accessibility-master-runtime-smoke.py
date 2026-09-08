@@ -22,6 +22,12 @@ def snapshot(driver):
         const player = document.getElementById('accessibility-player-overview');
         const inventory = document.getElementById('accessibility-inventory-camp-overview');
         const headers = ['mobile-header','header-side','grid-main-header'].map(id => document.getElementById(id));
+        const loading = document.querySelector('.loading-content');
+        const main = document.getElementById('unit-main');
+        const visiblePopupText = Array.from(document.querySelectorAll('.popup')).filter(p => {
+            const s = getComputedStyle(p);
+            return s.display !== 'none' && s.visibility !== 'hidden';
+        }).map(p => (p.textContent || '').replace(/\\s+/g, ' ').trim()).join(' | ');
         return {
             requirejs: !!req,
             initializer: !!(req && req.defined('game/GameGlobalsInitializer')),
@@ -35,6 +41,9 @@ def snapshot(driver):
             inventorySynthetic: !!(inventory && (inventory.hasAttribute('tabindex') || inventory.hasAttribute('aria-label') || inventory.hasAttribute('role'))),
             headersHidden: headers.every(h => !h || h.getAttribute('aria-hidden') === 'true'),
             headersInert: headers.every(h => !h || h.hasAttribute('inert')),
+            loadingDisplay: loading ? getComputedStyle(loading).display : 'missing',
+            mainDisplay: main ? getComputedStyle(main).display : 'missing',
+            visiblePopupText,
             silentTabStops: Array.from(document.querySelectorAll('[tabindex="0"]')).filter(e => {
                 const r = (e.getAttribute('role') || '').toLowerCase();
                 if (e.matches('button,input,select,textarea,a[href]')) return false;
@@ -47,17 +56,29 @@ def snapshot(driver):
     """)
 
 
+def is_player_overview_ready(text):
+    return text.startswith('Player overview.') or text.startswith('Tổng quan người chơi.')
+
+
+def is_inventory_overview_ready(text):
+    return text.startswith('Inventory and camp overview.') or text.startswith('Tổng quan túi đồ và trại.')
+
+
 def run_case(width, height):
     driver = make_driver(width, height)
     try:
         driver.get(BASE_URL)
-        WebDriverWait(driver, 35).until(lambda d: all(snapshot(d)[k] for k in (
+        WebDriverWait(driver, 45).until(lambda d: all(snapshot(d)[k] for k in (
             'requirejs', 'initializer', 'accessibility', 'mobileExperience', 'overviewCleanup', 'finalAudit'
         )))
-        WebDriverWait(driver, 20).until(lambda d: snapshot(d)['playerText'].startswith('Player overview.') and snapshot(d)['inventoryText'].startswith('Inventory and camp overview.'))
-        state = snapshot(driver)
-        print(f'Accessibility browser state {width}x{height}:', json.dumps(state, sort_keys=True))
+        WebDriverWait(driver, 45).until(lambda d: snapshot(d)['loadingDisplay'] == 'none' and snapshot(d)['mainDisplay'] != 'none')
+        WebDriverWait(driver, 25).until(lambda d: is_player_overview_ready(snapshot(d)['playerText']) and is_inventory_overview_ready(snapshot(d)['inventoryText']))
 
+        state = snapshot(driver)
+        print(f'Accessibility browser state {width}x{height}:', json.dumps(state, ensure_ascii=False, sort_keys=True))
+
+        if 'Đã xảy ra lỗi!' in state['visiblePopupText'] or "You've found a bug!" in state['visiblePopupText']:
+            raise RuntimeError('Fresh startup opened the fatal JavaScript error popup')
         if state['playerSynthetic'] or state['inventorySynthetic']:
             raise RuntimeError('Read-only TalkBack summaries became synthetic focus stops')
         if not state['headersHidden'] or not state['headersInert']:
@@ -65,26 +86,18 @@ def run_case(width, height):
         if state['silentTabStops'] != 0:
             raise RuntimeError(f"Silent tabindex=0 stops remain: {state['silentTabStops']}")
 
-        severe_accessibility = []
-        known_master_world_error = []
+        local_severe = []
         for entry in driver.get_log('browser'):
-            if entry.get('level') != 'SEVERE':
-                continue
             msg = entry.get('message', '')
-            if 'WorldHelper.js' in msg and "Cannot read properties of null (reading 'version')" in msg:
-                known_master_world_error.append(msg)
-                continue
-            if ('Accessibility' in msg or 'GameGlobalsInitializer.js' in msg or 'requirejs' in msg.lower()):
-                severe_accessibility.append(msg)
+            if entry.get('level') == 'SEVERE' and ('127.0.0.1:8000' in msg or 'Uncaught' in msg or 'TypeError' in msg or 'ReferenceError' in msg):
+                local_severe.append(msg)
 
-        if severe_accessibility:
-            raise RuntimeError('Accessibility browser errors:\n' + '\n'.join(severe_accessibility))
-        if known_master_world_error:
-            print('Known master 0.7.1 fresh-game WorldHelper issue observed and excluded from accessibility compatibility result.')
+        if local_severe:
+            raise RuntimeError('Browser console errors:\n' + '\n'.join(local_severe))
     finally:
         driver.quit()
 
 
 run_case(390, 844)
 run_case(980, 844)
-print('Accessibility browser compatibility passed on master 0.7.1 in phone and wide viewport modes.')
+print('Fresh Vietnamese startup and accessibility compatibility passed in phone and wide viewport modes.')
