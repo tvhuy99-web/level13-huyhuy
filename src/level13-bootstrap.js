@@ -18,8 +18,7 @@ define([
 		AccessibilityMovementPositionHelper,
 		AccessibilityMovementPositionPriorityPatch
 	) {
-		let MovementPositionHelper = AccessibilityMovementPositionPriorityPatch || AccessibilityMovementPositionHelper;
-		if (MovementPositionHelper) new MovementPositionHelper();
+		if (AccessibilityMovementPositionHelper) new AccessibilityMovementPositionHelper();
 		require(['level13-app']);
 	});
 });
