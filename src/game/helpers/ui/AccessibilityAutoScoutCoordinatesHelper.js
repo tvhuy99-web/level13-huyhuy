@@ -14,7 +14,7 @@ define([
 
 	AccessibilityAutoScoutCoordinatesHelper.prototype.startWhenReady = function () {
 		if (this.started) return;
-		if (!GameGlobals.gameState || !GameGlobals.playerActionFunctions) {
+		if (!GameGlobals.gameState || !GameGlobals.playerActionFunctions || !GameGlobals.playerActionsHelper) {
 			this.retryTimer = window.setTimeout(() => this.startWhenReady(), 100);
 			return;
 		}
@@ -24,6 +24,12 @@ define([
 		GlobalSignals.add(this, GlobalSignals.gameShownSignal, this.scheduleRefresh);
 		GlobalSignals.add(this, GlobalSignals.playerLocationChangedSignal, this.scheduleRefresh);
 		GlobalSignals.add(this, GlobalSignals.playerMoveCompletedSignal, this.scheduleRefresh);
+		GlobalSignals.add(this, GlobalSignals.featureUnlockedSignal, this.scheduleRefresh);
+		GlobalSignals.add(this, GlobalSignals.visionChangedSignal, this.scheduleRefresh);
+		GlobalSignals.add(this, GlobalSignals.actionCompletedSignal, this.scheduleRefresh);
+		if (typeof window !== "undefined" && typeof document !== "undefined" && document.readyState !== "complete") {
+			window.addEventListener("load", () => this.scheduleRefresh(), { once: true });
+		}
 		this.scheduleRefresh();
 	};
 
@@ -38,9 +44,9 @@ define([
 			return;
 		}
 
-		this.autoScoutSector(sector);
 		this.renderCoordinates(sector);
 		this.hideScoutButton();
+		this.autoPressScout(sector);
 	};
 
 	AccessibilityAutoScoutCoordinatesHelper.prototype.getCurrentSector = function () {
@@ -49,20 +55,22 @@ define([
 		return nodes && nodes.head ? nodes.head.entity : null;
 	};
 
-	AccessibilityAutoScoutCoordinatesHelper.prototype.autoScoutSector = function (sector) {
-		if (!sector || !GameGlobals.gameState || !GameGlobals.playerActionFunctions) return;
+	// Remove only the manual button press. When the original Scout action becomes
+	// available, execute that exact action automatically. This deliberately goes
+	// through startAction("scout") so the original requirements, costs, injury /
+	// inventory-loss rolls, discoveries, story flags, result popup, logs, signals,
+	// rewards, completion bookkeeping, UI rebuild, and save behaviour stay intact.
+	AccessibilityAutoScoutCoordinatesHelper.prototype.autoPressScout = function (sector) {
+		if (typeof document !== "undefined" && document.readyState !== "complete") return;
+		if (!sector || !GameGlobals.gameState || !GameGlobals.playerActionFunctions || !GameGlobals.playerActionsHelper) return;
 		let sectorStatus = sector.get(SectorStatusComponent);
 		if (!sectorStatus || sectorStatus.scouted) return;
 
-		sectorStatus.scouted = true;
-		if (GameGlobals.gameState.stats) {
-			GameGlobals.gameState.stats.numTimesScouted = (GameGlobals.gameState.stats.numTimesScouted || 0) + 1;
-		}
+		let actions = GameGlobals.playerActionFunctions;
+		if (actions.currentAction) return;
+		if (!GameGlobals.playerActionsHelper.checkAvailability("scout", false, sector)) return;
 
-		GameGlobals.playerActionFunctions.unlockFeature("evidence");
-		GameGlobals.playerActionFunctions.unlockFeature("scout");
-		GlobalSignals.sectorScoutedSignal.dispatch(sector);
-		GameGlobals.playerActionFunctions.save();
+		actions.startAction("scout");
 	};
 
 	AccessibilityAutoScoutCoordinatesHelper.prototype.renderCoordinates = function (sector) {
