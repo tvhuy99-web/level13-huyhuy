@@ -109,12 +109,15 @@ define([
 		if (!button || !button.closest) return "";
 		let callout = button.closest(".callout-container");
 		let reason = callout ? callout.querySelector(".btn-disabled-reason") : null;
-		return this.norm(reason ? reason.textContent : "");
+		let text = this.norm(reason ? reason.textContent : "");
+		if (/^DISABLED_REASON_/i.test(text) || /^[A-Z0-9_]+$/.test(text)) return "";
+		return text;
 	};
 
 	H.prototype.configureDirectionButtonAccessibility = function (button, baseLabel) {
 		if (!button) return null;
-		let disabled = !!button.disabled || button.classList.contains("btn-disabled");
+		let isVisible = this.visible(button);
+		let disabled = isVisible && (!!button.disabled || button.classList.contains("btn-disabled"));
 		let reason = disabled ? this.getMovementDisabledReason(button) : "";
 		let label = baseLabel;
 		if (disabled) {
