@@ -596,8 +596,8 @@ define(['ash',
 			let logMsg = this.getScavengeMessageBase(sector);
 
 			var logMsgSuccess = logMsg;
-			var logMsgFlee = logMsg + "Fled empty-handed.";
-			var logMsgDefeat = logMsg + "Got into a fight and was defeated.";
+			var logMsgFlee = logMsg + "Rút lui tay trắng.";
+			var logMsgDefeat = logMsg + "Đã giao chiến và bị đánh bại.";
 
 			let successCallback = function () {
 				GameGlobals.gameState.stats.numTimesScavenged++;
@@ -608,9 +608,9 @@ define(['ash',
 				let warningThresholdHighScavengedPercent = 75;
 				let warningThresholdNoScavengeResources = ExplorationConstants.THRESHOLD_SCAVENGED_PERCENT_REVEAL_NO_RESOURCES;
 				if (sectorResources.getTotal() <= 0 && sectorItems.length <= 0 && scavengedPercentAfter >= warningThresholdNoScavengeResources) {
-					GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), logMsg + " There doesn't seem to be anything to scavenge here.");
+					GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), logMsg + " Có vẻ không còn gì để lục soát ở đây.");
 				} else if (scavengedPercentBefore < warningThresholdHighScavengedPercent && scavengedPercentAfter >= warningThresholdHighScavengedPercent) {
-					GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), logMsg + " There isn't much left to scavenge here.");
+					GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), logMsg + " Không còn nhiều thứ để lục soát ở đây.");
 				}
 			};
 			
@@ -643,10 +643,10 @@ define(['ash',
 			let logMsg = this.getScavengeMessageBase(sector);
 
 			var logMsgSuccess = logMsg;
-			var logMsgFlee = logMsg + "Fled empty-handed.";
-			var logMsgDefeat = logMsg + "Got into a fight and was defeated.";
+			var logMsgFlee = logMsg + "Rút lui tay trắng.";
+			var logMsgDefeat = logMsg + "Đã giao chiến và bị đánh bại.";
 			
-			logMsgSuccess += " " + Text.capitalize(resourceNameDisplayName) + " remaining: " + Math.round(100 - scavengedPercentAfter) + "%";
+			logMsgSuccess += " Còn lại " + Text.capitalize(resourceNameDisplayName) + ": " + Math.round(100 - scavengedPercentAfter) + "%";
 
 			let successCallback = function () {
 				GameGlobals.gameState.stats.numTimesScavenged++;
@@ -654,7 +654,7 @@ define(['ash',
 
 				let warningThresholdHighScavengedPercent = 100;
 				if (scavengedPercentBefore < warningThresholdHighScavengedPercent && scavengedPercentAfter >= warningThresholdHighScavengedPercent) {
-					GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), heapDisplayName + " picked clean");
+					GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), "Đã lục soát hết " + heapDisplayName);
 				}
 			};
 			
@@ -678,10 +678,10 @@ define(['ash',
 
 			let logMsg = "";
 			if (playerMaxVision <= PlayerStatConstants.VISION_BASE) {
-				if (sunlit) logMsg = "Rummaged blindly for loot. ";
-				else logMsg = "Rummaged in the dark. ";
+				if (sunlit) logMsg = "Mò mẫm tìm đồ mà không nhìn rõ. ";
+				else logMsg = "Mò mẫm trong bóng tối. ";
 			} else {
-				logMsg = "Went scavenging. ";
+				logMsg = "Đã đi lục soát. ";
 			}
 			return logMsg;
 		},
@@ -704,17 +704,17 @@ define(['ash',
 			let investigatePercentAfter = sectorStatus.getInvestigatedPercent(weightedInvestigateAdded);
 			let isCompletion = investigatePercentAfter >= 100;
 
-			let logMsg = "Investigated the sector. ";
+			let logMsg = "Đã điều tra khu vực. ";
 
 			let logMsgSuccess = logMsg;
-			let logMsgFlee = logMsg + "Fled empty-handed.";
-			let logMsgDefeat = logMsg + "Got into a fight and was defeated.";
+			let logMsgFlee = logMsg + "Đã rút lui tay trắng.";
+			let logMsgDefeat = logMsg + "Bạn đã giao chiến và bị đánh bại.";
 			let sys = this;
 			
 			if (isCompletion) {
-				logMsgSuccess += " Investigation completed. ";
+				logMsgSuccess += " Đã hoàn tất điều tra. ";
 			} else {
-				logMsgSuccess += " Investigation progress: " + Math.round(investigatePercentAfter) + "%";
+				logMsgSuccess += " Tiến độ điều tra: " + Math.round(investigatePercentAfter) + "%";
 			}
 			
 			let successCallback = function () {
@@ -781,7 +781,7 @@ define(['ash',
 			
 			let level = sector.get(PositionComponent).level;
 
-			let popupMsg = "Scouted the area.";
+			let popupMsg = "Đã trinh sát khu vực.";
 			let logMsg = "";
 			let found = false;
 			let showResultPopup = !GameConstants.uiModeMinimialExplorationPopups;
@@ -790,28 +790,28 @@ define(['ash',
 			if (featuresComponent.hasSpring) {
 				found = true;
 				showResultPopup = true;
-				popupMsg += "<br/>Found " + Text.addArticle(TextConstants.getSpringName(featuresComponent)) + ".";
+				popupMsg += "<br/>Phát hiện " + TextConstants.getSpringName(featuresComponent) + ".";
 			}
 			
 			if (featuresComponent.hasTradeConnectorSpot && !GameGlobals.levelHelper.getFirstScoutedSectorWithFeatureOnLevel(level, "hasTradeConnectorSpot")) {
 				found = true;
 				showResultPopup = true;
-				popupMsg += "<br/>Found a good place for a bigger building project.";
-				logMsg += "Found a good place for a bigger building project.";
+				popupMsg += "<br/>Phát hiện vị trí phù hợp cho một dự án công trình lớn.";
+				logMsg += "Phát hiện vị trí phù hợp cho một dự án công trình lớn.";
 			}
 			
 			let workshopComponent = sector.get(WorkshopComponent);
 			if (workshopComponent && workshopComponent.isClearable) {
 				found = true;
 				showResultPopup = true;
-				popupMsg += "<br/>Found " + Text.addArticle(TextConstants.getWorkshopName(workshopComponent.resource));
-				logMsg += "Found " + Text.addArticle(TextConstants.getWorkshopName(workshopComponent.resource));
+				popupMsg += "<br/>Phát hiện " + TextConstants.getWorkshopName(workshopComponent.resource);
+				logMsg += "Phát hiện " + TextConstants.getWorkshopName(workshopComponent.resource);
 			}
 
 			if (featuresComponent.examineSpots.length > 0) {
 				found = true;
 				showResultPopup = true;
-				popupMsg += "<br/>Found some interesting objects.";
+				popupMsg += "<br/>Phát hiện một số vật thể thú vị.";
 			}
 			
 			if (featuresComponent.campable) {
@@ -819,9 +819,9 @@ define(['ash',
 					found = true;
 					showResultPopup = true;
 					if (GameGlobals.gameState.numCamps == 0) {
-						popupMsg += "<br/>This seems like a safe spot to build a shelter.";
+						popupMsg += "<br/>Nơi này có vẻ an toàn để dựng chỗ trú ẩn.";
 					} else {
-						popupMsg += "<br/>This seems like a good place for a camp.";
+						popupMsg += "<br/>Nơi này có vẻ phù hợp để lập trại.";
 					}
 				}
 			}
@@ -832,14 +832,14 @@ define(['ash',
 					found = true;
 					showResultPopup = true;
 					popupMsg += "<br/>" + TextConstants.getPassageFoundMessage(passagesComponent.passageUp, PositionConstants.DIRECTION_UP, sunlit) + " ";
-					logMsg += level == 13 ? "Found a hole in the ceiling leading to the level above, but it's far too high to reach." : "Found a passage to the level above.";
+					logMsg += level == 13 ? "Phát hiện một lỗ trên trần dẫn lên tầng trên, nhưng nó quá cao để với tới." : "Phát hiện lối đi lên tầng trên.";
 				}
 
 				if (passagesComponent.passageDown && !GameGlobals.levelHelper.isPassageDownBuilt(level)) {
 					found = true;
 					showResultPopup = true;
 					popupMsg += "<br/>" + TextConstants.getPassageFoundMessage(passagesComponent.passageDown, PositionConstants.DIRECTION_DOWN, sunlit) + " ";
-					logMsg += "Found a passage to the level below.";
+					logMsg += "Phát hiện lối đi xuống tầng dưới.";
 					GameGlobals.gameState.setStoryFlag(StoryConstants.ESCAPE_PASSAGE_DOWN_FOUND, true);
 				}
 			}
@@ -850,12 +850,12 @@ define(['ash',
 				showResultPopup = true;
 				let locale = sectorLocalesComponent.locales[0];
 				if (sectorLocalesComponent.locales.length > 1) {
-					popupMsg += "<br/>There are some interesting buildings here.";
+					popupMsg += "<br/>Có một số công trình thú vị ở đây.";
 				} else if (locale.type == localeTypes.greenhouse) {
-					popupMsg += "<br/>There is an abandoned " + UIConstants.highlight(TextConstants.getLocaleName(locale, featuresComponent, true).toLowerCase()) + " here.";
-					logMsg += "Found a greenhouse.";
+					popupMsg += "<br/>Có một " + UIConstants.highlight(TextConstants.getLocaleName(locale, featuresComponent, true).toLowerCase()) + " bị bỏ hoang ở đây.";
+					logMsg += "Phát hiện một nhà kính.";
 				} else {
-					popupMsg += "<br/>There is a " + UIConstants.highlight(TextConstants.getLocaleName(locale, featuresComponent, true).toLowerCase()) + " here that seems worth scouting.";
+					popupMsg += "<br/>Có một " + UIConstants.highlight(TextConstants.getLocaleName(locale, featuresComponent, true).toLowerCase()) + " ở đây, có vẻ đáng để trinh sát.";
 				}
 			}
 			
@@ -870,13 +870,13 @@ define(['ash',
 			if (featuresComponent.heapResource) {
 				showResultPopup = true;
 				let heapDisplayName = TextConstants.getHeapDisplayName(featuresComponent.heapResource, featuresComponent);
-				popupMsg += "<br/>There is " + Text.addArticle(heapDisplayName) + " which can be scavenged for " + featuresComponent.heapResource + ".";
+				popupMsg += "<br/>Có " + heapDisplayName + " ở đây, có thể lục soát để lấy " + TextConstants.getResourceDisplayName(featuresComponent.heapResource) + ".";
 			}
 			
 			if (GameGlobals.sectorHelper.canBeInvestigated(sector, true)) {
 				showResultPopup = true;
-				popupMsg += "<br/>Something happened here just before the Fall. This sector can be <span class='hl-functionality'>investigated</span>.";
-				logMsg += "Found a sector that can be investigated.";
+				popupMsg += "<br/>Có chuyện gì đó đã xảy ra ngay trước Sụp đổ. Khu vực này có thể được <span class='hl-functionality'>điều tra</span>.";
+				logMsg += "Phát hiện một khu vực có thể điều tra.";
 			}
 			
 			let successCallback = function () {
@@ -930,7 +930,7 @@ define(['ash',
 			
 			let luxuryResource = localeVO.luxuryResource;
 			if (luxuryResource) {
-				customRewardTexts.push("Found a source of <span class='hl-functionality'>" + TribeConstants.getLuxuryDisplayName(luxuryResource) + "</span>. There is a building project available in camp to use it.");
+				customRewardTexts.push("Phát hiện nguồn <span class='hl-functionality'>" + TribeConstants.getLuxuryDisplayName(luxuryResource) + "</span>. Ở trại có một dự án công trình có thể sử dụng tài nguyên này.");
 			}
 			
 			let tradingPartner = null;
@@ -942,7 +942,7 @@ define(['ash',
 					let partner = TradeConstants.getTradePartner(campOrdinal);
 					if (partner) {
 						let partnerName = partner.name;
-						customRewardTexts.push("Found a new <span class='hl-functionality'>trading partner</span>. They call this place " + partnerName + ".");
+						customRewardTexts.push("Phát hiện <span class='hl-functionality'>đối tác giao thương</span> mới. Họ gọi nơi này là " + partnerName + ".");
 						tradingPartner = campOrdinal;
 					}
 				}
@@ -1024,7 +1024,7 @@ define(['ash',
 					return [
 						{ type: "dialogue", dialogueID: "locale_generic_greenhouse_intro_01" },
 						{ type: "custom", f: successCallback },
-						{ type: "log", textKey: "Scouted a Greenhouse." }
+						{ type: "log", textKey: "Đã trinh sát một nhà kính." }
 					];
 				}
 			}
@@ -1034,7 +1034,7 @@ define(['ash',
 					{ type: "dialogue", dialogueID: "locale_story_depot" },
 					{ type: "storyFlag", flagID: StoryConstants.flags.FALL_SEEN_STOREHOUSE, value: true },
 					{ type: "custom", f: successCallback },
-					{ type: "log", textKey: "Scouted a depot." }
+					{ type: "log", textKey: "Đã trinh sát một kho hàng." }
 				];
 			}
 
@@ -1043,7 +1043,7 @@ define(['ash',
 					{ type: "dialogue", dialogueID: "locale_story_spacefactory" },
 					{ type: "storyFlag", flagID: StoryConstants.flags.FALL_SEEN_SPACEFACTORY, value: true },
 					{ type: "custom", f: successCallback },
-					{ type: "log", textKey: "Scouted a manufacturing plant." }
+					{ type: "log", textKey: "Đã trinh sát một nhà máy sản xuất." }
 				];
 			}
 
@@ -1051,7 +1051,7 @@ define(['ash',
 				return [
 					{ type: "dialogue", dialogueID: "locale_story_seeddepot" },
 					{ type: "custom", f: successCallback },
-					{ type: "log", textKey: "Scouted an old seed depot, but the seeds were dead." }
+					{ type: "log", textKey: "Đã trinh sát một kho hạt giống cũ, nhưng hạt giống đã hỏng." }
 				];
 			}
 
@@ -1068,7 +1068,7 @@ define(['ash',
 					{ type: "storyFlag", flagID: StoryConstants.flags.RESCUE_EXPLORER_FOUND, value: true },
 					{ type: "custom", f: successCallback },
 					{ type: "custom", f: shelterSuccessCallback },
-					{ type: "log", textKey: "Scouted the apartment." }
+					{ type: "log", textKey: "Đã trinh sát căn hộ." }
 				];
 			}
 
@@ -1077,7 +1077,7 @@ define(['ash',
 					{ type: "dialogue", dialogueID: "locale_story_compound" },
 					{ type: "storyFlag", flagID: StoryConstants.flags.GANG_COMPOUND_FOUND, value: true },
 					{ type: "custom", f: successCallback },
-					{ type: "log", textKey: "Scouted a compound." }
+					{ type: "log", textKey: "Đã trinh sát một khu phức hợp." }
 				];
 			}
 
@@ -1086,7 +1086,7 @@ define(['ash',
 					{ type: "dialogue", dialogueID: "locale_story_expedition_camp" },
 					{ type: "storyFlag", flagID: StoryConstants.flags.EXPEDITION_FATE_KNOWN, value: true },
 					{ type: "custom", f: successCallback },
-					{ type: "log", textKey: "Scouted the campsite." }
+					{ type: "log", textKey: "Đã trinh sát khu cắm trại." }
 				];
 			}
 
@@ -1094,7 +1094,7 @@ define(['ash',
 				return [
 					{ type: "dialogue", dialogueID: "locale_story_isolation_center" },
 					{ type: "custom", f: successCallback },
-					{ type: "log", textKey: "Scouted the facility." }
+					{ type: "log", textKey: "Đã trinh sát cơ sở này." }
 				];
 			}
 
@@ -1174,7 +1174,7 @@ define(['ash',
 		},
 
 		getLocaleLogKey: function (localeVO, localeName, isScouted) {
-			let result = "Scouted " +  Text.addArticle(localeName);
+			let result = "Đã trinh sát " + localeName;
 
 			if (localeVO.type == localeTypes.shortcut) {
 				if (isScouted) {
@@ -1303,14 +1303,14 @@ define(['ash',
 			let sectorFeatures = sector.get(SectorFeaturesComponent);
 			let springName = TextConstants.getSpringName(sectorFeatures);
 
-			let logMsgFailBase = "Approached the " + springName + ", but got attacked. ";
+			let logMsgFailBase = "Đã đến gần " + springName + " nhưng bị tấn công. ";
 			
 			let messages = {
 				popupTitle: springName,
 				id: LogConstants.MSG_ID_USE_SPRING,
-				msgSuccess: "Refilled water at the " + springName + ".",
-				msgFlee: logMsgFailBase + "Fled empty-handed.",
-				msgDefeat: logMsgFailBase + "Lost the fight.",
+				msgSuccess: "Đã lấy nước tại " + springName + ".",
+				msgFlee: logMsgFailBase + "Rút lui tay trắng.",
+				msgDefeat: logMsgFailBase + "Đã thua trận.",
 				addToLog: false,
 			};
 
@@ -1372,13 +1372,13 @@ define(['ash',
 				sys.clearBlocker(action, blocker.type, sectorPos);
 			};
 			
-			let logMsgFailBase = "Tried to clear the waste. ";
+			let logMsgFailBase = "Đã cố dọn chất thải. ";
 			
 			let messages = {
 				id: LogConstants.MSG_ID_CLEAR_WASTE,
-				msgSuccess: "Cleared the waste. The area is now safe to pass through.",
-				msgFlee: logMsgFailBase + "Fled before completing the operation.",
-				msgDefeat: logMsgFailBase + "Lost the fight.",
+				msgSuccess: "Đã dọn sạch chất thải. Khu vực hiện đã an toàn để đi qua.",
+				msgFlee: logMsgFailBase + "Rút lui trước khi hoàn tất công việc.",
+				msgDefeat: logMsgFailBase + "Đã thua trận.",
 				addToLog: true,
 			};
 
@@ -1388,14 +1388,14 @@ define(['ash',
 		bridgeGap: function (sectorPos) {
 			let position = this.getPositionVO(sectorPos);
 			this.clearBlocker("bridge_gap", MovementConstants.BLOCKER_TYPE_GAP, sectorPos);
-			GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_BRIDGED_GAP, "Built a bridge.", { position: position, visibility: LogConstants.MGS_VISIBILITY_LEVEL });
+			GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_BRIDGED_GAP, "Đã bắc cầu qua khoảng trống.", { position: position, visibility: LogConstants.MGS_VISIBILITY_LEVEL });
 		},
 		
 		clearDebris: function (sectorPos) {
 			let position = this.getPositionVO(sectorPos);
 			let playerPos = this.playerPositionNodes.head.position;
 			this.clearBlocker("clear_debris", MovementConstants.BLOCKER_TYPE_DEBRIS, sectorPos);
-			let msg = "Debris cleared at " + position.getInGameFormat(position.level !== playerPos.level);
+			let msg = "Đã dọn đống đổ nát tại " + position.getInGameFormat(position.level !== playerPos.level);
 			GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_CLEAR_DEBRIS, msg, { position: position, visibility: LogConstants.MGS_VISIBILITY_LEVEL });
 		},
 
@@ -1403,7 +1403,7 @@ define(['ash',
 			let position = this.getPositionVO(sectorPos);
 			let playerPos = this.playerPositionNodes.head.position;
 			this.clearBlocker("clear_explosives", MovementConstants.BLOCKER_TYPE_EXPLOSIVES, sectorPos);
-			let msg = "Explosives cleared at " + position.getInGameFormat(position.level !== playerPos.level);
+			let msg = "Đã dọn chất nổ tại " + position.getInGameFormat(position.level !== playerPos.level);
 			GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), msg, { position: position, visibility: LogConstants.MGS_VISIBILITY_LEVEL });
 		},
 
@@ -1419,7 +1419,7 @@ define(['ash',
 
 			var sectorPos = positionComponent.level + "." + positionComponent.sectorId() + "." + direction;
 			this.clearBlocker("clear_gate", MovementConstants.BLOCKER_TYPE_TOLL_GATE, sectorPos);
-			GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), "Paid for passage.");
+			GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), "Đã trả phí để đi qua.");
 		},
 		
 		clearBlocker: function (action, blockerType, sectorPos) {
@@ -1495,10 +1495,10 @@ define(['ash',
 		wait: function () {
 			var sys = this;
 			GameGlobals.uiFunctions.setGameElementsVisibility(false);
-			GameGlobals.uiFunctions.showInfoPopup(
-				"Wait",
-				"Passed some time just waiting.",
-				"Continue",
+		GameGlobals.uiFunctions.showInfoPopup(
+				"Chờ",
+				"Đã dành một khoảng thời gian để chờ.",
+				Text.t("ui.common.continue_button_label"),
 				null,
 				() => {
 					GameGlobals.uiFunctions.hideGame(false);
@@ -1506,10 +1506,10 @@ define(['ash',
 						setTimeout(function () {
 							GameGlobals.uiFunctions.showGame();
 							GameGlobals.uiFunctions.onPlayerPositionChanged(); // reset cooldowns
-							let msgFail = "Settled down to pass some time but got attacked.";
+							let msgFail = "Đã nghỉ lại để chờ một lúc nhưng bị tấn công.";
 							let messages = {
 								id: LogConstants.MSG_ID_WAIT,
-								msgSuccess:  "Waited some time.",
+								msgSuccess:  "Đã chờ một lúc.",
 								msgFlee: msgFail,
 								msgDefeat: msgFail,
 								addToLog: false,
@@ -1579,7 +1579,7 @@ define(['ash',
 			
 			let discoveredGoods = GameGlobals.playerActionResultsHelper.saveDiscoveredGoods(rewards);
 			if (discoveredGoods.items && discoveredGoods.items.length > 0) {
-				let discoveredGoodsText = "Found a source of " + TextConstants.getListText(discoveredGoods.items.map(item => ItemConstants.getItemDisplayName(item).toLowerCase()));
+				let discoveredGoodsText = "Phát hiện nguồn " + TextConstants.getListText(discoveredGoods.items.map(item => ItemConstants.getItemDisplayName(item).toLowerCase()));
 				messages1.push({ id: LogConstants.getUniqueID(), text: discoveredGoodsText, addToPopup: true, addToLog: true });
 			}
 
@@ -1638,7 +1638,7 @@ define(['ash',
 				forceShowInventoryManagement: true,
 			};
 			
-			GameGlobals.uiFunctions.showResultPopup("Manage inventory", "", resultVO, cb, options);
+			GameGlobals.uiFunctions.showResultPopup("Quản lý túi đồ", "", resultVO, cb, options);
 		},
 		
 		logResultMessages: function (messages) {
@@ -1690,7 +1690,7 @@ define(['ash',
 			
 			let result = TradeConstants.makeResultVO(caravan);
 			let resultMessageVO = GameGlobals.playerActionResultsHelper.getRewardsTextVO(result);
-			let logMessage = "A trade caravan returned from " + tradePartner.name + ". " + Text.compose(resultMessageVO);
+			let logMessage = "Một đoàn xe giao thương đã trở về từ " + tradePartner.name + ". " + Text.compose(resultMessageVO);
 			let pendingPosition = campSector.get(PositionComponent).clone();
 			pendingPosition.inCamp = true;
 
@@ -1791,7 +1791,7 @@ define(['ash',
 			GameGlobals.gameState.increaseGameStatSimple("numTradesMade");
 			
 			GlobalSignals.inventoryChangedSignal.dispatch();
-			GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_TRADE_WITH_CARAVAN, "Traded with a caravan.");
+			GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_TRADE_WITH_CARAVAN, "Đã giao thương với một đoàn buôn.");
 		},
 		
 		recruitExplorer: function (explorerId) {
@@ -1809,7 +1809,7 @@ define(['ash',
 			GameGlobals.gameState.increaseGameStatSimple("numExplorersRecruited");
 			GlobalSignals.explorersChangedSignal.dispatch();
 			
-			GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_RECRUIT, "Recruited a new explorer.", { visibility: LogConstants.MSG_VISIBILITY_CAMP });
+			GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_RECRUIT, "Đã tuyển một nhà thám hiểm mới.", { visibility: LogConstants.MSG_VISIBILITY_CAMP });
 		},
 
 		startExplorerDialogue: function (explorerID) {
@@ -1946,7 +1946,7 @@ define(['ash',
 			}
 			
 			GameGlobals.uiFunctions.showConfirmation(
-				"Are you sure you want to dismiss " + explorer.name + "?",
+				"Bạn có chắc muốn cho " + explorer.name + " rời đội không?",
 				function () {
 					explorersComponent.removeExplorer(explorer);
 					GameGlobals.gameState.increaseGameStatSimple("numExplorersDismissed");
@@ -2082,7 +2082,7 @@ define(['ash',
 
 			GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_BUILT_CAMP, "ui.log.built_camp_message", { visibility: LogConstants.MGS_VISIBILITY_LEVEL });
 			if (position.level == 15) {
-				GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), "It will be difficult to trade resources with camps from below Level 14 from here.");
+				GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), "Từ đây sẽ khó giao thương tài nguyên với các trại ở dưới tầng 14.");
 			}
 
 			GameGlobals.gameState.numCamps++;
@@ -2151,7 +2151,7 @@ define(['ash',
 			
 			// TODO use camp name in message if defined
 
-			let msg = "Greenhouse is ready. Workers in camp on level " + campLevel + " can now use it.";
+			let msg = "Nhà kính đã sẵn sàng. Người lao động trong trại ở tầng " + campLevel + " giờ có thể sử dụng nó.";
 			
 			this.buildImprovement(action, improvementNames.greenhouse, sector);
 			GameGlobals.playerActionFunctions.unlockFeature("herbs");
@@ -2169,7 +2169,7 @@ define(['ash',
 			}
 
 			let resourceName = TribeConstants.getLuxuryDisplayName(resource);
-			let msg = "Resource outpost is ready. " + Text.capitalize(resourceName) + " is now available in all camps.";
+			let msg = "Tiền đồn tài nguyên đã sẵn sàng. " + Text.capitalize(resourceName) + " hiện đã có ở tất cả các trại.";
 
 			this.buildImprovement(action, improvementNames.luxuryOutpost, sector);
 			GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), msg, { position: position, visibility: LogConstants.MSG_VISIBILITY_CAMP });
@@ -2180,7 +2180,7 @@ define(['ash',
 			var position = this.getPositionVO(sectorPos);
 			var sector = this.getActionSector(action, sectorPos);
 			this.buildImprovement(action, improvementNames.tradepost_connector, sector);
-			GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), "Great Elevator is ready.", { position: position, visibility: LogConstants.MSG_VISIBILITY_CAMP });
+			GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), "Thang máy lớn đã sẵn sàng.", { position: position, visibility: LogConstants.MSG_VISIBILITY_CAMP });
 		},
 		
 		buildSundome: function (sectorPos) {
@@ -2188,7 +2188,7 @@ define(['ash',
 			let position = this.getPositionVO(sectorPos).getPositionInCamp();
 			var sector = this.getActionSector(action, sectorPos);
 			this.buildImprovement(action, improvementNames.sundome, sector);
-			GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), "Sundome is completed.", { position: position, visibility: LogConstants.MSG_VISIBILITY_CAMP });
+			GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), "Mái vòm chống nắng đã hoàn thành.", { position: position, visibility: LogConstants.MSG_VISIBILITY_CAMP });
 		},
 		
 		improveOutImprovement: function (param) {
@@ -2241,7 +2241,7 @@ define(['ash',
 		buildLights: function (sectorPos) {
 			let sector = this.getActionSectorOrCurrent(sectorPos);
 			this.buildImprovement("build_in_lights", GameGlobals.playerActionsHelper.getImprovementNameForAction("build_in_lights"), sector);
-			var msg = "Installed lights in the camp.";
+			var msg = "Đã lắp đèn trong trại.";
 			GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_BUILT_LIGHTS, msg, { position: sector.get(PositionComponent).getPositionInCamp() });
 		},
 
@@ -2253,7 +2253,7 @@ define(['ash',
 		buildFortification: function (sectorPos) {
 			let sector = this.getActionSectorOrCurrent(sectorPos);
 			this.buildImprovement("build_in_fortification", GameGlobals.playerActionsHelper.getImprovementNameForAction("build_in_fortification"), sector);
-			GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_BUILT_FORTIFICATION, "Fortified the camp.", { position: sector.get(PositionComponent).getPositionInCamp() });
+			GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_BUILT_FORTIFICATION, "Đã củng cố trại.", { position: sector.get(PositionComponent).getPositionInCamp() });
 		},
 
 		buildAqueduct: function (sectorPos) {
@@ -2379,7 +2379,7 @@ define(['ash',
 				this.buildImprovement(action, GameGlobals.playerActionsHelper.getImprovementNameForAction(action), sector);
 				if (GameGlobals.storyHelper.isReadyForLaunch(true)) {
 					let msgOptions = { position: sectorPosVO.getPositionInCamp() };
-					GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), "The colony ship is ready to launch.", msgOptions);
+					GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), "Con tàu Thuộc địa đã sẵn sàng phóng.", msgOptions);
 				}
 			} else {
 				log.w("Couldn't find sectors for building space ship.");
@@ -2453,7 +2453,7 @@ define(['ash',
 			let buildingCostsFirst = GameGlobals.playerActionsHelper.getCosts(buildAction, 1, null, 1);
 			let buildingCostsLast = GameGlobals.playerActionsHelper.getCosts(buildAction, 1, null, lastActionOrdinal);
 			
-			let msg = "Are you sure you want to dismantle this building? Only some of its building materials can be salvaged";
+			let msg = "Bạn có chắc muốn tháo dỡ công trình này không? Chỉ một phần vật liệu xây dựng có thể được thu hồi.";
 			let sys = this;
 			
 			GameGlobals.uiFunctions.showConfirmation(msg, function () {
@@ -2474,7 +2474,7 @@ define(['ash',
 				GlobalSignals.improvementBuiltSignal.dispatch();
 				sys.save();
 				
-				let msg = "Dismantled " + Text.addArticle(displayName);
+				let msg = "Đã tháo dỡ " + displayName;
 				GameGlobals.playerHelper.addLogMessage("MSG_ID_DISMANTLE_" + improvementName, msg, { position: sector.get(PositionComponent).getPositionInCamp() });
 			});
 		},
@@ -2598,7 +2598,7 @@ define(['ash',
 			} else {
 				perksComponent.addPerk(PerkConstants.getPerk(PerkConstants.perkIds.healthBonus2));
 			}
-			GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_USE_HOSPITAL2, "Augmentation complete.");
+			GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_USE_HOSPITAL2, "Cấy ghép hoàn tất.");
 			this.completeAction("use_in_hospital_2");
 		},
 		
@@ -2694,7 +2694,7 @@ define(['ash',
 			let itemsComponent = this.playerPositionNodes.head.entity.get(ItemsComponent);
 			let item = itemsComponent.getItem(null, itemInstanceId, playerPos.inCamp, false);
 			GameGlobals.uiFunctions.showConfirmation(
-				"Are you sure you want to discard this item?",
+				"Bạn có chắc muốn bỏ vật phẩm này không?",
 				function () {
 					itemsComponent.discardItem(item, playerPos.inCamp, false);
 					GlobalSignals.equipmentChangedSignal.dispatch();
@@ -2776,14 +2776,14 @@ define(['ash',
 					} else {
 						log.w("No injury found that can be healed!");
 					}
-					GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_USE_FIRST_AID_KIT, "Used a first aid kit.");
+					GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_USE_FIRST_AID_KIT, "Đã dùng một bộ sơ cứu.");
 					this.forceStatsBarUpdate();
 					break;
 				
 				case "stamina_potion":
 					GameGlobals.playerHelper.addPerk(PerkConstants.perkIds.staminaBonus);
 					this.engine.updateComplete.addOnce(function () {
-						GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_USE_STAMINA_POTION, "Feeling stronger and more awake.");
+						GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_USE_STAMINA_POTION, "Cảm thấy khỏe và tỉnh táo hơn.");
 						sys.playerStatsNodes.head.stamina.stamina += PlayerStatConstants.STAMINA_GAINED_FROM_POTION_1;
 						sys.engine.updateComplete.addOnce(function () {
 							sys.forceStatsBarUpdate();
@@ -2809,13 +2809,13 @@ define(['ash',
 					let suppliesCacheRewards = GameGlobals.playerActionResultsHelper.getUseItemRewards(itemId);
 					let suppliesResultMsg = GameGlobals.playerActionResultsHelper.getRewardsMessageText(suppliesCacheRewards);
 					GameGlobals.playerActionResultsHelper.collectRewards(true, suppliesCacheRewards);
-					GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_USE_SUPPLIES_CACHE, "Used " + Text.addArticle(itemName) + ". " + suppliesResultMsg);
+					GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_USE_SUPPLIES_CACHE, "Đã sử dụng " + itemName + ". " + suppliesResultMsg);
 					break;
 
 				case "cache_robots":
 					let robotsCacheRewards = GameGlobals.playerActionResultsHelper.getUseItemRewards(itemId);
 					GameGlobals.playerActionResultsHelper.collectRewards(true, robotsCacheRewards);
-					GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), "Repaired the Robot and took it to the Factory.");
+					GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), "Đã sửa Robot và đưa nó về Nhà máy.");
 					break;
 					
 				case "cache_evidence":
@@ -2830,11 +2830,11 @@ define(['ash',
 					GameGlobals.uiFunctions.showInfoPopup(
 						itemName,
 						message,
-						"Continue",
+										Text.t("ui.common.continue_button_label"),
 						resultVO
 					);
 					this.playerStatsNodes.head.evidence.value += evidence;
-					GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_USE_BOOK, "Read a book. Gained " + evidence + " evidence.");
+					GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_USE_BOOK, "Đã đọc một cuốn sách. Nhận được " + evidence + " manh mối.");
 					break;
 				
 				case "cache_rumours":
@@ -2844,11 +2844,11 @@ define(['ash',
 					GameGlobals.uiFunctions.showInfoPopup(
 						itemName,
 						message,
-						"Continue",
+										Text.t("ui.common.continue_button_label"),
 						resultVO
 					);
 					this.playerStatsNodes.head.rumours.value += rumours;
-					GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_USE_NEWSPAPER, "Read a newspaper. Gained " + rumours + " rumours.");
+					GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_USE_NEWSPAPER, "Đã đọc một tờ báo. Nhận được " + rumours + " tin đồn.");
 					break;
 				
 				case "cache_hope":
@@ -2858,11 +2858,11 @@ define(['ash',
 					GameGlobals.uiFunctions.showInfoPopup(
 						itemName,
 						message,
-						"Continue",
+										Text.t("ui.common.continue_button_label"),
 						resultVO
 					);
 					this.playerStatsNodes.head.entity.get(HopeComponent).hope += hope;
-					GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_USE_SEED, "Donated seeds. Gained " + hope + " hope.");
+					GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_USE_SEED, "Đã dâng hạt giống. Nhận được " + hope + " hy vọng.");
 					break;
 				
 				case "cache_insight":
@@ -2872,11 +2872,11 @@ define(['ash',
 					GameGlobals.uiFunctions.showInfoPopup(
 						itemName,
 						message,
-						"Continue",
+										Text.t("ui.common.continue_button_label"),
 						resultVO
 					);
 					this.playerStatsNodes.head.insight.value += insight;
-					GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_USE_RESEARCHPAPER, "Read a research paper. Gained " + insight + " insight.");
+					GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_USE_RESEARCHPAPER, "Đã đọc một bài nghiên cứu. Nhận được " + insight + " hiểu biết.");
 					break;
 				
 				case "document":
@@ -2890,7 +2890,7 @@ define(['ash',
 						GameGlobals.uiFunctions.showInfoPopup(
 							itemName,
 							message,
-							"Continue",
+												Text.t("ui.common.continue_button_label"),
 							resultVO
 						);
 					}
@@ -2909,14 +2909,14 @@ define(['ash',
 					GameGlobals.gameState.increaseGameStatSimple("numExplorersRecruited");
 					GlobalSignals.explorersChangedSignal.dispatch();
 					
-					GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_RECRUIT, "Robot repaired. It has joined the explorers.");
+					GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_RECRUIT, "Robot đã được sửa và gia nhập đội thám hiểm.");
 					break;
 
 				case "consumable_graffiti":
-					GameGlobals.uiFunctions.showInput("Graffiti", "Choose message to leave to this sector.", "", false,
+					GameGlobals.uiFunctions.showInput("Hình vẽ trên tường", "Chọn thông điệp để để lại tại khu vực này.", "", false,
 						function (input) {
 							sectorStatus.graffiti = input;
-							GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), "Left a message in the City.");
+							GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), "Đã để lại một thông điệp trong Thành phố.");
 							GlobalSignals.actionCompletedSignal.dispatch();
 						});
 					GameGlobals.gameState.increaseGameStatSimple("numGraffitiMade");
@@ -3039,9 +3039,9 @@ define(['ash',
 
 			let unlockedResearchIDs = GameGlobals.upgradeEffectsHelper.getUnlockedResearchIDs(upgradeID);
 			
-			let title = "Research complete";
-			let upgradeName = TextConstants.getUpgradeDisplayName(upgradeID);
-			let message = "<p>You've researched <span class='hl-functionality'>" + upgradeName + "</span>.</p>";
+							let title = "Nghiên cứu hoàn tất";
+							let upgradeName = TextConstants.getUpgradeDisplayName(upgradeID);
+							let message = "<p>Bạn đã nghiên cứu <span class='hl-functionality'>" + upgradeName + "</span>.</p>";
 			message += "<p class='p-meta'>" + GameGlobals.upgradeEffectsHelper.getEffectDescription(upgradeID, true) + "</p>";
 			
 			if (unlockedResearchIDs.length > 0) {
@@ -3049,14 +3049,14 @@ define(['ash',
 					.filter(upgradeID => GameGlobals.playerActionsHelper.isVisible(upgradeID))
 					.map(upgradeID => TextConstants.getUpgradeDisplayName(upgradeID));
 				if (unlockedResearchNames.length > 0) {
-					message += "<p class='p-meta'>new research:<br/>" + unlockedResearchNames.join("<br/>") + "</p>";
+									message += "<p class='p-meta'>nghiên cứu mới:<br/>" + unlockedResearchNames.join("<br/>") + "</p>";
 				}
 			}
 
 			let hints = GameGlobals.upgradeEffectsHelper.getEffectHints(upgradeID);
 			if (hints && hints.length > 0) message += "<p class='p-meta'>" + hints + "</p>";
 			
-			GameGlobals.uiFunctions.showInfoPopup(title, message, "Continue", null, null, true, false);
+							GameGlobals.uiFunctions.showInfoPopup(title, message, Text.t("ui.common.continue_button_label"), null, null, true, false);
 			
 			let unlockedGeneralActions = GameGlobals.upgradeEffectsHelper.getUnlockedGeneralActions(upgradeID);
 			this.unlockFeatures(unlockedGeneralActions);
@@ -3079,10 +3079,10 @@ define(['ash',
 			
 			let hasDeity = GameGlobals.tribeHelper.hasDeity();
 			let hasInsight = this.playerStatsNodes.head.insight.value > 0;
-			let baseMsg = "Milestone claimed. We now call this a " + newMilestone.name + ".";
+							let baseMsg = "Đã nhận cột mốc. Từ giờ, chúng ta gọi nơi này là " + newMilestone.name + ".";
 			let popupMsg = "<p>" + baseMsg + "</p>";
 			popupMsg += "<p>" + UIConstants.getMilestoneUnlocksDescriptionHTML(newMilestone, oldMilestone, true, true, hasDeity, hasInsight) + "<p>";
-			GameGlobals.uiFunctions.showInfoPopup("Milestone", popupMsg, "Continue", null, null, false, false);
+							GameGlobals.uiFunctions.showInfoPopup("Cột mốc", popupMsg, Text.t("ui.common.continue_button_label"), null, null, false, false);
 
 			GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), baseMsg, { visibility: LogConstants.MSG_VISIBILITY_CAMP });
 			
@@ -3119,7 +3119,7 @@ define(['ash',
 			}
 
 			if (totalCollected < 1 && maxToCollect >= 1) {
-				GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_USE_COLLECTOR_FAIL, "Nothing to collect yet.");
+				GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_USE_COLLECTOR_FAIL, "Chưa có gì để thu thập.");
 			}
 
 			this.completeAction(actionName);
@@ -3190,7 +3190,7 @@ define(['ash',
 		},
 
 		launch: function () {
-			GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), "The colony ship launches.", { visibility: LogConstants.MSG_VISIBILITY_GLOBAL });
+			GameGlobals.playerHelper.addLogMessage(LogConstants.getUniqueID(), "Con tàu Thuộc địa đã phóng.", { visibility: LogConstants.MSG_VISIBILITY_GLOBAL });
 			
 			GameGlobals.gameState.isLaunched = true;
 			GameGlobals.metaState.hasCompletedGame = true;

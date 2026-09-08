@@ -97,10 +97,10 @@ define([
 			var healthFactor = (playerStamina.health/100);
 			var explorerBonus = explorersComponent.getCurrentBonus(ItemConstants.itemBonusTypes.fight_att);
 			var desc = "";
-			if (itemBonus <= 0) desc += "player: " + this.FIGHT_PLAYER_BASE_ATT;
-			if (itemBonus > 0) desc += "equipment: " + itemBonus;
-			if (healthFactor < 1) desc += "<br/>health: -" + Math.round((1-healthFactor) * 1000) / 10 + "%";
-			if (explorerBonus > 0) desc += "<br/>explorers: " + explorerBonus;
+			if (itemBonus <= 0) desc += "bạn: " + this.FIGHT_PLAYER_BASE_ATT;
+			if (itemBonus > 0) desc += "trang bị: " + itemBonus;
+			if (healthFactor < 1) desc += "<br/>sinh lực: -" + Math.round((1-healthFactor) * 1000) / 10 + "%";
+			if (explorerBonus > 0) desc += "<br/>nhà thám hiểm: " + explorerBonus;
 			return desc;
 		},
 		
@@ -116,10 +116,10 @@ define([
 		getPlayerDefDesc: function (playerStamina, itemsComponent, explorersComponent) {
 			let itemBonus = itemsComponent.getCurrentBonus(ItemConstants.itemBonusTypes.fight_def);
 			let desc = "";
-			if (itemBonus > 0) desc += "equipment: " + itemBonus;
-			else desc += "player: " + this.FIGHT_PLAYER_BASE_DEF;
+			if (itemBonus > 0) desc += "trang bị: " + itemBonus;
+			else desc += "bạn: " + this.FIGHT_PLAYER_BASE_DEF;
 			var explorerBonus = explorersComponent.getCurrentBonus(ItemConstants.itemBonusTypes.fight_def);
-			if (explorerBonus > 0) desc += "<br/>explorers: " + explorerBonus;
+			if (explorerBonus > 0) desc += "<br/>nhà thám hiểm: " + explorerBonus;
 			return desc;
 		},
 		
@@ -128,7 +128,7 @@ define([
 		},
 		
 		getPlayerShieldDesc: function (playerStamina, itemsComponent) {
-			return "equipment: " + itemsComponent.getCurrentBonus(ItemConstants.itemBonusTypes.fight_shield);
+			return "trang bị: " + itemsComponent.getCurrentBonus(ItemConstants.itemBonusTypes.fight_shield);
 		},
 		
 		getPlayerSpeed: function (itemsComponent) {

@@ -127,7 +127,7 @@ function (Ash, Text, CanvasUtils, GameGlobals, GlobalSignals, CanvasConstants, C
 		},
 		
 		toString: function () {
-			return "TechTree (" + this.roots.length + ")";
+			return "Cây công nghệ (" + this.roots.length + ")";
 		},
 	});
 	

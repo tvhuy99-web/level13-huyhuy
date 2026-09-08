@@ -18,7 +18,7 @@ define([], function () {
 		let overlay = document.getElementById("upgrades-vis-overlay");
 		if (overlay) {
 			overlay.setAttribute("role", "group");
-			overlay.setAttribute("aria-label", "Technology tree");
+			overlay.setAttribute("aria-label", "Cây công nghệ");
 		}
 		this.configureNodes(document);
 		this.observe();
@@ -41,7 +41,7 @@ define([], function () {
 		let name = this.normalize(node.textContent);
 		node.setAttribute("role", "button");
 		if (!node.hasAttribute("tabindex")) node.setAttribute("tabindex", "0");
-		if (name) node.setAttribute("aria-label", "View upgrade details: " + name);
+		if (name) node.setAttribute("aria-label", "Xem chi tiết nâng cấp: " + name);
 
 		if (node.getAttribute("data-accessibility-key-bound") !== "true") {
 			node.setAttribute("data-accessibility-key-bound", "true");

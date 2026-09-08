@@ -521,17 +521,17 @@ define([
 					let beaconBonus = GameGlobals.sectorHelper.getBeaconMovementBonus(sector, this.playerStatsNodes.head.perks);
 					if (beaconBonus !== 1) {
 						if (result.length > 0) result += "<br/>";
-						result += "Beacon: " + beaconBonus;
+						result += "Đèn hiệu: " + beaconBonus;
 					}
 					let debrisMalus = GameGlobals.sectorHelper.getDebrisMovementMalus(sector);
 					if (debrisMalus !== 1) {
 						if (result.length > 0) result += "<br/>";
-						result += "Debris: " + debrisMalus;
+						result += "Đống đổ nát: " + debrisMalus;
 					}
 					let floodedMalus = GameGlobals.sectorHelper.getFloodedMovementMalus(sector);
 					if (floodedMalus !== 1) {
 						if (result.length > 0) result += "<br/>";
-						result += "Flooded: " + floodedMalus;
+						result += "Ngập nước: " + floodedMalus;
 					}
 					break;
 			}
@@ -794,39 +794,39 @@ define([
 			};
 
 			// General
-			startCategory("General", true);
-			addStat("Time played", this.getGameStatSimple("playTime"), true, GameConstants.gameStatUnits.seconds);
-			addStat("Time outside", this.getGameStatKeyedSum("timeOutsidePerLevel"), true, GameConstants.gameStatUnits.seconds);
-			addStat("Blueprint pieces found", this.getGameStatSimple("numBlueprintPiecesFound"), GameGlobals.gameState.isFeatureUnlocked("blueprints"));
+			startCategory("Tổng quan", true);
+			addStat("Thời gian chơi", this.getGameStatSimple("playTime"), true, GameConstants.gameStatUnits.seconds);
+			addStat("Thời gian ở bên ngoài", this.getGameStatKeyedSum("timeOutsidePerLevel"), true, GameConstants.gameStatUnits.seconds);
+			addStat("Mảnh bản thiết kế đã tìm thấy", this.getGameStatSimple("numBlueprintPiecesFound"), GameGlobals.gameState.isFeatureUnlocked("blueprints"));
 			endCategory();
 
 			// Exploration
-			startCategory("Exploration", true);
-			addStat("Steps taken", this.getGameStatSimple("numStepsTaken"));
-			addStat("Sectors visited", this.getGameStatSimple("numVisitedSectors"));
-			addStat("Sectors scouted", this.getGameStatSimple("numTimesScouted"));
-			addStat("Times scavenged", this.getGameStatSimple("numTimesScavenged"));
-			addStat("Most steps on level", this.getGameStatHighScore("numStepsPerLevel"), GameGlobals.gameState.isFeatureUnlocked("levels"), GameConstants.gameStatUnits.steps, GameConstants.gameStatUnits.level);
-			addStat("Expeditions started", this.getGameStatSimple("numExcursionsStarted"), GameGlobals.gameState.isFeatureUnlocked("camp"));
-			addStat("Expeditions survived", this.getStatPercentage("numExcursionsSurvived", "numExcursionsStarted"), GameGlobals.gameState.isFeatureUnlocked("camp"));
-			addStat("Longest survived", this.getGameStatHighScore("longestSurvivedExcrusion"), GameGlobals.gameState.isFeatureUnlocked("camp"), GameConstants.gameStatUnits.steps, GameConstants.gameStatUnits.level);
+			startCategory("Khám phá", true);
+			addStat("Số bước đã đi", this.getGameStatSimple("numStepsTaken"));
+			addStat("Khu vực đã ghé thăm", this.getGameStatSimple("numVisitedSectors"));
+			addStat("Khu vực đã trinh sát", this.getGameStatSimple("numTimesScouted"));
+			addStat("Số lần lục soát", this.getGameStatSimple("numTimesScavenged"));
+			addStat("Nhiều bước nhất trong một tầng", this.getGameStatHighScore("numStepsPerLevel"), GameGlobals.gameState.isFeatureUnlocked("levels"), GameConstants.gameStatUnits.steps, GameConstants.gameStatUnits.level);
+			addStat("Số chuyến thám hiểm đã bắt đầu", this.getGameStatSimple("numExcursionsStarted"), GameGlobals.gameState.isFeatureUnlocked("camp"));
+			addStat("Số chuyến thám hiểm sống sót", this.getStatPercentage("numExcursionsSurvived", "numExcursionsStarted"), GameGlobals.gameState.isFeatureUnlocked("camp"));
+			addStat("Sống sót lâu nhất", this.getGameStatHighScore("longestSurvivedExcrusion"), GameGlobals.gameState.isFeatureUnlocked("camp"), GameConstants.gameStatUnits.steps, GameConstants.gameStatUnits.level);
 			endSubCategory();
 			// addStat("Furthest away from camp", this.getGameStatHighScore("mostDistantSectorFromCampVisited"), GameGlobals.gameState.isFeatureUnlocked("camp"), GameConstants.gameStatUnits.steps);
 			// addStat("Lowest stamina when returning to camp", this.getGameStatHighScore("lowestStaminaReturnedToCampWith"), GameGlobals.gameState.isFeatureUnlocked("camp"));
-			addStat("Injuries received", this.getGameStatSimple("numInjuriesReceived"));
-			addStat("Explorer injuries received", this.getGameStatSimple("numExplorerInjuriesReceived"), GameGlobals.gameState.isFeatureUnlocked("explorers"));
-			addStat("Times rested outside", this.getGameStatSimple("numTimesRestedOutside"));
-			addStat("Times despaired", this.getGameStatKeyedSum("numTimesDespairedPerLevel"));
-			addStat("Most despairs on level", this.getGameStatHighScore("numTimesDespairedPerLevel"), GameGlobals.gameState.isFeatureUnlocked("levels"));
-			addStat("People met outside", this.getGameStatList("uniqueOutNPCsMet"), visibleIfValueGreaterThanZero);
-			addStat("Graffiti made", this.getGameStatSimple("numGraffitiMade"), visibleIfValueGreaterThanZero);
+			addStat("Số lần bị thương", this.getGameStatSimple("numInjuriesReceived"));
+			addStat("Số lần người thám hiểm bị thương", this.getGameStatSimple("numExplorerInjuriesReceived"), GameGlobals.gameState.isFeatureUnlocked("explorers"));
+			addStat("Số lần nghỉ ngơi bên ngoài", this.getGameStatSimple("numTimesRestedOutside"));
+			addStat("Số lần tuyệt vọng", this.getGameStatKeyedSum("numTimesDespairedPerLevel"));
+			addStat("Tuyệt vọng nhiều nhất trong một tầng", this.getGameStatHighScore("numTimesDespairedPerLevel"), GameGlobals.gameState.isFeatureUnlocked("levels"));
+			addStat("Người đã gặp bên ngoài", this.getGameStatList("uniqueOutNPCsMet"), visibleIfValueGreaterThanZero);
+			addStat("Hình vẽ graffiti đã tạo", this.getGameStatSimple("numGraffitiMade"), visibleIfValueGreaterThanZero);
 			endCategory();
 
 			// Camp
-			startCategory("Camp", GameGlobals.gameState.isFeatureUnlocked("camp"));
-			addStat("Buildings built", this.getGameStatKeyedSum("numBuildingsBuiltPerId", id => getImprovementType(improvementNames[id]) == improvementTypes.camp));
-			addStat("Buildings dismantled", this.getGameStatKeyedSum("numBuildingsDismantledPerId"));
-			addStat("Building improvements", this.getGameStatKeyedSum("numBuildingImprovementsPerId"));
+			startCategory("Trại", GameGlobals.gameState.isFeatureUnlocked("camp"));
+			addStat("Công trình đã xây", this.getGameStatKeyedSum("numBuildingsBuiltPerId", id => getImprovementType(improvementNames[id]) == improvementTypes.camp));
+			addStat("Công trình đã tháo dỡ", this.getGameStatKeyedSum("numBuildingsDismantledPerId"));
+			addStat("Số lần nâng cấp công trình", this.getGameStatKeyedSum("numBuildingImprovementsPerId"));
 			/*
 			for (let improvementID in improvementNames) {
 				let improvementName = improvementNames[improvementID];
@@ -839,99 +839,103 @@ define([
 				}
 			}
 			*/
-			addStat("Raids sustained", this.getGameStatKeyed("numCampEventsByType", "raid"));
-			addStat("Raids lost", this.getGameStatSimple("numRaidsLost"));
-			addStat("Most resources lost in a raid", this.getGameStatHighScore("mostResourcesLostInRaid"));
-			addStat("Disease outbreaks", this.getGameStatKeyed("numCampEventsByType", "disease"));
-			addStat("Natural disasters", this.getGameStatKeyed("numCampEventsByType", "disaster"));
-			addStat("Refugees accepted", this.getGameStatSimple("numRefugeesAccepted"), visibleIfValueGreaterThanZero);
+			addStat("Số lần chống đỡ đột kích", this.getGameStatKeyed("numCampEventsByType", "raid"));
+			addStat("Số lần thua đột kích", this.getGameStatSimple("numRaidsLost"));
+			addStat("Mất nhiều tài nguyên nhất trong một cuộc đột kích", this.getGameStatHighScore("mostResourcesLostInRaid"));
+			addStat("Dịch bệnh bùng phát", this.getGameStatKeyed("numCampEventsByType", "disease"));
+			addStat("Thiên tai", this.getGameStatKeyed("numCampEventsByType", "disaster"));
+			addStat("Người tị nạn đã tiếp nhận", this.getGameStatSimple("numRefugeesAccepted"), visibleIfValueGreaterThanZero);
 
 			let playerStats = [ "rumours", "evidence", "hope", "insight"];
+			let playerStatDisplayNames = { rumours: "Tin đồn", evidence: "Bằng chứng", hope: "Hy vọng", insight: "Sáng tỏ" };
 			let playerStatsAllSources = [ "amountPlayerStatsFoundPerId", "amountPlayerStatsProducedInCampsPerId" ];
 			for (let i = 0; i < playerStats.length; i++) {
 				let stat = playerStats[i];
+				let statDisplayName = playerStatDisplayNames[stat] || stat;
 				let isStatVisible = GameGlobals.gameState.isFeatureUnlocked(stat);
-				addStat(stat + ": Produced in camp", this.getGameStatKeyed("amountPlayerStatsProducedInCampsPerId", stat), isStatVisible && GameGlobals.gameState.isFeatureUnlocked("camp"));
-				addStat(stat + ": Found exploring", this.getGameStatKeyed("amountPlayerStatsFoundPerId", stat), isStatVisible);
+				addStat(statDisplayName + ": Sản xuất tại trại", this.getGameStatKeyed("amountPlayerStatsProducedInCampsPerId", stat), isStatVisible && GameGlobals.gameState.isFeatureUnlocked("camp"));
+				addStat(statDisplayName + ": Tìm thấy khi khám phá", this.getGameStatKeyed("amountPlayerStatsFoundPerId", stat), isStatVisible);
 				// addStat("% produced in camp", this.getStatPercentageFromKeyedSum("amountPlayerStatsProducedInCampsPerId", playerStatsAllSources, stat), isStatVisible && GameGlobals.gameState.isFeatureUnlocked("camp"));
 				// addStat("% found exploring", this.getStatPercentageFromKeyedSum("amountPlayerStatsFoundPerId", playerStatsAllSources, stat), isStatVisible && GameGlobals.gameState.isFeatureUnlocked("camp"));
 			}
 			endCategory();
 
 			// Resources
-			startCategory("Resources", true);
+			startCategory("Tài nguyên", true);
 			let resStatsAllSources = [ "amountResourcesProducedInCampsPerName", "amountResourcesFoundPerName" ];
 			//addStat("Resources produced in camp", this.getGameStatKeyedSum("amountResourcesProducedInCampsPerName"), GameGlobals.gameState.isFeatureUnlocked("camp"));
 			//addStat("Resources found", this.getGameStatKeyedSum("amountResourcesFoundPerName"));
 
 			for (let key in resourceNames) {
 				let name = resourceNames[key];
+				let resourceDisplayNames = { food: "thức ăn", water: "nước", population: "dân số", rope: "dây thừng", fuel: "nhiên liệu", medicine: "thuốc", tools: "dụng cụ", rubber: "cao su", metal: "kim loại", concrete: "bê tông", coal: "than", herbs: "thảo dược", glass: "thủy tinh", sulphur: "lưu huỳnh", chemicals: "hóa chất", electricity: "điện", robots: "robot", books: "sách", medicine: "thuốc" };
+				let resourceDisplayName = resourceDisplayNames[name] || name;
 				let isVisible = GameGlobals.gameState.isFeatureUnlocked("resource_" + name);
 				let isCampVisible = GameGlobals.gameState.isFeatureUnlocked("camp");
-				addStat(name + ": Produced in camp", this.getGameStatKeyed("amountResourcesProducedInCampsPerName", name), isVisible && isCampVisible);
-				addStat(name + ": Found", this.getGameStatKeyed("amountResourcesFoundPerName", name), isVisible);
+				addStat(resourceDisplayName + ": Sản xuất tại trại", this.getGameStatKeyed("amountResourcesProducedInCampsPerName", name), isVisible && isCampVisible);
+				addStat(resourceDisplayName + ": Tìm thấy", this.getGameStatKeyed("amountResourcesFoundPerName", name), isVisible);
 				//addStat("% produced in camp", this.getStatPercentageFromKeyedSum("amountResourcesProducedInCampsPerName", resStatsAllSources, name), GameGlobals.gameState.isFeatureUnlocked("camp"));
 				//addStat("% found", this.getStatPercentageFromKeyedSum("amountResourcesFoundPerName", resStatsAllSources, name), GameGlobals.gameState.isFeatureUnlocked("camp"));
 			}
 			
-			addStat("Resources overflown due to storage", this.getGameStatKeyedSum("amountResourcesOverflownPerName"), GameGlobals.gameState.isFeatureUnlocked("camp"));
-			addStat("% of produced resources overflown", this.getStatPercentageFromKeyedSum("amountResourcesOverflownPerName", "amountResourcesProducedInCampsPerName"), GameGlobals.gameState.isFeatureUnlocked("camp"));
-			addStat("Food collected from traps", this.getGameStatKeyed("amountResourcesCollectedFromCollectorsPerName", resourceNames.food));
-			addStat("Water collected from buckets", this.getGameStatKeyed("amountResourcesCollectedFromCollectorsPerName", resourceNames.water));
+			addStat("Tài nguyên vượt quá sức chứa", this.getGameStatKeyedSum("amountResourcesOverflownPerName"), GameGlobals.gameState.isFeatureUnlocked("camp"));
+			addStat("% tài nguyên sản xuất bị vượt sức chứa", this.getStatPercentageFromKeyedSum("amountResourcesOverflownPerName", "amountResourcesProducedInCampsPerName"), GameGlobals.gameState.isFeatureUnlocked("camp"));
+			addStat("Thức ăn thu được từ bẫy", this.getGameStatKeyed("amountResourcesCollectedFromCollectorsPerName", resourceNames.food));
+			addStat("Nước thu được từ thùng chứa", this.getGameStatKeyed("amountResourcesCollectedFromCollectorsPerName", resourceNames.water));
 			endCategory();
 
 			// Trade
-			startCategory("Trade", GameGlobals.gameState.isFeatureUnlocked("trade"));
-			addStat("Traders received", this.getGameStatKeyed("numCampEventsByType", "trader"), GameGlobals.gameState.isFeatureUnlocked("trade"));
-			addStat("Trades made", this.getGameStatSimple("numTradesMade"));
-			addStat("Trade partners found", this.getGameStatList("foundTradingPartners"));
-			addStat("Caravans sent", this.getGameStatSimple("numCaravansSent"));
-			addStat("Silver found", this.getGameStatSimple("amountFoundCurrency"), GameGlobals.gameState.isFeatureUnlocked("currency"));
-			addStat("Items sold", this.getGameStatKeyedSum("numItemsSoldPerId"));
-			addStat("Items bought", this.getGameStatKeyedSum("numItemsBoughtPerId"));
-			addStat("Most items sold", this.getGameStatHighScore("numItemsSoldPerId"));
-			addStat("Most items bought", this.getGameStatHighScore("numItemsBoughtPerId"));
-			addStat("Resources sold", this.getGameStatKeyedSum("amountResourcesSoldPerName"));
-			addStat("Most resource sold", this.getGameStatHighScore("amountResourcesSoldPerName"));
-			addStat("Most resource bought", this.getGameStatHighScore("amountResourcesBoughtPerName"));
-			addStat("Item bought for highest price", this.getGameStatHighScore("highestPriceItemBought"));
-			addStat("Item sold for highest price", this.getGameStatHighScore("highestPriceItemSold"));
+			startCategory("Giao thương", GameGlobals.gameState.isFeatureUnlocked("trade"));
+			addStat("Thương nhân đã tiếp đón", this.getGameStatKeyed("numCampEventsByType", "trader"), GameGlobals.gameState.isFeatureUnlocked("trade"));
+			addStat("Số lần giao thương", this.getGameStatSimple("numTradesMade"));
+			addStat("Đối tác giao thương đã tìm thấy", this.getGameStatList("foundTradingPartners"));
+			addStat("Đoàn buôn đã gửi", this.getGameStatSimple("numCaravansSent"));
+			addStat("Bạc đã tìm thấy", this.getGameStatSimple("amountFoundCurrency"), GameGlobals.gameState.isFeatureUnlocked("currency"));
+			addStat("Vật phẩm đã bán", this.getGameStatKeyedSum("numItemsSoldPerId"));
+			addStat("Vật phẩm đã mua", this.getGameStatKeyedSum("numItemsBoughtPerId"));
+			addStat("Bán nhiều vật phẩm nhất", this.getGameStatHighScore("numItemsSoldPerId"));
+			addStat("Mua nhiều vật phẩm nhất", this.getGameStatHighScore("numItemsBoughtPerId"));
+			addStat("Tài nguyên đã bán", this.getGameStatKeyedSum("amountResourcesSoldPerName"));
+			addStat("Bán nhiều tài nguyên nhất", this.getGameStatHighScore("amountResourcesSoldPerName"));
+			addStat("Mua nhiều tài nguyên nhất", this.getGameStatHighScore("amountResourcesBoughtPerName"));
+			addStat("Vật phẩm mua với giá cao nhất", this.getGameStatHighScore("highestPriceItemBought"));
+			addStat("Vật phẩm bán với giá cao nhất", this.getGameStatHighScore("highestPriceItemSold"));
 			endCategory();
 
 			// Fights
-			startCategory("Fight", GameGlobals.gameState.isFeatureUnlocked("fight"));
-			addStat("Fights started", this.getGameStatSimple("numFightsStarted"));
-			addStat("Fights won", this.getGameStatSimple("numFightsWon"));
+			startCategory("Chiến đấu", GameGlobals.gameState.isFeatureUnlocked("fight"));
+			addStat("Trận chiến đã bắt đầu", this.getGameStatSimple("numFightsStarted"));
+			addStat("Trận chiến đã thắng", this.getGameStatSimple("numFightsWon"));
 			// addStat("Fights fled", this.getGameStatSimple("numFightsFled")); 
 			// addStat("% of fights won", this.getStatPercentage("numFightsWon", "numFightsStarted"));
-			addStat("Enemy: Most defeated", this.getGameStatHighScore("numTimesKilledEnemy"));
-			addStat("Enemy: Most defated by", this.getGameStatHighScore("numTimesKilledByEnemy"));
+			addStat("Kẻ địch: Bị đánh bại nhiều nhất", this.getGameStatHighScore("numTimesKilledEnemy"));
+			addStat("Kẻ địch: Đánh bại người chơi nhiều nhất", this.getGameStatHighScore("numTimesKilledByEnemy"));
 			//addStat("Unique enemy types defeated", this.getGameStatList("uniqueEnemiesDefeated"));
 			endCategory();
 
 			// Items
-			startCategory("Items", true);
-			addStat("Items found", this.getGameStatKeyedSum("numItemsFoundPerId"));
-			addStat("Unique items found", this.getGameStatList("uniqueItemsFound"));
-			addStat("Items crafted", this.getGameStatSimple("numItemsCrafted"));
-			addStat("Unique items crafted", this.getGameStatList("uniqueItemsCrafted"));
-			addStat("Unique items equipped", this.getGameStatList("uniqueItemsEquipped"));
-			addStat("Items lost", this.getGameStatSimple("numItemsLost"));
-			addStat("Items broken", this.getGameStatSimple("numItemsBroken"));
-			addStat("Items repaired", this.getGameStatSimple("numItemsRepaired"));
-			addStat("Lock picks used", this.getGameStatKeyedSum("numItemsUsedPerId", (id) => id == "exploration_1"));
+			startCategory("Vật phẩm", true);
+			addStat("Vật phẩm đã tìm thấy", this.getGameStatKeyedSum("numItemsFoundPerId"));
+			addStat("Vật phẩm độc nhất đã tìm thấy", this.getGameStatList("uniqueItemsFound"));
+			addStat("Vật phẩm đã chế tạo", this.getGameStatSimple("numItemsCrafted"));
+			addStat("Vật phẩm độc nhất đã chế tạo", this.getGameStatList("uniqueItemsCrafted"));
+			addStat("Vật phẩm độc nhất đã trang bị", this.getGameStatList("uniqueItemsEquipped"));
+			addStat("Vật phẩm đã mất", this.getGameStatSimple("numItemsLost"));
+			addStat("Vật phẩm bị hỏng", this.getGameStatSimple("numItemsBroken"));
+			addStat("Vật phẩm đã sửa", this.getGameStatSimple("numItemsRepaired"));
+			addStat("Số lần dùng dụng cụ phá khóa", this.getGameStatKeyedSum("numItemsUsedPerId", (id) => id == "exploration_1"));
 			//addStat("Ingredients found", this.getGameStatKeyedSum("numItemsFoundPerId", (id) => ItemConstants.getItemType(id) == ItemConstants.itemTypes.ingredient));
 			//addStat("Ingredients used", this.getGameStatKeyedSum("numItemsUsedPerId", (id) => ItemConstants.getItemType(id) == ItemConstants.itemTypes.ingredient));
 			endCategory();
 
 			// Explorers
-			startCategory("Explorers", GameGlobals.gameState.isFeatureUnlocked("explorers"));
-			addStat("Explorers recruited", this.getGameStatSimple("numExplorersRecruited"));
-			addStat("Explorers lost", this.getGameStatSimple("numExplorersLost"));
-			addStat("Explorers dismissed", this.getGameStatSimple("numExplorersDismissed"));
-			addStat("Most steps together", this.getGameStatHighScore("mostStepsWithExplorer"));
-			addStat("Most fights together", this.getGameStatHighScore("mostFightsWithExplorer"));
-			addStat("Most chats", this.getGameStatHighScore("mostDialoguesWithExplorer"));
+			startCategory("Nhà thám hiểm", GameGlobals.gameState.isFeatureUnlocked("explorers"));
+			addStat("Nhà thám hiểm đã tuyển", this.getGameStatSimple("numExplorersRecruited"));
+			addStat("Nhà thám hiểm đã mất", this.getGameStatSimple("numExplorersLost"));
+			addStat("Nhà thám hiểm đã sa thải", this.getGameStatSimple("numExplorersDismissed"));
+			addStat("Nhiều bước đi cùng nhau nhất", this.getGameStatHighScore("mostStepsWithExplorer"));
+			addStat("Nhiều trận chiến cùng nhau nhất", this.getGameStatHighScore("mostFightsWithExplorer"));
+			addStat("Nhiều cuộc trò chuyện nhất", this.getGameStatHighScore("mostDialoguesWithExplorer"));
 			endCategory();
 
 			return result;

@@ -11,7 +11,7 @@ define([
         metaMessages: [],
 
 		constructor: function () {
-            this.showLanguageSelection = GameConstants.isDebugVersion;
+            this.showLanguageSelection = true;
             this.initElements();
 			return this;
 		},
@@ -81,11 +81,11 @@ define([
             }
         },
 
-        showMetaMessage: function (message) {
-            let text = message.text;
-            if (!text) return;
-            GameGlobals.uiFunctions.showInfoPopup("System Message", text, "Continue");
-        },
+		showMetaMessage: function (message) {
+			let text = message.text;
+			if (!text) return;
+			GameGlobals.uiFunctions.showInfoPopup("Tin nhắn hệ thống", text, "Tiếp tục");
+		},
 
         refreshSettingsPopup: function () {
             this.updateSettingsValues();

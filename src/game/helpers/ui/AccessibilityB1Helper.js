@@ -118,7 +118,7 @@ define([
 		target.focus();
 		this.refreshItemCalloutButtons(target.closest(".item-slot") || target);
 		this.pendingInventoryIdentity = null;
-		this.announce("Equipment updated. Focus kept on the item.");
+		this.announce("Trang bị đã được cập nhật. Vẫn giữ tiêu điểm ở vật phẩm.");
 	};
 
 	AccessibilityB1Helper.prototype.findInventoryFocusTarget = function (identity) {

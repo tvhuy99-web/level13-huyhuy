@@ -45,7 +45,7 @@ define([], function () {
 		let saveList = document.getElementById("save-list");
 		if (saveList) {
 			saveList.setAttribute("role", "listbox");
-			saveList.setAttribute("aria-label", "Save slots");
+			saveList.setAttribute("aria-label", "Ô lưu trò chơi");
 		}
 
 		let slots = document.querySelectorAll("#save-list .li-save-slot");
@@ -59,8 +59,8 @@ define([], function () {
 			this.bindActivateOnKeyboard(slot);
 		}
 
-		this.setLabel("#textarea-export-save", "Exported save data");
-		this.setLabel("#textarea-import-save", "Imported save data");
+		this.setLabel("#textarea-export-save", "Dữ liệu lưu đã xuất");
+		this.setLabel("#textarea-import-save", "Dữ liệu lưu đã nhập");
 		this.setStatus("#save-export-info", "polite");
 		this.setStatus("#import-save-msg", "polite");
 		this.setStatus("#save-list-options-info", "polite");
@@ -68,13 +68,13 @@ define([], function () {
 
 	AccessibilityFinalAuditHelper.prototype.configureSelectionLists = function () {
 		let knownGroups = {
-			"resultlist-inventorymanagement-found": "Found items and resources",
-			"resultlist-inventorymanagement-kept": "Kept items and resources",
-			"resultlist-loststuff-lost": "Lost items and resources",
-			"inventorylist-incoming-caravan-trader-inventory": "Trader inventory",
-			"inventorylist-incoming-caravan-trader-offer": "Trader offer",
-			"inventorylist-incoming-caravan-camp-inventory": "Camp inventory",
-			"inventorylist-incoming-caravan-camp-offer": "Camp offer",
+			"resultlist-inventorymanagement-found": "Vật phẩm và tài nguyên tìm thấy",
+			"resultlist-inventorymanagement-kept": "Vật phẩm và tài nguyên giữ lại",
+			"resultlist-loststuff-lost": "Vật phẩm và tài nguyên đã mất",
+			"inventorylist-incoming-caravan-trader-inventory": "Kho của thương nhân",
+			"inventorylist-incoming-caravan-trader-offer": "Hàng thương nhân chào",
+			"inventorylist-incoming-caravan-camp-inventory": "Kho của trại",
+			"inventorylist-incoming-caravan-camp-offer": "Hàng trại chào",
 		};
 
 		for (let id in knownGroups) {
@@ -102,13 +102,13 @@ define([], function () {
 		let objectName = this.getSelectionObjectName(item);
 		let prefix = "";
 		switch (hostID) {
-			case "resultlist-inventorymanagement-found": prefix = "Take"; break;
-			case "resultlist-inventorymanagement-kept": prefix = "Leave"; break;
-			case "resultlist-loststuff-lost": prefix = "Lost"; break;
-			case "inventorylist-incoming-caravan-trader-inventory": prefix = "Add from trader"; break;
-			case "inventorylist-incoming-caravan-trader-offer": prefix = "Remove from trader offer"; break;
-			case "inventorylist-incoming-caravan-camp-inventory": prefix = "Offer from camp"; break;
-			case "inventorylist-incoming-caravan-camp-offer": prefix = "Remove from camp offer"; break;
+			case "resultlist-inventorymanagement-found": prefix = "Lấy"; break;
+			case "resultlist-inventorymanagement-kept": prefix = "Để lại"; break;
+			case "resultlist-loststuff-lost": prefix = "Đã mất"; break;
+			case "inventorylist-incoming-caravan-trader-inventory": prefix = "Thêm từ thương nhân"; break;
+			case "inventorylist-incoming-caravan-trader-offer": prefix = "Bỏ khỏi hàng thương nhân chào"; break;
+			case "inventorylist-incoming-caravan-camp-inventory": prefix = "Chào hàng từ trại"; break;
+			case "inventorylist-incoming-caravan-camp-offer": prefix = "Bỏ khỏi hàng trại chào"; break;
 		}
 		if (objectName) item.setAttribute("aria-label", (prefix ? prefix + " " : "") + objectName);
 
@@ -139,11 +139,11 @@ define([], function () {
 		for (let i = 0; i < containers.length; i++) {
 			let container = containers[i];
 			let title = container.querySelector(".horizontal-select-title");
-			let label = this.normalize(title ? title.textContent : "Selection");
+			let label = this.normalize(title ? title.textContent : "Lựa chọn");
 			let list = container.querySelector(".horizontal-select-list");
 			if (!list) continue;
 			list.setAttribute("role", "radiogroup");
-			list.setAttribute("aria-label", label || "Selection");
+			list.setAttribute("aria-label", label || "Lựa chọn");
 			let options = list.querySelectorAll(".horizontal-select-option");
 			for (let j = 0; j < options.length; j++) {
 				let option = options[j];
@@ -199,11 +199,11 @@ define([], function () {
 			if (!name) continue;
 			let input = row.querySelector(".stepper input.amount");
 			if (input) {
-				input.setAttribute("aria-label", "Amount of " + name + " to carry");
+				input.setAttribute("aria-label", "Số lượng " + name + " mang theo");
 				let buttons = row.querySelectorAll(".stepper button[data-type]");
 				for (let j = 0; j < buttons.length; j++) {
-					let verb = buttons[j].getAttribute("data-type") === "plus" ? "Increase" : "Decrease";
-					buttons[j].setAttribute("aria-label", verb + " " + name + " to carry");
+					let verb = buttons[j].getAttribute("data-type") === "plus" ? "Tăng" : "Giảm";
+					buttons[j].setAttribute("aria-label", verb + " " + name + " mang theo");
 					if (input.id) buttons[j].setAttribute("aria-controls", input.id);
 				}
 			}
@@ -223,8 +223,8 @@ define([], function () {
 			if (!button) continue;
 			let campName = this.normalize(row.querySelector(".camp-overview-name .label") ? row.querySelector(".camp-overview-name .label").textContent : "");
 			let level = this.normalize(row.querySelector(".camp-overview-level-container") ? row.querySelector(".camp-overview-level-container").textContent : "");
-			let target = campName || (level ? "camp on " + level : "camp");
-			button.setAttribute("aria-label", "Go to " + target);
+			let target = campName || (level ? "trại ở " + level : "trại");
+			button.setAttribute("aria-label", "Đi tới " + target);
 		}
 	};
 

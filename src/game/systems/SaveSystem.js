@@ -96,7 +96,7 @@ define([
 			this.saveMetaState();
 			
 			if (isDefaultSlot) {
-				this.error = success ? null : "Failed to save";
+				this.error = success ? null : "Không thể lưu";
 				this.lastDefaultSaveTimestamp = new Date().getTime();
 			}
 		},

@@ -233,6 +233,7 @@ define(function () {
 		},
 		
 		pluralify: function (s) {
+			if (this.currentLanguage == "VI_VN") return s;
 			let irregular = this.getIrregularPlural(s);
 			if (irregular) return irregular;
 			
@@ -246,6 +247,7 @@ define(function () {
 		},
 		
 		depluralify: function (s) {
+			if (this.currentLanguage == "VI_VN") return s;
 			if (s[s.length - 1] === "s") {
 				return s.substr(0, s.length - 1);
 			}
@@ -254,6 +256,7 @@ define(function () {
 		},
 		
 		addArticle: function (s) {
+			if (this.currentLanguage == "VI_VN") return s;
 			if (this.isPlural(s)) return s;
 			return this.getArticle(s) + " " + s;
 		},

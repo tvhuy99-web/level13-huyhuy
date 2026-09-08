@@ -269,11 +269,11 @@ define([
 			if (levelPos !== 13) GameGlobals.playerActionFunctions.unlockFeature("levels");
 			
 			if (this.isGroundLevel(levelPos)) {
-				this.showLevelPopup("Ground", this.getGroundMessage());
+				this.showLevelPopup("Mặt đất", this.getGroundMessage());
 			}
 			
 			if (this.isSurfaceLevel(levelPos)) {
-				this.showLevelPopup("Surface", this.getSurfaceMessage());
+				this.showLevelPopup("Bề mặt", this.getSurfaceMessage());
 			}
 			
 			if (levelPos != 13) {
@@ -354,7 +354,7 @@ define([
 				let levelSectors = GameGlobals.levelHelper.getSectorsByLevel(sectorPos.level);
 				let levelVisitedSectors = levelSectors.filter(s => GameGlobals.sectorHelper.isVisited(s));
 				if (levelVisitedSectors.length == 15) {
-					this.addLogMessage(LogConstants.getUniqueID(), "Another inhospitable street. There won't be a place for a camp on this level.");
+					this.addLogMessage(LogConstants.getUniqueID(), "Lại một con phố khắc nghiệt. Sẽ không có chỗ dựng trại ở tầng này.");
 					return;
 				}
 			}
@@ -364,13 +364,13 @@ define([
 				
 				let isPreviousEarlyZone = featuresComponentPrevious.isEarlyZone();
 				if (isPreviousEarlyZone && !isEarlyZone && !GameGlobals.playerHelper.isAffectedByHazardAt(sectorEntity)) {
-					this.addLogMessage(LogConstants.MSG_ID_ENTER_OUTSKIRTS, "Entering the outskirts.");
+				this.addLogMessage(LogConstants.MSG_ID_ENTER_OUTSKIRTS, "Đang tiến vào vùng ngoại vi.");
 					return;
 				}
 			}
 			
 			if (!isEarlyZone && isSearchingForGreenHouse && Math.random() < 0.01) {
-				this.addLogMessage(LogConstants.getUniqueID(), "Need to find a Greenhouse.");
+				this.addLogMessage(LogConstants.getUniqueID(), "Cần tìm một nhà kính.");
 				return;
 			}
 		},
@@ -380,11 +380,11 @@ define([
 
 			if (sector && !sector.has(CampComponent) && previousSector && previousSector.has(CampComponent) && logAmbient) {
 				if (GameGlobals.gameState.getStoryFlag(StoryConstants.flags.GREENHOUSE_SEARCHING_FOR_CURE)) {
-					this.addLogMessage(LogConstants.getUniqueID(), "Out into the City again. Somewhere out there is a cure waiting to be found.");
+				this.addLogMessage(LogConstants.getUniqueID(), "Lại bước vào Thành phố. Đâu đó ngoài kia có một phương thuốc đang chờ được tìm thấy.");
 				} else if (GameGlobals.gameState.getStoryFlag(StoryConstants.flags.ESCAPE_SEARCHING_FOR_GROUND)) {
-					this.addLogMessage(LogConstants.getUniqueID(), "Out into the City again. The camp is comfortable, but you have a goal.");
+				this.addLogMessage(LogConstants.getUniqueID(), "Lại bước vào Thành phố. Trại rất thoải mái, nhưng bạn vẫn còn mục tiêu.");
 				} else {
-					this.addLogMessage(LogConstants.getUniqueID(), "Out into the City again. The darkness envelops you like water.");
+				this.addLogMessage(LogConstants.getUniqueID(), "Lại bước vào Thành phố. Bóng tối bao phủ bạn như nước.");
 				}
 			}
 		},
@@ -418,7 +418,7 @@ define([
 		
 		showLevelPopup: function (title, msg) {
 			setTimeout(function () {
-				GameGlobals.uiFunctions.showInfoPopup(title, msg, "Continue", null, null, true, false);
+				GameGlobals.uiFunctions.showInfoPopup(title, msg, Text.t("ui.common.continue_button_label"), null, null, true, false);
 			}, 300);
 		},
 

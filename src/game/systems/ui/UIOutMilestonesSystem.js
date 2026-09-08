@@ -143,7 +143,7 @@ define([
 			
 			// unlock button
 			$("#milestone-next-button-container").empty();
-			$("#milestone-next-button-container").append("<div><button class='action' action='" + action + "'>Unlock</button></div>");
+			$("#milestone-next-button-container").append("<div><button class='action' action='" + action + "'>Mở khóa</button></div>");
 			
 			GameGlobals.uiFunctions.createButtons("#milestone-next-button-container");
 		},
@@ -184,7 +184,7 @@ define([
 			let isReady = currentAmount >= reqAmount;
 			let spanName = "<span>" + displayName + "</span>";
 			let spanAmount = "<span class='" + (isReady ? "" : "action-cost-blocker") + "'>" + currentAmount + "/" + reqAmount + "</span>";
-			let spanIcon = isReady ? "<span class='reqs-checkmark' title='checkmark' />" : "";
+			let spanIcon = isReady ? "<span class='reqs-checkmark' title='đã đạt' />" : "";
 			return "<span class='reqs-list-entry'>" + spanName + ": " + spanAmount + spanIcon + "</span>";
 		},
 

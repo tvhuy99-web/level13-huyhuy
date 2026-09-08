@@ -66,7 +66,7 @@ define([
 				var rewards = resultNode.result.pendingResultVO;
 				var hasPickedSomething = this.getHasSelectedSomething(rewards);
 				var canPickSomething = rewards && (rewards.gainedResources.getTotal() > 0 || rewards.gainedItems.length > 0);
-				$(".inventory-selection-ok .btn-label").text(hasPickedSomething ? "Take selected" : canPickSomething ? "Leave" : "Continue");
+				$(".inventory-selection-ok .btn-label").text(hasPickedSomething ? "Lấy món đã chọn" : canPickSomething ? "Rời đi" : "Tiếp tục");
 				$(".inventory-selection-ok").toggleClass("btn-secondary", !hasPickedSomething && canPickSomething);
 				this.pendingButtonsUpdate = false;
 

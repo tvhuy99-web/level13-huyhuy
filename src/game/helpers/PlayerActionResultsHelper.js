@@ -1062,7 +1062,7 @@ define([
 			let foundSomething = rewards.gainedResources.getTotal() > 0;
 
 			if (rewards.gainedResources.getTotal() > 0) {
-				if (format == this.RESULT_MGS_FORMAT_LOG) fragments.push({ textKey: "Gained " });
+				if (format == this.RESULT_MGS_FORMAT_LOG) fragments.push({ rawText: "Đã nhận " });
 				if (format == this.RESULT_MSG_FORMAT_PREVIEW) fragments.push({ textKey: "+" });
 
 				let resourcesTextVO = TextConstants.getResourcesTextVO(rewards.gainedResources);
@@ -1126,15 +1126,15 @@ define([
 					div += UIConstants.getExplorerDivSimple(explorerVO, false, false, true);
 					div += "<br/>";
 					if (isAnimal) {
-						div += "Found a stray <span class='hl-functionality'>" + Text.addArticle(explorerVO.name) + "</span>. ";
+						div += "Phát hiện <span class='hl-functionality'>" + explorerVO.name + "</span> đi lạc. ";
 					} else {
-						div += "Met <span class='hl-functionality'>" + Text.addArticle(explorerTypeName) + "</span> called " + explorerVO.name + ". ";
+						div += "Gặp một <span class='hl-functionality'>" + explorerTypeName + "</span> tên là " + explorerVO.name + ". ";
 					}
 					
 					if (willJoin) {
-						div += Text.capitalize(pronoun) + " joined the party.";
+						div += "Đã gia nhập đội.";
 					} else if (explorerCamp) {
-						div += Text.capitalize(pronoun) +" will meet you at " + explorerCamp.camp.getName() + " on level " + explorerCamp.position.level + ".";
+						div += "Sẽ gặp bạn tại " + explorerCamp.camp.getName() + " ở tầng " + explorerCamp.position.level + ".";
 					}
 					div += "</div>";
 				}
@@ -1143,19 +1143,19 @@ define([
 			let gainedhtml = "";
 			gainedhtml += "<ul class='resultlist resultlist-positive'>";
 			if (resultVO.gainedEvidence) {
-				gainedhtml += "<li>" + resultVO.gainedEvidence + " evidence</li>";
+				gainedhtml += "<li>" + resultVO.gainedEvidence + " bằng chứng</li>";
 			}
 			if (resultVO.gainedRumours) {
-				gainedhtml += "<li>" + resultVO.gainedRumours + " rumours</li>";
+				gainedhtml += "<li>" + resultVO.gainedRumours + " tin đồn</li>";
 			}
 			if (resultVO.gainedHope) {
-				gainedhtml += "<li>" + resultVO.gainedHope + " hope</li>";
+				gainedhtml += "<li>" + resultVO.gainedHope + " hy vọng</li>";
 			}
 			if (resultVO.gainedInsight) {
-				gainedhtml += "<li>" + resultVO.gainedInsight + " insight</li>";
+				gainedhtml += "<li>" + resultVO.gainedInsight + " hiểu biết</li>";
 			}
 			if (resultVO.gainedPopulation) {
-				gainedhtml += "<li>" + resultVO.gainedPopulation + " population</li>";
+				gainedhtml += "<li>" + resultVO.gainedPopulation + " dân số</li>";
 			}
 			if (resultVO.gainedBlueprintPiece) {
 				gainedhtml += UIConstants.getBlueprintPieceLI(resultVO.gainedBlueprintPiece);
@@ -1163,11 +1163,11 @@ define([
 			if (resultVO.gainedItemUpgrades) {
 				for (let i = 0; i < resultVO.gainedItemUpgrades.length; i++) {
 					let itemID = resultVO.gainedItemUpgrades[i];
-					gainedhtml += "<li>Upgraded " + ItemConstants.getItemDisplayNameFromID(itemID) + "</li>";
+					gainedhtml += "<li>Đã nâng cấp " + ItemConstants.getItemDisplayNameFromID(itemID) + "</li>";
 				}
 			}
 			if (resultVO.gainedCurrency) {
-				gainedhtml += "<li>" + resultVO.gainedCurrency + " silver</li>";
+				gainedhtml += "<li>" + resultVO.gainedCurrency + " bạc</li>";
 			}
 
 			gainedhtml += "</ul>";
@@ -1186,7 +1186,7 @@ define([
 				resultVO.lostPerks.length > 0;
 
 			if (hasLostInventoryStuff) {
-				var lostMsg = resultVO.lostItems.length > 1 ? "Lost some items." : resultVO.lostItems.length > 0 ? "Lost an item." : ""
+				var lostMsg = resultVO.lostItems.length > 1 ? "Mất một số vật phẩm." : resultVO.lostItems.length > 0 ? "Mất một vật phẩm." : ""
 				var losthtml = "<div id='resultlist-loststuff' class='infobox'>";
 				var losthtml = "<div class='warning'>" + lostMsg + "</span>";
 				losthtml += "<div id='resultlist-loststuff-lost' class='infobox inventorybox inventorybox-negative'>";
@@ -1198,9 +1198,9 @@ define([
 			
 			if (resultVO.brokenItems.length > 0) {
 				if (resultVO.brokenItems.length == 1) {
-					div += "<p class='warning'>Broke an item (" + ItemConstants.getItemDisplayName(resultVO.brokenItems[0]) + ").</p>";
+					div += "<p class='warning'>Đã làm hỏng một vật phẩm (" + ItemConstants.getItemDisplayName(resultVO.brokenItems[0]) + ").</p>";
 				} else {
-					div += "<p class='warning'>Broke some items.</p>";
+					div += "<p class='warning'>Đã làm hỏng một số vật phẩm.</p>";
 				}
 			}
 
@@ -1232,7 +1232,7 @@ define([
 			hasGainedStuff = hasGainedStuff || resultVO.gainedResources.getTotal() > 0 || resultVO.gainedItems.length > 0 || resultVO.gainedExplorers.length > 0;
 			
 			if (!hasGainedStuff && !hasLostSomething && !showInventoryManagement) {
-				if (isFight) div += "<p class='p-meta'>Nothing left behind.</p>"
+				if (isFight) div += "<p class='p-meta'>Không còn gì bỏ lại.</p>"
 				else if (resultVO.action === "despair") div += "";
 				else if (resultVO.action === "clear_workshop") div += "";
 				else if (resultVO.action === "clear_waste_r") div += "";
@@ -1243,7 +1243,7 @@ define([
 			
 			if (resultVO.lostExplorers && resultVO.lostExplorers.length > 0) {
 				for (let i = 0; i < resultVO.lostExplorers.length; i++) {
-					div += "<p class='warning'><span class='hl-functionality'>" + resultVO.lostExplorers[i].name + "</span> left.</p>";
+					div += "<p class='warning'><span class='hl-functionality'>" + resultVO.lostExplorers[i].name + "</span> đã rời đi.</p>";
 				}
 			}
 
@@ -1251,7 +1251,7 @@ define([
 				for (let i = 0; i < resultVO.gainedExplorerInjuries.length; i++) {
 					let explorerID = resultVO.gainedExplorerInjuries[i];
 					let explorerVO = GameGlobals.playerHelper.getExplorerByID(explorerID);
-					div += "<p class='warning'>" + explorerVO.name + " got injured.</p>";
+					div += "<p class='warning'>" + explorerVO.name + " bị thương.</p>";
 				}
 			}
 
@@ -1260,7 +1260,7 @@ define([
 					let explorerID = resultVO.lostExplorerInjuries[i];
 					let explorerVO = GameGlobals.playerHelper.getExplorerByID(explorerID);
 					if (explorerVO) {
-						div += "<p>" + explorerVO.name + " got healed.</p>";
+						div += "<p>" + explorerVO.name + " đã lành vết thương.</p>";
 					}
 				}
 			}
@@ -1288,17 +1288,17 @@ define([
 			if (resultVO.lostPerks.length > 0) {
 				let lostNegativePerks = resultVO.lostPerks.filter(p => p && PerkConstants.isNegative(p));
 				if (lostNegativePerks.length > 0) {
-					div += "<p>Got rid of " + TextConstants.getListText(lostNegativePerks.map(perkVO => perkVO.name)) + ".</p>";
+					div += "<p>Đã loại bỏ " + TextConstants.getListText(lostNegativePerks.map(perkVO => perkVO.name)) + ".</p>";
 				}
 
 				let lostPositivePerks = resultVO.lostPerks.filter(p => p && !PerkConstants.isNegative(p));
 				if (lostPositivePerks.length > 0) {
-					div += "<p class='warning'>You lost " + TextConstants.getListText(lostPositivePerks.map(perkVO => perkVO.name)) + ".</p>";
+					div += "<p class='warning'>Bạn mất " + TextConstants.getListText(lostPositivePerks.map(perkVO => perkVO.name)) + ".</p>";
 				}
 			}
 
 			if (resultVO.lostCurrency > 0) {
-				div += "<p class='warning'>You lost " + resultVO.lostCurrency + " silver.</p>";
+				div += "<p class='warning'>Bạn mất " + resultVO.lostCurrency + " bạc.</p>";
 			}
 
 			div += "</div>";
@@ -1308,16 +1308,16 @@ define([
 		getInventoryManagementDiv: function () {			
 			let html = "<div id='resultlist-inventorymanagement' class='unselectable'>";
 
-			html += "<h3 class='hide-from-visual-layout'>Inventory management</h3>";
+			html += "<h3 class='hide-from-visual-layout'>Quản lý túi đồ</h3>";
 
 			html += "<div id='resultlist-inventorymanagement-found' class='infobox inventorybox'>";
-			html += "<h4 class='hide-from-visual-layout'>Found</h4>";
+			html += "<h4 class='hide-from-visual-layout'>Đã tìm thấy</h4>";
 			html += "<ul></ul>";
 			html += "<p class='msg-empty p-meta'></p>";
 			html += "</div>"
 
 			html += "<div id='resultlist-inventorymanagement-kept' class='infobox inventorybox'>";
-			html += "<h4 class='hide-from-visual-layout'>Bag</h4>";
+			html += "<h4 class='hide-from-visual-layout'>Túi</h4>";
 			html += "<ul></ul>";
 			html += "<p class='msg-empty p-meta'></p>";
 			html += "</div>"
@@ -1342,18 +1342,18 @@ define([
 					explorer = explorersComponent.getExplorerInPartyByType(ExplorerConstants.explorerType.SCOUT);
 				}
 
-				let displayName = explorer ? "<span class='hl-functionality'>" + explorer.name + "</span>" : "Explorers";
+				let displayName = explorer ? "<span class='hl-functionality'>" + explorer.name + "</span>" : "Các nhà thám hiểm";
 				
 				let displayFinds = "";
 				let totalResources = resultVO.gainedResourcesFromExplorers.getTotal();
 				let totalItems = resultVO.gainedItemsFromExplorers.length;
 				if (totalResources > 0 && totalItems == 0) {
 					if (resultVO.gainedResourcesFromExplorers.isOnlySupplies()) {
-						displayFinds = "some supplies";
+						displayFinds = "một ít nhu yếu phẩm";
 					} else if (resultVO.gainedResourcesFromExplorers.isOneResource()) {
-						displayFinds = "some " + resultVO.gainedResourcesFromExplorers.getNames()[0];
+						displayFinds = "một ít " + resultVO.gainedResourcesFromExplorers.getNames()[0];
 					} else {
-						displayFinds = "some resources";
+						displayFinds = "một ít tài nguyên";
 					}
 				} else if (totalItems == 1 && totalResources == 0) {
 					let itemName = ItemConstants.getItemDisplayName(resultVO.gainedItemsFromExplorers[0]);
@@ -1370,28 +1370,28 @@ define([
 					if (uniqueNames.length == 1) {
 						displayFinds = totalItems + " " + Text.pluralify(uniqueNames[0]);
 					} else if (uniqueTypes.length == 1) {
-						displayFinds = "some " + ItemConstants.getItemTypeDisplayName(uniqueTypes[0]);
+						displayFinds = "một ít " + ItemConstants.getItemTypeDisplayName(uniqueTypes[0]);
 					} else {
-						displayFinds = "some items";
+						displayFinds = "một số vật phẩm";
 					}
 				} else {
-					displayFinds = "some things";
+					displayFinds = "một vài thứ";
 				}
 				
 				div += "<div>";
-				div += displayName + " found " + displayFinds;
+				div += displayName + " tìm thấy " + displayFinds;
 				div += "</div>";
 			}
 			
 			if (GameGlobals.playerHelper.getPartyAbilityLevel(ExplorerConstants.abilityType.SCAVENGE_BLUEPRINTS) > 0) {
 				let explorer = explorersComponent.getExplorerInPartyByType(ExplorerConstants.explorerType.SCAVENGER);
 
-				let displayName = explorer ? "<span class='hl-functionality'>" + explorer.name + "</span>" : "Explorers";
-				let displayFinds = " a blueprint";
+				let displayName = explorer ? "<span class='hl-functionality'>" + explorer.name + "</span>" : "Các nhà thám hiểm";
+				let displayFinds = " một bản thiết kế";
 
 				if (resultVO.gainedBlueprintPiece && Math.random() < 0.75) {
 					div += "<div>";
-					div += displayName + " found " + displayFinds;
+					div += displayName + " tìm thấy " + displayFinds;
 					div += "</div>";
 				}
 			}
@@ -1449,7 +1449,7 @@ define([
 						item.type !== ItemConstants.itemTypes.trade;
 					if (isInteresting) {
 						let itemName = ItemConstants.getItemDisplayName(item);
-						messages.push({ id: LogConstants.MSG_ID_FOUND_ITEM_FIRST, text: "Found " + Text.addArticle(itemName) + ".", addToPopup: true, addToLog: true });
+						messages.push({ id: LogConstants.MSG_ID_FOUND_ITEM_FIRST, text: "Tìm thấy " + itemName + ".", addToPopup: true, addToLog: true });
 					}
 				}
 			}
@@ -1469,26 +1469,26 @@ define([
 			}
 				
 			if (resultVO.lostExplorers && resultVO.lostExplorers.length > 0) {
-				messages.push({ id: LogConstants.MSG_ID_LOST_EXPLORER, text: "Lost " + resultVO.lostExplorers.length + " explorers.", addToPopup: true, addToLog: true });
+				messages.push({ id: LogConstants.MSG_ID_LOST_EXPLORER, text: "Mất " + resultVO.lostExplorers.length + " nhà thám hiểm.", addToPopup: true, addToLog: true });
 			}
 
 			for (let i = 0; i < resultVO.gainedPerks.length; i++) {
 				let perkVO = resultVO.gainedPerks[i];
 
 				if (perkVO.type == PerkConstants.perkTypes.injury) {
-					messages.push({ id: LogConstants.MSG_ID_GOT_INJURED, text: "Got injured.", addToPopup: true, addToLog: true });
+					messages.push({ id: LogConstants.MSG_ID_GOT_INJURED, text: "Bị thương.", addToPopup: true, addToLog: true });
 				}
 
 				if (perkVO.id == PerkConstants.perkIds.cursed) {
-					messages.push({ id: LogConstants.getUniqueID(), text: "Got cursed.", addToPopup: true, addToLog: true });
+					messages.push({ id: LogConstants.getUniqueID(), text: "Bị nguyền rủa.", addToPopup: true, addToLog: true });
 				}
 
 				if (perkVO.id == PerkConstants.perkIds.stressed) {
-					messages.push({ id: LogConstants.getUniqueID(), text: "Got stressed.", addToPopup: true, addToLog: true });
+					messages.push({ id: LogConstants.getUniqueID(), text: "Bị căng thẳng.", addToPopup: true, addToLog: true });
 				}
 
 				if (perkVO.id == PerkConstants.perkIds.accomplished) {
-					messages.push({ id: LogConstants.getUniqueID(), text: "Feeling accomplished.", addToPopup: true, addToLog: true });
+					messages.push({ id: LogConstants.getUniqueID(), text: "Cảm thấy mãn nguyện.", addToPopup: true, addToLog: true });
 				}
 			}
 
@@ -1496,7 +1496,7 @@ define([
 				for (let i = 0; i < resultVO.gainedExplorerInjuries.length; i++) {
 					let explorerID = resultVO.gainedExplorerInjuries[i];
 					let explorerVO = GameGlobals.playerHelper.getExplorerByID(explorerID);
-					messages.push({ id: LogConstants.getUniqueID(), text: explorerVO.name + " got injured.", addToPopup: true, addToLog: true });
+					messages.push({ id: LogConstants.getUniqueID(), text: explorerVO.name + " bị thương.", addToPopup: true, addToLog: true });
 				}
 			}
 
@@ -1504,7 +1504,7 @@ define([
 				for (let i = 0; i < resultVO.lostExplorerInjuries.length; i++) {
 					let explorerID = resultVO.lostExplorerInjuries[i];
 					let explorerVO = GameGlobals.playerHelper.getExplorerByID(explorerID);
-					messages.push({ id: LogConstants.getUniqueID(), text: explorerVO.name + " got healed.", addToPopup: true, addToLog: true });
+					messages.push({ id: LogConstants.getUniqueID(), text: explorerVO.name + " đã được chữa trị.", addToPopup: true, addToLog: true });
 				}
 			}
 

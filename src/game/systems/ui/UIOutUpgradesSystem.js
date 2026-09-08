@@ -148,7 +148,7 @@ define([
 			if (noUpgrades) {
 				var allResearched = numUnResearched === 0;
 				$("#world-upgrades-empty-message").text(allResearched ?
-					"All upgrades researched." : "No upgrades available at the moment.");
+					"Đã nghiên cứu tất cả nâng cấp." : "Hiện không có nâng cấp nào.");
 			}
 
 			$.each($("#upgrades-list button.action"), function () {
@@ -183,7 +183,7 @@ define([
 				var definition = UpgradeConstants.upgradeDefinitions[this.vis.selectedID];
 				var isUnlocked = this.tribeNodes.head.upgrades.hasUpgrade(definition.id);
 				var isAvailable = GameGlobals.playerActionsHelper.checkRequirements(definition.id, false).value > 0;
-				var statusS = isUnlocked ? "researched" : isAvailable ? "available" : "locked";
+				var statusS = isUnlocked ? "đã nghiên cứu" : isAvailable ? "có thể nghiên cứu" : "bị khóa";
 				let name = TextConstants.getUpgradeDisplayName(definition.id);
 				let description = Text.t(UpgradeConstants.getDescriptionTextKey(definition.id));
 				$("#upgrade-details-status").text(statusS);
@@ -236,7 +236,7 @@ define([
 			let iconTD = "<td style='padding: 0px 3px'>";
 			let hasBlueprint = this.tribeNodes.head.upgrades.getBlueprint(upgradeDefinition.id);
 			if (hasBlueprint && !isSmallLayout)
-				iconTD += "<span class='" + classes + "'><div class='info-callout-target info-callout-target-small' description='blueprint'><img src='img/items/blueprint.png' alt='blueprint'/></div></span>";
+				iconTD += "<span class='" + classes + "'><div class='info-callout-target info-callout-target-small' description='bản thiết kế'><img src='img/items/blueprint.png' alt='bản thiết kế'/></div></span>";
 			iconTD += "</td>";
 
 			let unlockedResearchDescription = this.getUnlockedResearchDescription(upgradeDefinition.id);
@@ -258,10 +258,10 @@ define([
 				case UpgradeConstants.upgradeStatus.UNLOCKABLE:
 					let action = upgradeDefinition.id;
 					let baseActionID = GameGlobals.playerActionsHelper.getBaseActionID(action);
-					buttonTD = "<td class='minwidth'><button class='action' action='" + action + "' baseaction='" + baseActionID + "'>research</button></td>";
+					buttonTD = "<td class='minwidth'><button class='action' action='" + action + "' baseaction='" + baseActionID + "'>Nghiên cứu</button></td>";
 					break;
 				case UpgradeConstants.upgradeStatus.BLUEPRINT_USABLE:
-					 buttonTD = "<td class='minwidth'><button class='action' action='unlock_upgrade_" + upgradeDefinition.id + "'>unlock</button></td>";
+					 buttonTD = "<td class='minwidth'><button class='action' action='unlock_upgrade_" + upgradeDefinition.id + "'>Mở khóa</button></td>";
 					 break;
 				case UpgradeConstants.upgradeStatus.BLUEPRINT_IN_PROGRESS:
 					var blueprintVO = this.tribeNodes.head.upgrades.getBlueprint(upgradeDefinition.id);
@@ -279,7 +279,7 @@ define([
 					blueprintTD += "</td>";
 					showDescription = false;
 					iconTD = "<td class='hide-on-mobiles list-amount'>" + blueprintVO.currentPieces + " / " + blueprintVO.maxPieces + "</td>";
-					buttonTD = "<td class='list-action'><button class='action multiline' action='create_blueprint_" + upgradeDefinition.id + "'>Combine</button></td>";
+					buttonTD = "<td class='list-action'><button class='action multiline' action='create_blueprint_" + upgradeDefinition.id + "'>Kết hợp</button></td>";
 					break;
 				default:
 					buttonTD = "<td></td>";
@@ -358,7 +358,7 @@ define([
 
 					if (shownResearchNames.length == 0) return "";
 
-					return "unlocked research: " + shownResearchNames.join(", ");
+					return "đã mở khóa nghiên cứu: " + shownResearchNames.join(", ");
 			}
 		},
 		

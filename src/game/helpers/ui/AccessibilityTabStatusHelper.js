@@ -43,14 +43,14 @@ define([], function () {
 
 	AccessibilityTabStatusHelper.prototype.getBubbleStatus = function (bubble) {
 		if (!bubble || !this.isVisible(bubble)) return "";
-		if (bubble.classList.contains("bubble-increase")) return "improvement available";
+		if (bubble.classList.contains("bubble-increase")) return "có nâng cấp mới";
 
 		let value = this.normalize(bubble.textContent);
-		if (!value) return "new content";
-		if (value === "!") return "new content";
+		if (!value) return "có nội dung mới";
+		if (value === "!") return "có nội dung mới";
 		if (/^\d+$/.test(value)) {
 			let count = parseInt(value, 10);
-			return count === 1 ? "1 notification" : count + " notifications";
+			return count === 1 ? "1 thông báo" : count + " thông báo";
 		}
 		return value;
 	};

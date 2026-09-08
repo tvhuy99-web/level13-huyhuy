@@ -106,8 +106,8 @@ function (Ash, UIList, FileUtils, GameGlobals, GlobalSignals, GameConstants, UIC
 		},
 
 		updateHeader: function () {
-			$("#manage-save-popup-header").text(this.showImport ? "Import save" : "Manage saves");
-			$("#manage-save-info").text(this.showImport ? "Paste an exported save below to load it." : "Note that the game is still in alpha and updates can break old saves.");
+			$("#manage-save-popup-header").text(this.showImport ? "Nhập bản lưu" : "Quản lý bản lưu");
+			$("#manage-save-info").text(this.showImport ? "Dán bản lưu đã xuất vào bên dưới để tải." : "Lưu ý rằng trò chơi vẫn đang ở giai đoạn alpha và các bản cập nhật có thể làm hỏng bản lưu cũ.");
 			$("#manage-save-info").toggleClass("p-meta", !this.showImport);
 		},
 
@@ -145,13 +145,13 @@ function (Ash, UIList, FileUtils, GameGlobals, GlobalSignals, GameConstants, UIC
 			if (data.hasData) {
 				slotInfoText += "<span class='secondary'>" + this.getDateDisplayString(data.date) +"</span></br><br/>";
 				slotInfoText += "<span class='secondary'>"
-				slotInfoText += "world seed: " + data.seed +"</br>";
-				slotInfoText += "camps: " + data.numCamps +"</br>";
-				slotInfoText += "<span class='" + (showVersionWarning ? "warning" : "") + "'>version: " + data.version + "</span>";
+				slotInfoText += "mã thế giới: " + data.seed +"</br>";
+				slotInfoText += "số trại: " + data.numCamps +"</br>";
+				slotInfoText += "<span class='" + (showVersionWarning ? "warning" : "") + "'>phiên bản: " + data.version + "</span>";
 				slotInfoText += "</span>";
 				slotInfoText += "</br>";
 			} else {
-				slotInfoText += "<span class='secondary'>(empty)</span>"
+				slotInfoText += "<span class='secondary'>(trống)</span>"
 			}
 
 			if (!GameGlobals.saveHelper.hasManualSave(slotID)) {
@@ -197,7 +197,7 @@ function (Ash, UIList, FileUtils, GameGlobals, GlobalSignals, GameConstants, UIC
 		updateSaveSlotListItem: function (li, data) {
 			let hasData = data.hasData;
 			let sys = GameGlobals.engine.getSystem(UIOutManageSaveSystem);
-			let infoText = hasData ? ("seed: " + data.seed + ", camps: " + data.numCamps) : "(empty)";
+			let infoText = hasData ? ("mã: " + data.seed + ", trại: " + data.numCamps) : "(trống)";
 			li.$root.data("slotID", data.slotID);
 			li.$slotName.text(data.slotDisplayName);
 			li.$saveName.text(data.saveName || "");
@@ -254,12 +254,12 @@ function (Ash, UIList, FileUtils, GameGlobals, GlobalSignals, GameConstants, UIC
 			let result = "";
 			let showVersionWarning = this.showSaveVersionWarning(saveObject);
 
-			result += "Save version: <span" + (showVersionWarning ? " class='warning'" : "") + ">" + saveObject.version + "</span><br/>";
-			result += "Save timestamp: " + this.getDateDisplayStringFromDateString(saveObject.timeStamp) + "<br/>";
-			result += "Save world seed: " + GameGlobals.saveHelper.getWorldSeedFromSave(saveObject);
+			result += "Phiên bản lưu: <span" + (showVersionWarning ? " class='warning'" : "") + ">" + saveObject.version + "</span><br/>";
+			result += "Thời điểm lưu: " + this.getDateDisplayStringFromDateString(saveObject.timeStamp) + "<br/>";
+			result += "Mã thế giới: " + GameGlobals.saveHelper.getWorldSeedFromSave(saveObject);
 
 			if (showVersionWarning) {
-				result += "<br/><br/><span class='warning'>This save is from an old, incompatible version. It may not work properly.</span>";
+				result += "<br/><br/><span class='warning'>Bản lưu này thuộc phiên bản cũ không tương thích. Có thể nó sẽ không hoạt động chính xác.</span>";
 			}
 
 			return result;
@@ -267,12 +267,12 @@ function (Ash, UIList, FileUtils, GameGlobals, GlobalSignals, GameConstants, UIC
 
 		getSaveSlotDisplayName: function (slotID) {
 			switch (slotID) {
-				case GameConstants.SAVE_SLOT_DEFAULT: return "Default";
-				case GameConstants.SAVE_SLOT_BACKUP: return "Automatic #1 (Backup)";
-				case GameConstants.SAVE_SLOT_LOADED: return "Automatic #2 (Loaded)";
-				case GameConstants.SAVE_SLOT_USER_1: return "Custom #1";
-				case GameConstants.SAVE_SLOT_USER_2: return "Custom #2";
-				case GameConstants.SAVE_SLOT_USER_3: return "Custom #3";
+				case GameConstants.SAVE_SLOT_DEFAULT: return "Mặc định";
+				case GameConstants.SAVE_SLOT_BACKUP: return "Tự động #1 (Sao lưu)";
+				case GameConstants.SAVE_SLOT_LOADED: return "Tự động #2 (Đã tải)";
+				case GameConstants.SAVE_SLOT_USER_1: return "Tùy chỉnh #1";
+				case GameConstants.SAVE_SLOT_USER_2: return "Tùy chỉnh #2";
+				case GameConstants.SAVE_SLOT_USER_3: return "Tùy chỉnh #3";
 			}
 			log.w("Unknown save slot ID: " + slotID);
 			return "";
@@ -280,13 +280,13 @@ function (Ash, UIList, FileUtils, GameGlobals, GlobalSignals, GameConstants, UIC
 
 		getAutomaticSaveInfoText: function (slotID) {
 			switch (slotID) {
-				case GameConstants.SAVE_SLOT_BACKUP: return "Automatically saved when building a camp.";
-				case GameConstants.SAVE_SLOT_LOADED: return "Automatically saved when loading the page.";
-				case GameConstants.SAVE_SLOT_USER_1: return "Custom #1";
-				case GameConstants.SAVE_SLOT_USER_2: return "Custom #2";
-				case GameConstants.SAVE_SLOT_USER_3: return "Custom #3";
+				case GameConstants.SAVE_SLOT_BACKUP: return "Tự động lưu khi xây trại.";
+				case GameConstants.SAVE_SLOT_LOADED: return "Tự động lưu khi tải trang.";
+				case GameConstants.SAVE_SLOT_USER_1: return "Tùy chỉnh #1";
+				case GameConstants.SAVE_SLOT_USER_2: return "Tùy chỉnh #2";
+				case GameConstants.SAVE_SLOT_USER_3: return "Tùy chỉnh #3";
 			}
-			return "This slot can't be manually overwritten.";
+			return "Không thể ghi đè thủ công lên ô lưu này.";
 		},
 
 		getDateDisplayStringFromDateString: function (s) {
@@ -361,8 +361,8 @@ function (Ash, UIList, FileUtils, GameGlobals, GlobalSignals, GameConstants, UIC
 			let isOk = saveObject;
 			if (isOk) {
 				let sys = this;
-				let confirmationText = "Are you sure you want to load this save? Your current progress will be lost.<br/><br/>";
-				confirmationText += "Loaded data:<br/>";
+				let confirmationText = "Bạn có chắc muốn tải bản lưu này không? Tiến trình hiện tại sẽ bị mất.<br/><br/>";
+				confirmationText += "Dữ liệu đã tải:<br/>";
 				confirmationText += this.getSaveDataSummary(isOk);
 				
 				importTextArea.val("");
@@ -375,7 +375,7 @@ function (Ash, UIList, FileUtils, GameGlobals, GlobalSignals, GameConstants, UIC
 					true
 				);
 			} else {
-				let msg = "That doesn't appear to be a valid save.";
+				let msg = "Dữ liệu này có vẻ không phải là bản lưu hợp lệ.";
 				$("#import-save-msg").text(msg);
 				$("#import-save-msg").toggleClass("warning", true);
 				GameGlobals.uiFunctions.toggle("#import-save-msg", true);
@@ -423,8 +423,8 @@ function (Ash, UIList, FileUtils, GameGlobals, GlobalSignals, GameConstants, UIC
 			let sys = this;
 			GameGlobals.uiFunctions.popupManager.closePopup("manage-save-popup");
 			GameGlobals.uiFunctions.showConfirmation(
-				"Are you sure you want to load this save? Any unsaved progress will be lost.<br/><br/>"
-				+ "Loaded data:<br/>" 
+				"Bạn có chắc muốn tải bản lưu này không? Mọi tiến trình chưa lưu sẽ bị mất.<br/><br/>"
+				+ "Dữ liệu đã tải:<br/>"
 				+ this.getSaveDataSummary(isOk),
 				function () {
 					sys.loadState(saveJSON);

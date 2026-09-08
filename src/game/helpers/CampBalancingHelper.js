@@ -205,9 +205,9 @@ define([
 				let hasMedicine = resourcesVO && resourcesVO.getResource(resourceNames.medicine) > 0;
 
 				if (hasMedicine) {
-					addValue(CampConstants.REPUTATION_FROM_MEDICINE, "Medicine", false);
+					addValue(CampConstants.REPUTATION_FROM_MEDICINE, "Thuốc", false);
 				} else if (hasHerbs) {
-					addValue(CampConstants.REPUTATION_FROM_HERBS, "Herbs", false);
+					addValue(CampConstants.REPUTATION_FROM_HERBS, "Thảo dược", false);
 				}
 			}
 			
@@ -228,20 +228,20 @@ define([
 						var numHouses = improvementsComponent.getCount(improvementNames.house) + improvementsComponent.getCount(improvementNames.house2);
 						var generatorBonus = numHouses * CampConstants.REPUTATION_PER_HOUSE_FROM_GENERATOR * (1 + level * 0.1);
 						generatorBonus = Math.round(generatorBonus * 100) / 100;
-						addValue(generatorBonus, "Generator", false);
+						addValue(generatorBonus, "Máy phát điện", false);
 						break;
 					case improvementNames.radiotower:
-						addValue(improvementVO.count * defaultBonus * levelBonus, "Radio", false);
+						addValue(improvementVO.count * defaultBonus * levelBonus, "Đài phát thanh", false);
 						break;
 					case improvementNames.shrine:
 						levelBonus = 1 + (level - 1) * 0.5;
-						addValue(improvementVO.count * defaultBonus * levelBonus, "Shrine", false);
+						addValue(improvementVO.count * defaultBonus * levelBonus, "Miếu", false);
 						break;
 					case improvementNames.sundome:
-						addValue(improvementVO.count * defaultBonus, "Sun Dome", false);
+						addValue(improvementVO.count * defaultBonus, "Mái vòm mặt trời", false);
 						break;
 					default:
-						addValue(improvementVO.count * defaultBonus, "Buildings", false);
+						addValue(improvementVO.count * defaultBonus, "Công trình", false);
 						break;
 				}
 			}
@@ -258,7 +258,7 @@ define([
 			if (isSunlit && improvementsComponent.getCount(improvementNames.sundome) < 1) {
 				let sunlightPenaltyFactor = -0.75;
 				let sunlightPenaltyValue = result * sunlightPenaltyFactor;
-				addValue(sunlightPenaltyValue, "Sunlight", true, true, sunlightPenaltyFactor * 100);
+				addValue(sunlightPenaltyValue, "Ánh nắng", true, true, sunlightPenaltyFactor * 100);
 				addPenalty(CampConstants.REPUTATION_PENALTY_TYPE_SUNLIT, isSunlit);
 			}
 			
@@ -269,10 +269,10 @@ define([
 				let penaltyRatio = 0.25;
 				let penalty = result * penaltyRatio;
 				if (noFood) {
-					addValue(-penalty, "No food", false, true, -penaltyRatio * 100);
+					addValue(-penalty, "Không có thức ăn", false, true, -penaltyRatio * 100);
 				}
 				if (noWater) {
-					addValue(-penalty, "No water", false, true, -penaltyRatio * 100);
+					addValue(-penalty, "Không có nước", false, true, -penaltyRatio * 100);
 				}
 				addPenalty(CampConstants.REPUTATION_PENALTY_TYPE_FOOD, noFood);
 				addPenalty(CampConstants.REPUTATION_PENALTY_TYPE_WATER, noWater);
@@ -286,11 +286,11 @@ define([
 				let penaltyRatioRounded = Math.round(penaltyRatio * 20) / 20;
 				let defencePenalty = result * penaltyRatioRounded;
 				if (penaltyRatio > 0.25) {
-					addValue(-defencePenalty, "Terrible defences", false, true, -penaltyRatioRounded * 100);
+					addValue(-defencePenalty, "Phòng thủ rất yếu", false, true, -penaltyRatioRounded * 100);
 				} else if (penaltyRatio > 0.15) {
-					addValue(-defencePenalty, "Poor defences", false, true, -penaltyRatioRounded * 100);
+					addValue(-defencePenalty, "Phòng thủ yếu", false, true, -penaltyRatioRounded * 100);
 				} else {
-					addValue(-defencePenalty, "Inadequate defences", false, true, -penaltyRatioRounded * 100);
+					addValue(-defencePenalty, "Phòng thủ không đủ", false, true, -penaltyRatioRounded * 100);
 				}
 			}
 			addPenalty(CampConstants.REPUTATION_PENALTY_TYPE_DEFENCES, noDefences);
@@ -300,7 +300,7 @@ define([
 			if (hasDamagedBuildings) {
 				let penaltyRatio = 0.20;
 				let penaltyValue = result * penaltyRatio;
-				addValue(-penaltyValue, "Damaged buildings", false, true, -penaltyRatio * 100);
+				addValue(-penaltyValue, "Công trình hư hại", false, true, -penaltyRatio * 100);
 			}
 			addPenalty(CampConstants.REPUTATION_PENALTY_TYPE_DAMAGED_BUILDINGS, hasDamagedBuildings);
 			
@@ -312,7 +312,7 @@ define([
 				let overflowRatio = (populationFullPeople - housingCap) / populationFullPeople;
 				let housingPenaltyRatio = Math.round(overflowRatio * 20) / 20 / 2;
 				let housingPenalty = Math.ceil(result * housingPenaltyRatio * 100) / 100;
-				addValue(-housingPenalty, "Overcrowding", false, true, housingPenaltyRatio * 100);
+				addValue(-housingPenalty, "Quá đông người", false, true, housingPenaltyRatio * 100);
 			}
 			addPenalty(CampConstants.REPUTATION_PENALTY_TYPE_HOUSING, noHousing);
 			

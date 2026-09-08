@@ -69,7 +69,7 @@ define([
 		getIsNotSelectableReason: function (explorerVO) {
 			if (!explorerVO) return "ui.actions.unavailable_reason_invalid_message";
 
-			if (explorerVO.injuredTimer >= 0) return "Explorer injured";
+			if (explorerVO.injuredTimer >= 0) return "Nhà thám hiểm bị thương";
 
 			return null;
 		},

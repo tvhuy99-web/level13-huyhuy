@@ -49,14 +49,14 @@ define([], function () {
 		log.setAttribute("aria-live", "polite");
 		log.setAttribute("aria-relevant", "additions text");
 		log.setAttribute("aria-atomic", "false");
-		if (!log.getAttribute("aria-label")) log.setAttribute("aria-label", "Recent game messages");
+		if (!log.getAttribute("aria-label")) log.setAttribute("aria-label", "Thông báo trò chơi gần đây");
 	};
 
 	AccessibilityHelper.prototype.configureTabs = function () {
 		let tabList = document.getElementById("switch-tabs");
 		if (!tabList) return;
 		tabList.setAttribute("role", "tablist");
-		if (!tabList.getAttribute("aria-label")) tabList.setAttribute("aria-label", "Game sections");
+		if (!tabList.getAttribute("aria-label")) tabList.setAttribute("aria-label", "Các khu vực trò chơi");
 
 		let tabs = tabList.children;
 		for (let i = 0; i < tabs.length; i++) {
@@ -152,7 +152,7 @@ define([], function () {
 		for (let i = 0; i < buttons.length; i++) {
 			let button = buttons[i];
 			if (button.getAttribute("aria-label")) continue;
-			let action = button.getAttribute("data-type") === "plus" ? "Increase" : "Decrease";
+			let action = button.getAttribute("data-type") === "plus" ? "Tăng" : "Giảm";
 			button.setAttribute("aria-label", action + " " + inputName);
 			if (input.id) button.setAttribute("aria-controls", input.id);
 		}
@@ -183,7 +183,7 @@ define([], function () {
 			if (!hasInteractiveContent) {
 				target.removeAttribute("tabindex");
 				if (target.getAttribute("role") === "note" || target.getAttribute("role") === "tooltip") target.removeAttribute("role");
-				if (target.getAttribute("aria-label") === "More information") target.removeAttribute("aria-label");
+				if (target.getAttribute("aria-label") === "Thêm thông tin") target.removeAttribute("aria-label");
 				this.removeAriaReference(target, "aria-describedby", calloutID);
 				callout.setAttribute("aria-hidden", "true");
 				callout.removeAttribute("role");
@@ -193,7 +193,7 @@ define([], function () {
 
 			callout.removeAttribute("aria-hidden");
 			callout.setAttribute("role", "group");
-			if (!callout.getAttribute("aria-label")) callout.setAttribute("aria-label", "Details and actions");
+			if (!callout.getAttribute("aria-label")) callout.setAttribute("aria-label", "Chi tiết và hành động");
 
 			let focusTarget = this.getFocusableCalloutTarget(target);
 			if (!focusTarget) {

@@ -726,12 +726,12 @@ define([
 				let ids = [];
 
 				if (rand2 <= 0.33) {
-					name = "weapons trader";
+					name = "thương nhân vũ khí";
 					categories.push("weapon");
 					ids.push("consumable_weapon");
 					ids.push("stamina_potion_1");
 				} else if (rand2 <= 0.66) {
-					name = "clothing trader";
+					name = "thương nhân quần áo";
 					categories.push("clothing_over");
 					categories.push("clothing_upper");
 					categories.push("clothing_lower");
@@ -739,7 +739,7 @@ define([
 					categories.push("clothing_head");
 					categories.push("shoes");
 				} else {
-					name = "equipment trader";
+					name = "thương nhân trang bị";
 					categories.push("light");
 					categories.push("bag");
 					categories.push("exploration");
@@ -761,7 +761,7 @@ define([
 				usesCurrency = traderLevel > 1;
 			} else if (traderType == TradeConstants.traderType.GENERAL) {
 				// 2) misc trader: sells ingredients, random items, buys all items, uses currency
-				name = "general trader";
+				name = "thương nhân tổng hợp";
 				let categories = [];
 				while (categories.length < 3) {
 					if (Math.random() <= 0.2) categories.push("light");
@@ -793,7 +793,7 @@ define([
 				usesCurrency = traderLevel > 1;
 			} else if (traderType == TradeConstants.traderType.CRAFTING) {
 				// 3) ingredient trader: sells ingredients, buys ingredients, occational items, no currency
-				name = "crafting trader";
+				name = "thương nhân nguyên liệu chế tạo";
 				let ingredientProbability = 0.25;
 				let num = 5 + campOrdinal * 3;
 				while (sellItems.length < num && ingredientProbability <= 1) {
@@ -817,12 +817,12 @@ define([
 				let mainResource = RandomUtils.selectOneFromRelativeProbabilities(mainResourceRelativeProbabilities);
 					
 				if (mainResource == resourceNames.herbs) {
-					name = "herbs trader";
+					name = "thương nhân thảo dược";
 					sellResources.addResource(resourceNames.herbs, minResAmount + Math.random() * randResAmount);
 					buyResources.push(resourceNames.herbs);
 					if (unlockedResources.medicine && Math.random() < 0.75) {
 						if (campOrdinal > 8) {
-							name = "medicine trader";
+							name = "thương nhân thuốc";
 							sellResources.addResource(resourceNames.medicine, minResAmount + Math.random() * randResAmount);
 						}
 						buyResources.push(resourceNames.medicine);
@@ -831,25 +831,25 @@ define([
 						addSellItemsFromCategories([ "voucher" ], 0.3, 1, 1, true, "cache_hope");
 					}
 				} else if (mainResource == resourceNames.tools) {
-					name = "tools trader";
+					name = "thương nhân dụng cụ";
 					sellResources.addResource(resourceNames.tools, minResAmount + Math.random() * randResAmount);
 					buyResources.push(resourceNames.tools);
 				} else if (mainResource == resourceNames.fuel) {
-					name = "fuel trader";
+					name = "thương nhân nhiên liệu";
 					sellResources.addResource(resourceNames.fuel, minResAmount + Math.random() * randResAmount);
 					buyResources.push(resourceNames.fuel);
 				} else if (mainResource == resourceNames.rubber) {
-					name = "rubber trader";
+					name = "thương nhân cao su";
 					sellResources.addResource(resourceNames.rubber, minResAmount + Math.random() * randResAmount);
 					buyResources.push(resourceNames.rubber);
 				} else if (mainResource == resourceNames.water) {
-					name = "supplies trader";
+					name = "thương nhân nhu yếu phẩm";
 					sellResources.addResource(resourceNames.water, minResAmount + Math.random() * randResAmount);
 					sellResources.addResource(resourceNames.food, minResAmount + Math.random() * randResAmount);
 					buyResources.push(resourceNames.water);
 					buyResources.push(resourceNames.food);
 				} else {
-					name = "materials trader";
+					name = "thương nhân vật liệu";
 					sellResources.addResource(resourceNames.metal, minResAmount + Math.random() * randResAmount);
 					buyResources.push(resourceNames.metal);
 					sellResources.addResource(resourceNames.rope, minResAmount + Math.random() * randResAmount);
@@ -864,7 +864,7 @@ define([
 			} else if (traderType == TradeConstants.traderType.PARTNER) {
 				// 5) trading partner trader: buys and sells same stuff as partner, plus occational items, currency based on partner
 				var partner = TradeConstants.getRandomTradePartner(campOrdinal);
-				name = "trader from " + partner.name;
+				name = "thương nhân từ " + partner.name;
 				for (let i = 0; i < partner.sellsResources.length; i++) {
 					sellResources.addResource(partner.sellsResources[i], minResAmount + Math.random() * randResAmount, "get-trader");
 				}
@@ -887,7 +887,7 @@ define([
 				usesCurrency = partner.usesCurrency;
 			} else if (traderType == TradeConstants.traderType.VALUABLES) {
 				// 6) valuables trader (artefacts, cahces)
-				name = "rarities trader";
+				name = "thương nhân đồ quý";
 				addSellItemsFromCategories([ "bag" ], 0.1, 1, 1, false);
 				addSellItemsFromCategories([ "light" ], 0.1, 1, 1, false);
 				addSellItemsFromCategories([ "artefact" ], 0.3, 1, 2, true);

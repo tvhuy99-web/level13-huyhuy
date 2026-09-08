@@ -278,7 +278,7 @@ define([
 			if (showExamine) {
 				let spotID = featuresComponent.examineSpots[0];
 				let spotDef = StoryConstants.getSectorExampineSpot(spotID);
-				$("#out-action-examine").find(".btn-label").text("examine " + Text.t(spotDef.shortNameKey));
+				$("#out-action-examine").find(".btn-label").text("khám xét " + Text.t(spotDef.shortNameKey));
 			}
 
 			// workshop
@@ -286,7 +286,7 @@ define([
 			GameGlobals.uiFunctions.toggle(this.elements.btnClearWorkshop, showWorkshop);
 			if (showWorkshop) {
 				let workshopName = TextConstants.getWorkshopName(workshopComponent.resource);
-				this.elements.btnClearWorkshop.find(".btn-label").text("scout " + workshopName);
+				this.elements.btnClearWorkshop.find(".btn-label").text("thám sát " + workshopName);
 			}
 
 			// resource heap
@@ -294,7 +294,7 @@ define([
 			GameGlobals.uiFunctions.toggle(this.elements.btnScavengeHeap, showHeap);
 			if (showHeap) {
 				let heapName = TextConstants.getHeapDisplayName(featuresComponent.heapResource, featuresComponent);
-				this.elements.btnScavengeHeap.find(".btn-label").text("scavenge " + heapName);
+				this.elements.btnScavengeHeap.find(".btn-label").text("lục lọi " + heapName);
 			}
 
 			GameGlobals.uiFunctions.slideToggleIf("#out-locales", null, this.getVisibleLocales().length > 0, 200, 0);
@@ -395,8 +395,8 @@ define([
 
 		showTollGatePopup: function (direction) {
 			let action = "clear_gate_" + direction;
-			let title = "Toll gate";
-			let msg = "Some gangsters are lounging about. They want you to pay for passage.";
+			let title = "Trạm thu phí";
+			let msg = "Một nhóm du côn đang tụ tập. Chúng muốn bạn trả phí để đi qua.";
 			GameGlobals.uiFunctions.showActionPopup(action, title, msg);
 		},
 
@@ -420,10 +420,10 @@ define([
 			
 			if (isScouted) {
 				if (sectorStatus.graffiti) {
-					description += "There is a graffiti here: " + sectorStatus.graffiti;
+					description += "Có hình vẽ trên tường ở đây: " + sectorStatus.graffiti;
 					description += "</p><p>";
 				} else if (featuresComponent.graffiti) {
-					description += "There is a graffiti here: " + Text.t(featuresComponent.graffiti);
+					description += "Có hình vẽ trên tường ở đây: " + Text.t(featuresComponent.graffiti);
 					description += "</p><p>";
 				}
 			}
@@ -444,19 +444,19 @@ define([
 
 			// light / darkness description
 			if (featuresComponent.sunlit >= 1) {
-				if (hasVision) desc += "The area is swathed in relentless <span class='hl-functionality'>daylight</span>. ";
-				else desc += "The area is swathed in blinding <span class='hl-functionality'>sunlight</span>. ";
+				if (hasVision) desc += "Khu vực ngập trong <span class='hl-functionality'>ánh sáng ban ngày</span> gay gắt. ";
+				else desc += "Khu vực ngập trong <span class='hl-functionality'>ánh nắng</span> chói lòa. ";
 			} else if (featuresComponent.sunlit > 0) {
-				desc += "The area is illuminated by <span class='hl-functionality'>indirect sunlight</span> from a nearby sector. ";
+				desc += "Khu vực được chiếu sáng bởi <span class='hl-functionality'>ánh nắng gián tiếp</span> từ khu vực lân cận. ";
 			} else {
 				if (sectorStatus.glowStickSeconds > -5) {
 					if (sectorStatus.glowStickSeconds < 5)
-						desc += "The glowstick fades out.";
+						desc += "Que phát sáng dần tắt.";
 					else
-						desc += "A glowstick casts a sickly <span class='hl-functionality'>light</span>.";
+						desc += "Một que phát sáng tỏa ra <span class='hl-functionality'>ánh sáng</span> nhợt nhạt.";
 				} else {
 					if (hasVision) desc += "";
-					else desc += "There is no <span class='hl-functionality'>light</span>. ";
+					else desc += "Không có <span class='hl-functionality'>ánh sáng</span>. ";
 				}
 			}
 
@@ -477,7 +477,7 @@ define([
 					if (locale.type == localeTypes.tradingpartner) {
 						var partner = TradeConstants.getTradePartner(campOrdinal);
 						if (partner) {
-							desc += "<span class='hl-functionality'>" + partner.name + "</span> is located here. ";
+							desc += "<span class='hl-functionality'>" + partner.name + "</span> ở đây. ";
 						}
 					}
 				}
@@ -490,18 +490,18 @@ define([
 			switch (featureType) {
 				case WorldConstants.FEATURE_HOLE_COLLAPSE_EDGE:
 					let directionToCollapse = GameGlobals.levelHelper.getDirectionToFeature(sector, WorldConstants.FEATURE_HOLE_COLLAPSE);
-					return "The area to the " + directionToCollapse + " has collapsed.";
+					return "Khu vực về phía " + directionToCollapse + " đã sụp đổ.";
 				case WorldConstants.FEATURE_HOLE_WELL_EDGE:
 					let directionToWell = GameGlobals.levelHelper.getDirectionToFeature(sector, WorldConstants.FEATURE_HOLE_WELL);
-					return "The area is lit by a nearby sunwell.";
+					return "Khu vực được chiếu sáng bởi một giếng nắng gần đó.";
 				case WorldConstants.FEATURE_HOLE_MOUNTAIN_EDGE:
 					let directionToMountain = GameGlobals.levelHelper.getDirectionToFeature(sector, WorldConstants.FEATURE_HOLE_MOUNTAIN);
-					return "A mountain interrupts the City to the " + PositionConstants.getDirectionName(directionToMountain);
+					return "Một ngọn núi chắn ngang Thành phố về phía " + PositionConstants.getDirectionName(directionToMountain);
 				case WorldConstants.FEATURE_STRUCTURE_PILLAR:
-					return "The area is dominated by a massive concrete pillar, one of the great spines of the City. ";
+					return "Khu vực bị một trụ bê tông khổng lồ chi phối, một trong những xương sống lớn của Thành phố. ";
 				case WorldConstants.FEATURE_TRAIN_TRACKS_NEW:
 				case WorldConstants.FEATURE_TRAIN_TRACKS_OLD:
-					return "The area is crossed by train tracks."
+					return "Đường ray xe lửa chạy ngang qua khu vực."
 
 			}
 		},
@@ -519,7 +519,7 @@ define([
 			var description = "";
 
 			if (isScouted && featuresComponent.hasSpring) {
-				description += "There is a <span class='hl-functionality'>" + TextConstants.getSpringName(featuresComponent) + "</span> here. ";
+				description += "Có <span class='hl-functionality'>" + TextConstants.getSpringName(featuresComponent) + "</span> ở đây. ";
 			}
 
 			if (isScouted) {
@@ -527,15 +527,15 @@ define([
 				let canTrap = featuresComponent.resourcesCollectable.food > 0;
 				
 				if (canBucket && canTrap) {
-					description += "Both <span class='hl-functionality'>water</span> and <span class='hl-functionality'>food</span> can be collected here. ";
+					description += "Có thể thu thập cả <span class='hl-functionality'>nước</span> và <span class='hl-functionality'>thức ăn</span> ở đây. ";
 				} else if (canBucket) {
 					if (featuresComponent.sunlit) {
-						description += "It looks like <span class='hl-functionality'>rainwater</span> could be collected here. ";
+						description += "Có vẻ có thể thu thập <span class='hl-functionality'>nước mưa</span> ở đây. ";
 					} else {
-						description += "There is a bit of <span class='hl-functionality'>water</span> leaking here that could be collected. ";
+						description += "Có một ít <span class='hl-functionality'>nước</span> rò rỉ ở đây có thể thu thập được. ";
 					}
 				} else if (canTrap) {
-					description += "It might be worthwhile to install <span class='hl-functionality'>traps</span> here. ";
+					description += "Có lẽ nên đặt <span class='hl-functionality'>bẫy</span> ở đây. ";
 				}
 
 				if (featuresComponent.heapResource) {
@@ -545,9 +545,9 @@ define([
 						"</span>";
 					let resourceDisplayName = TextConstants.getResourceDisplayName(featuresComponent.heapResource);
 					if (sectorStatus.getHeapScavengedPercent() >= 100) {
-						description += "There is " + heapDisplayName + ", but it has been picked clean. ";
+						description += "Có " + heapDisplayName + ", nhưng đã bị vét sạch. ";
 					} else {
-						description += "There is " + heapDisplayName + ", which can be scavenged for " + resourceDisplayName + ". ";
+						description += "Có " + heapDisplayName + ", có thể lục lọi để tìm " + resourceDisplayName + ". ";
 					}
 				}
 			}
@@ -567,28 +567,28 @@ define([
 					let spotID = featuresComponent.examineSpots[i];
 					let spotDef = StoryConstants.getSectorExampineSpot(spotID);
 					if (!spotDef) continue;
-					description += "There is a " + Text.t(spotDef.nameKey) + " here. ";
+					description += "Có " + Text.t(spotDef.nameKey) + " ở đây. ";
 				}
 			}
 
 			if (isScouted && workshopComponent && workshopComponent.isClearable) {
 				var workshopName = TextConstants.getWorkshopName(workshopComponent.resource);
 				var workshopControl = sectorControlComponent.hasControlOfLocale(LocaleConstants.LOCALE_ID_WORKSHOP);
-				var workshopStatus = workshopControl ? "cleared for use" : "not cleared";
-				description += "There is <span class='hl-functionality'>" + Text.addArticle(workshopName) + "</span> here (" + workshopStatus + "). ";
+				var workshopStatus = workshopControl ? "đã dọn để sử dụng" : "chưa dọn dẹp";
+				description += "Có <span class='hl-functionality'>" + Text.addArticle(workshopName) + "</span> ở đây (" + workshopStatus + "). ";
 			}
 
 			if (isScouted && improvements.getCount(improvementNames.greenhouse) > 0) {
-				description += "There is a <span class='hl-functionality'>greenhouse</span> here. ";
+				description += "Có một <span class='hl-functionality'>nhà kính</span> ở đây. ";
 			}
 			
 			let luxuryResource = GameGlobals.sectorHelper.getLuxuryResourceOnSector(this.playerLocationNodes.head.entity, true);
 			if (isScouted && luxuryResource) {
-				description += "There is a source of <span class='hl-functionality'>" + TribeConstants.getLuxuryDisplayName(luxuryResource) + "</span> here. ";
+				description += "Có nguồn <span class='hl-functionality'>" + TribeConstants.getLuxuryDisplayName(luxuryResource) + "</span> ở đây. ";
 			}
 			
 			if (isScouted && GameGlobals.levelHelper.isFirstScoutedSectorWithFeatureOnLevel(this.playerLocationNodes.head.entity, "hasTradeConnectorSpot")) {
-				description += "There is space here for a bigger building project. ";
+				description += "Ở đây có chỗ cho một dự án xây dựng lớn hơn. ";
 			}
 
 			return description;
@@ -619,7 +619,7 @@ define([
 			// Camp
 			if (isScouted && hasVision && !hasCampHere && !hasCampOnLevel) {
 				if (featuresComponent.canHaveCamp() && !hasEnemies && !passagesComponent.passageUp && !passagesComponent.passageDown)
-					description += "This would be a good place for a <span class='hl-functionality'>camp</span>. ";
+					description += "Đây sẽ là nơi phù hợp để dựng <span class='hl-functionality'>trại</span>. ";
 			}
 
 			return description;
@@ -711,26 +711,26 @@ define([
 							case MovementConstants.BLOCKER_TYPE_DEBRIS:
 							case MovementConstants.BLOCKER_TYPE_WASTE_TOXIC:
 							case MovementConstants.BLOCKER_TYPE_WASTE_RADIOACTIVE:
-								description += "Passage to the " + directionName + " is blocked by <span class='hl-functionality'>" + blockerName + "</span>. ";
+								description += "Lối đi về phía " + directionName + " bị chặn bởi <span class='hl-functionality'>" + blockerName + "</span>. ";
 								break;
 							default:
-								description += "Passage to the " + directionName + " is blocked by a <span class='hl-functionality'>" + blockerName + "</span>. ";
+								description += "Lối đi về phía " + directionName + " bị chặn bởi một <span class='hl-functionality'>" + blockerName + "</span>. ";
 								break;
 						}
 					} else {
 						var gang = GameGlobals.levelHelper.getGang(position, direction);
 						if (blocker.type == MovementConstants.BLOCKER_TYPE_DEBRIS) {
-							description += "Debris to the " + directionName + " has been cleared away. ";
+							description += "Đống đổ nát về phía " + directionName + " đã được dọn sạch. ";
 						} else if (blocker.type == MovementConstants.BLOCKER_TYPE_EXPLOSIVES) {
-							description += "Old explosives to the " + directionName + " have been cleared away. ";
+							description += "Chất nổ cũ về phía " + directionName + " đã được dọn sạch. ";
 						} else if (blocker.type == MovementConstants.BLOCKER_TYPE_GANG) {
 							if (gang) {
-								description += "A " + blockerName + " to the " + directionName + " has been " + TextConstants.getUnblockedVerb(blocker.type) + ". ";
+								description += "Một " + blockerName + " về phía " + directionName + " đã được " + TextConstants.getUnblockedVerb(blocker.type) + ". ";
 							} else {
 								log.w("gang blocker but no gang component at " + position, this);
 							}
 						} else {
-							description += "A " + blockerName + " to the " + directionName + " has been " + TextConstants.getUnblockedVerb(blocker.type) + ". ";
+							description += "Một " + blockerName + " về phía " + directionName + " đã được " + TextConstants.getUnblockedVerb(blocker.type) + ". ";
 						}
 					}
 				}
@@ -752,7 +752,7 @@ define([
 
 			if (hasEnemies) {
 				if (isScouted) {
-					enemyDesc = "This area is " + TextConstants.getEnemyText(enemiesComponent.possibleEnemies, sectorControlComponent).toLowerCase() + ". ";
+					enemyDesc = "Khu vực này " + TextConstants.getEnemyText(enemiesComponent.possibleEnemies, sectorControlComponent).toLowerCase() + ". ";
 				}
 			} else if (isScouted) {
 				enemyDesc += Text.t("ui.exploration.sector_status_no_enemies_description");
@@ -766,27 +766,27 @@ define([
 					switch (levelComponent.notCampableReason) {
 						case LevelConstants.UNCAMPABLE_LEVEL_TYPE_RADIATION:
 							if (inhabited && featuresComponent.wear < 6)
-								notCampableDesc = "Many entrances have big yellow warning signs on them, with the text 'KEEP OUT' and a <span class='hl-functionality'>radiation</span> sign. ";
+								notCampableDesc = "Nhiều lối vào có biển cảnh báo màu vàng lớn ghi 'CẤM VÀO' cùng biểu tượng <span class='hl-functionality'>phóng xạ</span>. ";
 							else if (inhabited && featuresComponent.buildingDensity > 5)
-								notCampableDesc = "Walls are covered in graffiti warning about <span class='hl-functionality'>radiation</span>. ";
+								notCampableDesc = "Tường phủ đầy hình vẽ cảnh báo về <span class='hl-functionality'>phóng xạ</span>. ";
 							else
-								notCampableDesc = "There is an eerie air as if the place has been <span class='hl-functionality'>abandoned</span> in a hurry. ";
+								notCampableDesc = "Không khí rợn ngợp như thể nơi này đã bị <span class='hl-functionality'>bỏ hoang</span> vội vã. ";
 							break;
 
 						case LevelConstants.UNCAMPABLE_LEVEL_TYPE_POLLUTION:
 							if (inhabited && featuresComponent.wear < 6)
-								notCampableDesc = "Many entrances have big red warning signs on them with a <span class='hl-functionality'>skull sign</span> and the text 'KEEP OUT'. ";
+								notCampableDesc = "Nhiều lối vào có biển cảnh báo màu đỏ lớn với biểu tượng <span class='hl-functionality'>đầu lâu</span> và dòng 'CẤM VÀO'. ";
 							else if (inhabited && featuresComponent.buildingDensity > 5)
-								notCampableDesc = "Walls are covered in graffiti warning about some kind of <span class='hl-functionality'>pollution</span>. ";
+								notCampableDesc = "Tường phủ đầy hình vẽ cảnh báo về một dạng <span class='hl-functionality'>ô nhiễm</span>. ";
 							else
-								notCampableDesc = "A <span class='hl-functionality'>noxious smell</span> hangs in the air. ";
+								notCampableDesc = "Một <span class='hl-functionality'>mùi hôi độc hại</span> lơ lửng trong không khí. ";
 							break;
 
 						case LevelConstants.UNCAMPABLE_LEVEL_TYPE_SUPERSTITION:
 							if (inhabited)
-								notCampableDesc = "There aren't any signs of recent human <span class='hl-functionality'>habitation</span>. ";
+								notCampableDesc = "Không có dấu hiệu <span class='hl-functionality'>con người sinh sống</span> gần đây. ";
 							else
-								notCampableDesc = "An unnerving <span class='hl-functionality'>silence</span> blankets the streets. ";
+								notCampableDesc = "Một <span class='hl-functionality'>sự im lặng</span> đáng sợ bao trùm các con phố. ";
 							break;
 					}
 				}
@@ -797,23 +797,23 @@ define([
 			var hazardDesc = "";
 			if (hasHazards) {
 				if (hazards.radiation > 0) {
-					hazardDesc += "This place is <span class='hl-functionality'>radioactive</span> (" + hazards.radiation + "). ";
+					hazardDesc += "Nơi này có <span class='hl-functionality'>phóng xạ</span> (" + hazards.radiation + "). ";
 				}
 				if (hazards.poison > 0) {
-					hazardDesc += "This place is dangerously <span class='hl-functionality'>polluted</span> (" + hazards.poison + "). ";
+					hazardDesc += "Nơi này bị <span class='hl-functionality'>ô nhiễm</span> nghiêm trọng (" + hazards.poison + "). ";
 				}
 				if (hazards.cold > 0) {
-					let coldAdjective = hazards.cold < 20 ? "quite" : hazards.cold < 50 ? "very" : "extremely";
-					hazardDesc += "It's " + coldAdjective + " <span class='hl-functionality'>cold</span> here (" + hazards.cold + "). ";
+					let coldAdjective = hazards.cold < 20 ? "khá" : hazards.cold < 50 ? "rất" : "cực kỳ";
+					hazardDesc += "Ở đây " + coldAdjective + " <span class='hl-functionality'>lạnh</span> (" + hazards.cold + "). ";
 				}
 				if (hazards.flooded > 0) {
-					hazardDesc += "This place is <span class='hl-functionality'>flooded</span>. ";
+					hazardDesc += "Nơi này bị <span class='hl-functionality'>ngập</span>. ";
 				}
 				if (hazards.debris > 0) {
-					hazardDesc += "It difficult to move around here due to the amount of <span class='hl-functionality'>debris</span>.";
+					hazardDesc += "Rất khó di chuyển ở đây vì có quá nhiều <span class='hl-functionality'>đống đổ nát</span>.";
 				}
 				if (hazards.territory > 0) {
-					hazardDesc += "This sector is <span class='hl-functionality'>gang territory</span>.";
+					hazardDesc += "Khu vực này là <span class='hl-functionality'>lãnh địa băng nhóm</span>.";
 				}
 			}
 
@@ -941,14 +941,14 @@ define([
 				if (locale.type == localeTypes.tradingpartner) {
 					let partner = TradeConstants.getTradePartner(data.campOrdinal);
 					if (partner) {
-						info += "Already scouted (" + partner.name + ")";
+						info += "Đã thám sát (" + partner.name + ")";
 					} else {
-						info += "Already scouted";
+						info += "Đã thám sát";
 					}
 				} else if (locale.luxuryResource != null) {
-					info += "Already scouted (" + TribeConstants.getLuxuryDisplayName(locale.luxuryResource) + ")";
+					info += "Đã thám sát (" + TribeConstants.getLuxuryDisplayName(locale.luxuryResource) + ")";
 				} else {
-					info += "Already scouted";
+					info += "Đã thám sát";
 				}
 			}
 			li.$info.html(info);
@@ -1010,7 +1010,7 @@ define([
 				let directionName = PositionConstants.getDirectionName(direction, true);
 
 				if (blocker.type === MovementConstants.BLOCKER_TYPE_TOLL_GATE) {
-					let button = $("<button>approach toll gate (" + directionName + ")</button>");
+					let button = $("<button>tiếp cận trạm thu phí (" + directionName + ")</button>");
 					button.data("direction", direction);
 					button.click(ExceptionHandler.wrapClick((e) => sys.onApproachTollGateButtonClicked(e)));
 					$("#container-out-actions-movement-related").append(button);
@@ -1070,7 +1070,7 @@ define([
 			let pathToCampLen = pathToCamp ? pathToCamp.length : "?";
 			let canMove = GameGlobals.gameState.isFeatureUnlocked("move");
 			
-			$("#out-action-move-camp-details").text("(" + pathToCampLen + " blocks)");
+			$("#out-action-move-camp-details").text("(" + pathToCampLen + " ô)");
 			
 			let showDistanceIndicator = hasFirstCamp && canMove;
 			GameGlobals.uiFunctions.toggle($("#out-distance-indicator"), showDistanceIndicator);

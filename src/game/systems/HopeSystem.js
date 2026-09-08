@@ -102,8 +102,8 @@ define([
 		showDeityNamePopup: function () {
 			let sys = this;
 			GameGlobals.uiFunctions.showInput(
-				"Name deity",
-				"Now that you've built a temple, you should choose a name by which to your people will call this deity.",
+				"Đặt tên thần linh",
+				"Bạn đã xây một ngôi đền. Hãy chọn tên để mọi người gọi vị thần này.",
 				"",
 				false,
 				function (input) {

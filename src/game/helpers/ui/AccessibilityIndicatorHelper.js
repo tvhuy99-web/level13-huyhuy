@@ -35,10 +35,10 @@ define([], function () {
 	AccessibilityIndicatorHelper.prototype.configureIndicator = function (indicator) {
 		if (!indicator) return;
 		let label = "";
-		if (indicator.classList.contains("indicator-equipped")) label = "Equipped";
-		else if (indicator.classList.contains("indicator-increase")) label = "Better than current selection";
-		else if (indicator.classList.contains("indicator-decrease")) label = "Worse than current selection";
-		else if (indicator.classList.contains("indicator-even")) label = "Same as current selection";
+		if (indicator.classList.contains("indicator-equipped")) label = "Đã trang bị";
+		else if (indicator.classList.contains("indicator-increase")) label = "Tốt hơn lựa chọn hiện tại";
+		else if (indicator.classList.contains("indicator-decrease")) label = "Tệ hơn lựa chọn hiện tại";
+		else if (indicator.classList.contains("indicator-even")) label = "Giống lựa chọn hiện tại";
 
 		if (label) {
 			indicator.setAttribute("role", "img");

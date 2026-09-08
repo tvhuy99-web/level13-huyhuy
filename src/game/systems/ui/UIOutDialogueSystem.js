@@ -134,7 +134,7 @@ define([
 			}
 			
 			let textKey = pageVO.textKey;
-			if (!textKey && pageVO.resultTemplate) textKey = "Found something";
+			if (!textKey && pageVO.resultTemplate) textKey = "Phát hiện một điều gì đó";
 			$("#dialogue-module-dialogue p").html(Text.t(textKey, textParams));
 
 			let metaTextKey = pageVO.metaTextKey;

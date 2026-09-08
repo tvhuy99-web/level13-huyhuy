@@ -57,17 +57,17 @@ define([
 
 			let input = row.querySelector(".stepper input.amount");
 			if (input) {
-				input.setAttribute("aria-label", worker + " workers");
+				input.setAttribute("aria-label", worker + " người lao động");
 				let buttons = row.querySelectorAll(".stepper button[data-type]");
 				for (let j = 0; j < buttons.length; j++) {
-					let action = buttons[j].getAttribute("data-type") === "plus" ? "Increase" : "Decrease";
-					buttons[j].setAttribute("aria-label", action + " " + worker + " workers");
+					let action = buttons[j].getAttribute("data-type") === "plus" ? "Tăng" : "Giảm";
+					buttons[j].setAttribute("aria-label", action + " " + worker + " người lao động");
 					if (input.id) buttons[j].setAttribute("aria-controls", input.id);
 				}
 			}
 
 			let auto = row.querySelector("input.in-assign-workers-auto-toggle");
-			if (auto) auto.setAttribute("aria-label", "Auto-assign " + worker + " workers");
+			if (auto) auto.setAttribute("aria-label", "Tự động phân công " + worker + " người lao động");
 		}
 	};
 
@@ -83,17 +83,17 @@ define([
 			if (toggle && plan) {
 				toggle.setAttribute("aria-controls", plan.id);
 				toggle.setAttribute("aria-expanded", this.isVisible(plan) ? "true" : "false");
-				if (partner) toggle.setAttribute("aria-label", "Send caravan to " + partner);
+				if (partner) toggle.setAttribute("aria-label", "Gửi đoàn xe tới " + partner);
 			}
 			if (!plan) continue;
 
 			let sellSelect = plan.querySelector(".trade-caravans-outgoing-select-sell");
 			let buySelect = plan.querySelector(".trade-caravans-outgoing-select-buy");
 			let sellRange = plan.querySelector(".trade-caravans-outgoing-range-sell");
-			if (sellSelect) sellSelect.setAttribute("aria-label", "Resource to send to " + (partner || "trade partner"));
-			if (buySelect) buySelect.setAttribute("aria-label", "Resource to receive from " + (partner || "trade partner"));
+			if (sellSelect) sellSelect.setAttribute("aria-label", "Tài nguyên gửi tới " + (partner || "đối tác giao thương"));
+			if (buySelect) buySelect.setAttribute("aria-label", "Tài nguyên nhận từ " + (partner || "đối tác giao thương"));
 			if (sellRange) {
-				sellRange.setAttribute("aria-label", "Amount to send to " + (partner || "trade partner"));
+				sellRange.setAttribute("aria-label", "Số lượng gửi tới " + (partner || "đối tác giao thương"));
 				this.updateRangeValue(sellRange);
 				if (sellRange.getAttribute("data-accessibility-range-bound") !== "true") {
 					sellRange.setAttribute("data-accessibility-range-bound", "true");
@@ -117,7 +117,7 @@ define([
 			let typeElement = slot.querySelector(".explorer-slot-type-empty, .explorer-slot-type-selected");
 			let type = this.normalize(typeElement ? typeElement.textContent : "");
 			slot.setAttribute("role", "group");
-			if (type) slot.setAttribute("aria-label", type + " explorer slot");
+			if (type) slot.setAttribute("aria-label", "Ô nhà thám hiểm: " + type);
 		}
 
 		let explorers = document.querySelectorAll("#container-tab-two-explorers .npc-container");
@@ -140,11 +140,11 @@ define([
 				let button = buttons[j];
 				let action = button.getAttribute("action") || "";
 				let label = "";
-				if (action.indexOf("start_explorer_dialogue_") === 0) label = "Talk to " + name;
-				else if (action.indexOf("select_explorer_") === 0) label = "Add " + name + " to party";
-				else if (action.indexOf("deselect_explorer_") === 0) label = "Remove " + name + " from party";
-				else if (action.indexOf("dismiss_explorer_") === 0) label = "Dismiss " + name;
-				else if (action.indexOf("heal_explorer_") === 0) label = "Heal " + name;
+				if (action.indexOf("start_explorer_dialogue_") === 0) label = "Nói chuyện với " + name;
+				else if (action.indexOf("select_explorer_") === 0) label = "Thêm " + name + " vào đội";
+				else if (action.indexOf("deselect_explorer_") === 0) label = "Bỏ " + name + " khỏi đội";
+				else if (action.indexOf("dismiss_explorer_") === 0) label = "Sa thải " + name;
+				else if (action.indexOf("heal_explorer_") === 0) label = "Chữa trị cho " + name;
 				if (label && name) button.setAttribute("aria-label", label);
 			}
 		}
@@ -164,10 +164,10 @@ define([
 				let hide = row.querySelector("button.hide-project");
 				let map = row.querySelector("button.navigation");
 				let action = row.querySelector("button.action");
-				if (hide) hide.setAttribute("aria-label", "Hide project " + name);
-				if (map) map.setAttribute("aria-label", "Show project " + name + " on map");
+				if (hide) hide.setAttribute("aria-label", "Ẩn dự án " + name);
+				if (map) map.setAttribute("aria-label", "Hiện dự án " + name + " trên bản đồ");
 				if (action) {
-					let actionText = this.normalize(action.textContent) || "Build";
+					let actionText = this.normalize(action.textContent) || "Xây dựng";
 					action.setAttribute("aria-label", actionText + " " + name);
 				}
 			}
@@ -196,8 +196,8 @@ define([
 			section = document.createElement("section");
 			section.id = "accessibility-researched-upgrades";
 			section.className = "hide-from-visual-layout";
-			section.setAttribute("aria-label", "Researched upgrades");
-			section.innerHTML = "<h3>Researched upgrades</h3><ul></ul>";
+			section.setAttribute("aria-label", "Nâng cấp đã nghiên cứu");
+			section.innerHTML = "<h3>Nâng cấp đã nghiên cứu</h3><ul></ul>";
 			host.appendChild(section);
 		}
 

@@ -175,7 +175,7 @@ define([
 				if (lastReason !== comparisonReason) {
 					let displayReason = Text.t(disabledReason);
 					if (isDisabledOnlyForCooldown) {
-						displayReason = "Cooldown " + PlayerActionConstants.getCooldown(action) + "s";
+						displayReason = "Hồi chiêu " + PlayerActionConstants.getCooldown(action) + " giây";
 					}
 					GameGlobals.uiFunctions.toggle($enabledContent, false, this.buttonCalloutSignalParams);
 					GameGlobals.uiFunctions.toggle($disabledContent, true, this.buttonCalloutSignalParams);

@@ -98,7 +98,7 @@ function (Ash, Text, ExceptionHandler, GameGlobals, GlobalSignals, UIConstants) 
 			
 			let showTakeAll = hasResult && resultVO.hasSelectable();
 			if (showTakeAll) {
-				$("#common-popup .buttonbox").append("<button id='confirmation-takeall' class='action' action='take_all'>Take all</button>");
+				$("#common-popup .buttonbox").append("<button id='confirmation-takeall' class='action' action='take_all'>Lấy tất cả</button>");
 				$("#confirmation-takeall").click(ExceptionHandler.wrapClick(function (e) {
 					popUpManager.handleOkButton(true, okCallback);
 				}));

@@ -21,15 +21,15 @@ define([], function () {
 	};
 
 	AccessibilityB2Helper.prototype.configureSettings = function () {
-		this.setLabel("settings-checkbox-sfx-enabled", "Enable sounds");
-		this.setLabel("settings-checkbox-hotkeys-enabled", "Enable hotkeys");
-		this.setLabel("settings-checkbox-hotkeys-numpad", "Use Numpad for movement");
-		this.setLabel("language-dropdown", "Language");
+		this.setLabel("settings-checkbox-sfx-enabled", "Bật âm thanh");
+		this.setLabel("settings-checkbox-hotkeys-enabled", "Bật phím tắt");
+		this.setLabel("settings-checkbox-hotkeys-numpad", "Dùng bàn phím số để di chuyển");
+		this.setLabel("language-dropdown", "Ngôn ngữ");
 
 		let hotkeys = document.getElementById("hotkeys-list");
 		if (hotkeys) {
 			hotkeys.setAttribute("role", "region");
-			hotkeys.setAttribute("aria-label", "Hotkeys");
+			hotkeys.setAttribute("aria-label", "Phím tắt");
 		}
 	};
 
@@ -61,7 +61,7 @@ define([], function () {
 			if (!this.isVisible(inputContainer)) return;
 			input.setAttribute("aria-invalid", "true");
 			input.focus();
-			this.announceAssertive("Input was not accepted. Please review the field and try again.");
+			this.announceAssertive("Dữ liệu nhập chưa được chấp nhận. Hãy kiểm tra lại trường này và thử lại.");
 		}, 180);
 	};
 

@@ -20,7 +20,7 @@ define([
 		if (!player || !inventory) return false;
 		let playerText = this.norm(player.textContent);
 		let inventoryText = this.norm(inventory.textContent);
-		return playerText.indexOf("Player status.") >= 0 && inventoryText.indexOf("Inventory.") >= 0;
+		return playerText.indexOf("Trạng thái người chơi.") >= 0 && inventoryText.indexOf("Túi đồ.") >= 0;
 	};
 
 	H.prototype.isRealtimeVisualHeaderMutationTarget = function (target) {
@@ -101,7 +101,8 @@ define([
 
 	H.prototype.isTemporaryMovementReason = function (reason) {
 		let text = this.norm(reason).toLowerCase();
-		return text.indexOf("currently unavailable") >= 0 || text.indexOf("busy ") === 0 || text.indexOf("in progress") >= 0;
+		return text.indexOf("currently unavailable") >= 0 || text.indexOf("busy ") === 0 || text.indexOf("in progress") >= 0
+			|| text.indexOf("tạm thời không khả dụng") >= 0 || text.indexOf("đang bận") === 0 || text.indexOf("đang thực hiện") >= 0;
 	};
 
 	H.prototype.configureDirectionButtonAccessibility = function (button, baseLabel) {
@@ -113,9 +114,9 @@ define([
 		let label = baseLabel;
 		if (disabled) {
 			if (temporary) {
-				label += ". Temporarily unavailable while the current movement or action finishes.";
+				label += ". Tạm thời không khả dụng trong khi hành động hiện tại hoàn tất.";
 			} else {
-				label += ". Cannot move.";
+				label += ". Không thể di chuyển.";
 				if (reason) label += " " + reason + ".";
 			}
 			button.setAttribute("aria-disabled", "true");
@@ -127,14 +128,14 @@ define([
 	};
 
 	H.prototype.configureMovement = function () {
-		let dirs = { nw:"northwest", north:"north", ne:"northeast", west:"west", east:"east", sw:"southwest", south:"south", se:"southeast" };
+		let dirs = { nw:"tây bắc", north:"bắc", ne:"đông bắc", west:"tây", east:"đông", sw:"tây nam", south:"nam", se:"đông nam" };
 		let directionButtons = [];
 		let directionStates = [];
 		for (let k in dirs) {
 			let button = document.getElementById("out-action-move-" + k);
 			let emergencyButton = document.getElementById("out-action-move-" + k + "-grit");
-			let normalState = this.configureDirectionButtonAccessibility(button, "Move " + dirs[k]);
-			let emergencyState = this.configureDirectionButtonAccessibility(emergencyButton, "Move " + dirs[k] + " using emergency movement");
+			let normalState = this.configureDirectionButtonAccessibility(button, "Di chuyển " + dirs[k]);
+			let emergencyState = this.configureDirectionButtonAccessibility(emergencyButton, "Di chuyển " + dirs[k] + " bằng lối khẩn cấp");
 			if (button) directionButtons.push(button);
 			if (emergencyButton) directionButtons.push(emergencyButton);
 
@@ -147,7 +148,7 @@ define([
 		let compass = document.getElementById("out-container-compass-actions");
 		if (compass) {
 			compass.setAttribute("role", "group");
-			compass.setAttribute("aria-label", "Movement and travel actions");
+			compass.setAttribute("aria-label", "Hành động di chuyển và hành trình");
 		}
 
 		let region = this.movementRegion();
@@ -177,28 +178,28 @@ define([
 
 		let message = "";
 		if (popup) {
-			message = "Movement is not available during the current dialogue or popup. Continue or close it first.";
+			message = "Không thể di chuyển trong hội thoại hoặc cửa sổ hiện tại. Hãy tiếp tục hoặc đóng nó trước.";
 		} else if (getUp) {
-			message = "Movement is not available yet. Choose Get up.";
+			message = "Chưa thể di chuyển. Hãy chọn Đứng dậy.";
 		} else if (hasVisibleMovementTable && visibleDirectionCount > 0) {
 			if (movementAvailable) {
-				message = "Movement is available. Available directions: " + availableDirections.join(", ") + ".";
+				message = "Có thể di chuyển. Các hướng khả dụng: " + availableDirections.join(", ") + ".";
 			} else if (temporaryDirections.length > 0) {
-				message = "Movement is temporarily unavailable while the current movement or action finishes.";
+				message = "Tạm thời không thể di chuyển trong khi hành động hiện tại hoàn tất.";
 			} else {
-				message = "No movement direction is currently available.";
+				message = "Hiện không có hướng di chuyển khả dụng.";
 			}
-			if (temporaryDirections.length > 0) message += " Temporarily unavailable: " + temporaryDirections.join(", ") + ".";
-			if (blockedDirections.length > 0) message += " Blocked directions: " + blockedDirections.join(", ") + ".";
-			message += " Direction buttons follow.";
+			if (temporaryDirections.length > 0) message += " Tạm thời không khả dụng: " + temporaryDirections.join(", ") + ".";
+			if (blockedDirections.length > 0) message += " Hướng bị chặn: " + blockedDirections.join(", ") + ".";
+			message += " Các nút hướng nằm ngay sau đây.";
 		} else if (this.visible(buildCamp)) {
-			message = "Movement directions are not unlocked yet. This is the opening exploration area: build a camp, enter it, then leave camp when ready to explore to unlock direction buttons.";
+			message = "Các hướng di chuyển chưa được mở khóa. Đây là khu vực thám hiểm mở đầu: hãy xây trại, vào trại rồi rời trại khi sẵn sàng thám hiểm để mở khóa các nút hướng.";
 		} else if (this.visible(enterCamp)) {
-			message = "Movement directions are not unlocked yet. Enter camp, prepare for exploration, then leave camp to unlock direction buttons.";
+			message = "Các hướng di chuyển chưa được mở khóa. Hãy vào trại, chuẩn bị thám hiểm rồi rời trại để mở khóa các nút hướng.";
 		} else if (this.visible(scout)) {
-			message = "Movement directions are not unlocked yet. Complete the available exploration actions first.";
+			message = "Các hướng di chuyển chưa được mở khóa. Trước hết hãy hoàn thành các hành động thám hiểm khả dụng.";
 		} else {
-			message = "Movement directions are currently unavailable.";
+			message = "Hiện không có hướng di chuyển khả dụng.";
 		}
 
 		if (region.textContent !== message) region.textContent = message;

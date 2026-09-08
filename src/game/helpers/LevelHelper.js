@@ -921,9 +921,9 @@ define([
 
 		getClearBlockerProjectName: function (blockerType, isEarlyZone) {
 			switch (blockerType) {
-				case MovementConstants.BLOCKER_TYPE_GAP: return "Bridge";
-				case MovementConstants.BLOCKER_TYPE_DEBRIS: return "Debris";
-				case MovementConstants.BLOCKER_TYPE_EXPLOSIVES: return "Explosives";
+				case MovementConstants.BLOCKER_TYPE_GAP: return "Bắc cầu";
+				case MovementConstants.BLOCKER_TYPE_DEBRIS: return "Đống đổ nát";
+				case MovementConstants.BLOCKER_TYPE_EXPLOSIVES: return "Chất nổ";
 			}
 			
 		},
@@ -956,7 +956,7 @@ define([
 				case improvementNames.luxuryOutpost:
 					let luxuryResource = GameGlobals.sectorHelper.getLuxuryResourceOnSector(sector);
 					let resourceName = TribeConstants.getLuxuryDisplayName(luxuryResource);
-					return "Resource outpost (" + resourceName + ")";
+					return "Tiền đồn tài nguyên (" + resourceName + ")";
 			}
 			
 			let improvementID = ImprovementConstants.getImprovementID(improvementName);

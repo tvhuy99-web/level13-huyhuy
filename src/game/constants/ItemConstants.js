@@ -449,15 +449,15 @@ function (Ash, ItemData, Text, MathUtils, PlayerActionConstants, SectorConstants
 		},
 		
 		getUseItemVerb: function (item) {
-			if (item.id.startsWith("cache_metal")) return "Disassemble";
-			if (item.id.startsWith("cache_evidence")) return "Read";
-			if (item.id.startsWith("cache_rumours")) return "Read";
-			if (item.id.startsWith("cache_insight")) return "Read";
-			if (item.id.startsWith("cache_hope")) return "Donate";
-			if (item.id.startsWith("cache_robots")) return "Repair";
-			if (item.id.startsWith("robot")) return "Repair";
-			if (item.id.startsWith("document")) return "Read";
-			return "Use";
+			if (item.id.startsWith("cache_metal")) return "Tháo dỡ";
+			if (item.id.startsWith("cache_evidence")) return "Đọc";
+			if (item.id.startsWith("cache_rumours")) return "Đọc";
+			if (item.id.startsWith("cache_insight")) return "Đọc";
+			if (item.id.startsWith("cache_hope")) return "Dâng tặng";
+			if (item.id.startsWith("cache_robots")) return "Sửa chữa";
+			if (item.id.startsWith("robot")) return "Sửa chữa";
+			if (item.id.startsWith("document")) return "Đọc";
+			return "Sử dụng";
 		},
 			
 		getItemDisplayName: function (item, short) {
