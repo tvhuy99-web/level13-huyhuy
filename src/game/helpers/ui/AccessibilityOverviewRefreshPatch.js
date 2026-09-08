@@ -74,6 +74,7 @@ define([
 			GlobalSignals.gameShownSignal,
 			GlobalSignals.gameStartedSignal,
 			GlobalSignals.gameStateRefreshSignal,
+			GlobalSignals.updateButtonsSignal,
 			GlobalSignals.actionCompletedSignal,
 			GlobalSignals.actionRewardsCollectedSignal,
 			GlobalSignals.inventoryChangedSignal,
