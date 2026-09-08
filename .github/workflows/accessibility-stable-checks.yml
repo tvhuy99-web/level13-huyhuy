@@ -29,6 +29,7 @@ jobs:
           done < <(find src/game/helpers/ui -maxdepth 1 -name 'Accessibility*.js' -print0)
           node --check src/game/GameGlobalsInitializer.js
           node --check scripts/accessibility-stable-smoke.js
+          python3 -m py_compile scripts/accessibility-master-runtime-smoke.py scripts/accessibility-overview-refresh-smoke.py
 
       - name: Verify accessibility wiring on master
         run: node scripts/accessibility-stable-smoke.js
@@ -43,4 +44,6 @@ jobs:
           python3 -m http.server 8000 --directory .. >/tmp/level13-http.log 2>&1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID || true' EXIT
-          LEVEL13_BASE_URL="http://127.0.0.1:8000/level13-huyhuy/" python3 scripts/accessibility-master-runtime-smoke.py
+          export LEVEL13_BASE_URL="http://127.0.0.1:8000/level13-huyhuy/"
+          python3 scripts/accessibility-master-runtime-smoke.py
+          python3 scripts/accessibility-overview-refresh-smoke.py
