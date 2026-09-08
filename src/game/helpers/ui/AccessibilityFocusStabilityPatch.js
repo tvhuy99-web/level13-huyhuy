@@ -14,12 +14,6 @@ define([
 		);
 	};
 
-	// The visual headers are source data only: suppressVisualHeaders makes them
-	// aria-hidden and inert, while renderHeaderOverview exposes a separate stable
-	// text snapshot to screen readers. Let the headers populate the initial
-	// snapshot, then stop their continuously changing values (vision, stamina,
-	// health, resources, etc.) from rebuilding that snapshot while TalkBack is
-	// traversing the page.
 	H.prototype.hasInitializedHeaderOverviews = function () {
 		let player = document.getElementById("accessibility-player-overview");
 		let inventory = document.getElementById("accessibility-inventory-camp-overview");
@@ -46,9 +40,6 @@ define([
 		return false;
 	};
 
-	// Keep the observer focused on game DOM changes. ARIA attributes below are
-	// maintained by accessibility helpers themselves and observing them creates
-	// a refresh -> ARIA write -> refresh feedback loop on mobile screen readers.
 	H.prototype.observe = function () {
 		if (this.observer || typeof MutationObserver === "undefined" || !document.body) return;
 		this.observer = new MutationObserver((mutations) => {
@@ -64,10 +55,6 @@ define([
 		});
 	};
 
-	// The base helper creates compact real-text summaries for read-only visual
-	// clusters. Updating textContent with an identical string still replaces the
-	// text node and can invalidate TalkBack's virtual-cursor anchor. Make this
-	// operation idempotent.
 	H.prototype.setReadOnlySummary = function (source, label) {
 		label = this.norm(label);
 		if (!source || !label || !source.parentElement || this.hasActions(source) || this.isInVisualHeader(source)) return;
@@ -87,8 +74,6 @@ define([
 		this.suppressVisualTree(source, "summary");
 	};
 
-	// Keep the movement explanation next to the movement/action area in browse
-	// order instead of at the very top of the whole exploration panel.
 	H.prototype.movementRegion = function () {
 		let region = document.getElementById("accessibility-movement-status");
 		let host = document.getElementById("container-tab-two-out-actions") || document.getElementById("container-tab-two-out") || document.body;
@@ -114,21 +99,31 @@ define([
 		return text;
 	};
 
+	H.prototype.isTemporaryMovementReason = function (reason) {
+		let text = this.norm(reason).toLowerCase();
+		return text.indexOf("currently unavailable") >= 0 || text.indexOf("busy ") === 0 || text.indexOf("in progress") >= 0;
+	};
+
 	H.prototype.configureDirectionButtonAccessibility = function (button, baseLabel) {
 		if (!button) return null;
 		let isVisible = this.visible(button);
 		let disabled = isVisible && (!!button.disabled || button.classList.contains("btn-disabled"));
 		let reason = disabled ? this.getMovementDisabledReason(button) : "";
+		let temporary = disabled && this.isTemporaryMovementReason(reason);
 		let label = baseLabel;
 		if (disabled) {
-			label += ". Cannot move.";
-			if (reason) label += " " + reason + ".";
+			if (temporary) {
+				label += ". Temporarily unavailable while the current movement or action finishes.";
+			} else {
+				label += ". Cannot move.";
+				if (reason) label += " " + reason + ".";
+			}
 			button.setAttribute("aria-disabled", "true");
 		} else {
 			button.removeAttribute("aria-disabled");
 		}
 		if (button.getAttribute("aria-label") !== label) button.setAttribute("aria-label", label);
-		return { button: button, disabled: disabled, reason: reason };
+		return { button: button, disabled: disabled, temporary: temporary, reason: reason };
 	};
 
 	H.prototype.configureMovement = function () {
@@ -164,11 +159,16 @@ define([
 		let hasVisibleMovementTable = this.visible(movementTable);
 		let visibleDirectionCount = directionStates.length;
 		let availableDirections = [];
+		let temporaryDirections = [];
 		let blockedDirections = [];
 		for (let i = 0; i < directionStates.length; i++) {
 			let item = directionStates[i];
-			if (item.state && item.state.disabled) blockedDirections.push(item.name);
-			else availableDirections.push(item.name);
+			if (item.state && item.state.disabled) {
+				if (item.state.temporary) temporaryDirections.push(item.name);
+				else blockedDirections.push(item.name);
+			} else {
+				availableDirections.push(item.name);
+			}
 		}
 		let movementAvailable = hasVisibleMovementTable && availableDirections.length > 0;
 		let buildCamp = document.querySelector("button[action='build_out_camp']");
@@ -183,10 +183,13 @@ define([
 		} else if (hasVisibleMovementTable && visibleDirectionCount > 0) {
 			if (movementAvailable) {
 				message = "Movement is available. Available directions: " + availableDirections.join(", ") + ".";
+			} else if (temporaryDirections.length > 0) {
+				message = "Movement is temporarily unavailable while the current movement or action finishes.";
 			} else {
 				message = "No movement direction is currently available.";
 			}
-			if (blockedDirections.length > 0) message += " Cannot move: " + blockedDirections.join(", ") + ".";
+			if (temporaryDirections.length > 0) message += " Temporarily unavailable: " + temporaryDirections.join(", ") + ".";
+			if (blockedDirections.length > 0) message += " Blocked directions: " + blockedDirections.join(", ") + ".";
 			message += " Direction buttons follow.";
 		} else if (this.visible(buildCamp)) {
 			message = "Movement directions are not unlocked yet. This is the opening exploration area: build a camp, enter it, then leave camp when ready to explore to unlock direction buttons.";
