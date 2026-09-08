@@ -210,7 +210,7 @@ define([
 				movementOptions.canMoveTo[direction] = movementOptions.canMoveTo[direction] && !GameGlobals.movementHelper.isBlocked(entity, direction);
 				movementOptions.cantMoveToReason[direction] = GameGlobals.movementHelper.getBlockedReason(entity, direction);
 				if (isBlockedByHazard) movementOptions.cantMoveToReason[direction] = GameGlobals.sectorHelper.getHazardDisabledReason(featuresComponent, statusComponent, this.itemsNodes.head.items);
-				if (!neighbour) movementOptions.cantMoveToReason[direction] = "Nothing here.";
+				if (!neighbour) movementOptions.cantMoveToReason[direction] = "Không có gì ở đó.";
 				
 				//log.i(PositionConstants.getDirectionName(direction) + "\t" + isBlockedByHazard + " | " + movementOptions.cantMoveToReason[direction]);
 			}

@@ -179,8 +179,8 @@ define([
 				
 				if (sunlit > 0.5) {
 					if (shadeBonus + maxValueBase > maxValue) {
-						addMax("Sunglasses", shadeBonus);
-						addAccumulation("Sunglasses", shadeBonus / maxValueBase);
+						addMax("Kính râm", shadeBonus);
+						addAccumulation("Kính râm", shadeBonus / maxValueBase);
 					}
 				} else if (sunlit < 0.5) {
 					// equipment
@@ -195,15 +195,15 @@ define([
 						// TODO remove hardcoded glowstick vision value
 						let glowstickValue = 30;
 						let value = (maxValueBase + glowstickValue) - maxValue;
-						addMax("Glowstick", value);
-						addAccumulation("Glowstick", glowstickValue / maxValueBase);
+						addMax("Que phát sáng", value);
+						addAccumulation("Que phát sáng", glowstickValue / maxValueBase);
 						statusComponent.glowStickSeconds -= time * GameConstants.gameSpeedExploration;
 					}
 					// perks
 					var perkBonus = perksComponent.getTotalEffect(PerkConstants.perkTypes.light);
 					if (perkBonus > 0) {
-						addMax("Beacon", perkBonus);
-						addAccumulation("Beacon" , perkBonus);
+						addMax("Đèn hiệu", perkBonus);
+						addAccumulation("Đèn hiệu" , perkBonus);
 					}
 				}
 			}
@@ -232,15 +232,15 @@ define([
 					if (!inCamp) {
 						if (sunlit) {
 							if (isTotalReset) {
-								GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_VISION_RESET, "Blinded by sunlight.");
+								GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_VISION_RESET, "Bị ánh nắng làm lóa mắt.");
 							} else {
-								GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_VISION_RESET, "Engulfed by sunlight.");
+								GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_VISION_RESET, "Bị ánh nắng bao trùm.");
 							}
 						} else {
 							if (isTotalReset) {
-								GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_VISION_RESET, "The darkness is like a wall.");
+								GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_VISION_RESET, "Bóng tối dày như một bức tường.");
 							} else {
-								GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_VISION_RESET, "Back into the darkness.");
+								GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_VISION_RESET, "Lại chìm vào bóng tối.");
 							}
 						}
 					}
@@ -249,9 +249,9 @@ define([
 					vision.value = 0;
 					if (!inCamp) {
 						if (sunlit) {
-							GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_VISION_RESET, "Blinded by sunlight.");
+								GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_VISION_RESET, "Bị ánh nắng làm lóa mắt.");
 						} else {
-							GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_VISION_RESET, "The darkness is like a wall.");
+								GameGlobals.playerHelper.addLogMessage(LogConstants.MSG_ID_VISION_RESET, "Bóng tối dày như một bức tường.");
 						}
 					}
 				}

@@ -53,19 +53,19 @@ define([
 				if (blocker !== null) {
 					switch (blocker.type) {
 						case MovementConstants.BLOCKER_TYPE_GAP:
-							return { value: !isBridged, reason: "Bridge needed." };
+							return { value: !isBridged, reason: "Cần bắc cầu." };
 						case MovementConstants.BLOCKER_TYPE_WASTE_TOXIC:
-							return { value: !isCleaned, reason: "Blocked by toxic waste." };
+							return { value: !isCleaned, reason: "Bị chặn bởi chất thải độc hại." };
 						case MovementConstants.BLOCKER_TYPE_WASTE_RADIOACTIVE:
-							return { value: !isCleaned, reason: "Blocked by radioactive waste." };
+							return { value: !isCleaned, reason: "Bị chặn bởi chất thải phóng xạ." };
 						case MovementConstants.BLOCKER_TYPE_GANG:
-							return { value: !isDefeated, reason: "Blocked by a fight." };
+							return { value: !isDefeated, reason: "Bị chặn bởi một cuộc chiến." };
 						case MovementConstants.BLOCKER_TYPE_DEBRIS:
-							return { value: !isCleared, reason: "Blocked by debris." };
+							return { value: !isCleared, reason: "Bị chặn bởi đống đổ nát." };
 						case MovementConstants.BLOCKER_TYPE_EXPLOSIVES:
-							return { value: !isCleared, reason: "Blocked by explosives." };
+							return { value: !isCleared, reason: "Bị chặn bởi chất nổ." };
 						case MovementConstants.BLOCKER_TYPE_TOLL_GATE:
-							return { value: !isCleared, reason: "Blocked by a toll gate." };
+							return { value: !isCleared, reason: "Bị chặn bởi trạm thu phí." };
 						default:
 							log.w(this, "Unknown blocker type: " + blocker.type);
 							return { value: false };
@@ -83,7 +83,7 @@ define([
 				
 				if (!passage) {
 					blocked = true;
-					reason = "No passage.";
+					reason = "Không có lối đi.";
 				} else {
 					blocked = false;
 				}

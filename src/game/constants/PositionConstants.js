@@ -468,20 +468,20 @@ define(['ash', 'game/vos/PositionVO'], function (Ash, PositionVO) {
 		
 		getDirectionName: function (direction, short) {
 			switch (direction) {
-				case this.DIRECTION_WEST: return short ? "W" : "west";
-				case this.DIRECTION_NORTH: return short ? "N" : "north";
-				case this.DIRECTION_SOUTH: return short ? "S" : "south";
-				case this.DIRECTION_EAST: return short ? "E" : "east";
-				case this.DIRECTION_NE: return short ? "NE" : "north-east";
-				case this.DIRECTION_SE: return short ? "SE" : "south-east";
-				case this.DIRECTION_SW: return short ? "SW" : "south-west";
-				case this.DIRECTION_NW: return short ? "NW" : "north-west";
-				case this.DIRECTION_UP: return short ? "U" : "up";
-				case this.DIRECTION_DOWN: return short ? "D" : "down";
-				case this.DIRECTION_CAMP: return short ? "C" : "camp";
-				case this.DIRECTION_NONE: return "none";
+				case this.DIRECTION_WEST: return short ? "W" : "tây";
+				case this.DIRECTION_NORTH: return short ? "N" : "bắc";
+				case this.DIRECTION_SOUTH: return short ? "S" : "nam";
+				case this.DIRECTION_EAST: return short ? "E" : "đông";
+				case this.DIRECTION_NE: return short ? "NE" : "đông-bắc";
+				case this.DIRECTION_SE: return short ? "SE" : "đông-nam";
+				case this.DIRECTION_SW: return short ? "SW" : "tây-nam";
+				case this.DIRECTION_NW: return short ? "NW" : "tây-bắc";
+				case this.DIRECTION_UP: return short ? "U" : "lên";
+				case this.DIRECTION_DOWN: return short ? "D" : "xuống";
+				case this.DIRECTION_CAMP: return short ? "C" : "trại";
+				case this.DIRECTION_NONE: return "không có";
 			}
-			return "unknown";
+			return "không rõ";
 		},
 		
 		getDirectionTextKey: function (direction, short) {

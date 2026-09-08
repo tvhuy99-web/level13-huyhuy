@@ -405,19 +405,19 @@ define([
 					let lostCurrency = raidComponent.currencyLost;
 
 					if (raidComponent.victory) {
-						logMsg = "There has been a raid. We drove the attackers away.";
+						logMsg = "Đã xảy ra một cuộc đột kích. Chúng ta đã đẩy lùi kẻ tấn công.";
 					} else {
-						logMsg = "There has been a raid.";
+						logMsg = "Đã xảy ra một cuộc đột kích.";
 						if (lostResources.getTotal() > 0) {
-							logMsg += " We lost some resources.";
+							logMsg += " Chúng ta đã mất một số tài nguyên.";
 						} else if (currencyLost > 0) {
-							logMsg += " They stole some silver.";
+							logMsg += " Chúng đã lấy trộm bạc.";
 						} else {
-							logMsg += " There was nothing left to steal.";
+							logMsg += " Không còn gì để lấy trộm.";
 						}
 						
 						if (raidComponent.defendersLost > 0) {
-							logMsg += " " + raidComponent.defendersLost + " defenders were killed.";
+							logMsg += " " + raidComponent.defendersLost + " người phòng thủ đã bị giết.";
 						}
 
 						GameGlobals.gameState.increaseGameStatSimple("numRaidsLost");
@@ -426,7 +426,7 @@ define([
 					}
 					
 					if (raidComponent.damagedBuilding != null) {
-						logMsg += " A building was damaged.";
+						logMsg += " Một công trình đã bị hư hại.";
 					}
 
 					let raidEntry = { level: campNode.position.level, timeStamp: eventVO.timeStamp };
@@ -484,7 +484,7 @@ define([
 					let disasterType = MathUtils.randomElement(GameGlobals.campHelper.getValidDisasterTypes(campNode.entity));
 					campNode.entity.add(new DisasterComponent(disasterType));
 					if (this.isPlayerInCamp(campNode)) {
-						logMsg = "A " + disasterType + "!";
+						logMsg = "Một sự cố " + disasterType + "!";
 					}
 					break;
 
@@ -493,7 +493,7 @@ define([
 					let numUpdates = MathUtils.randomIntBetween(2, 8);
 					GameGlobals.campHelper.addDisabledPopulation(campNode.entity, num, null, CampConstants.DISABLED_POPULATION_REASON_DISEASE, -1);
 					campNode.entity.add(new DiseaseComponent("disease", numUpdates));
-					logMsg = "Disease outbreak!";
+					logMsg = "Dịch bệnh bùng phát!";
 					break;
 
 				case OccurrenceConstants.campOccurrenceTypes.trader:
@@ -505,7 +505,7 @@ define([
 					let traderLevel = GameGlobals.campHelper.getEventUpgradeLevel(OccurrenceConstants.campOccurrenceTypes.trader);
 					var caravan = GameGlobals.campHelper.getRandomIncomingCaravan(numCamps, GameGlobals.gameState.level, traderLevel, GameGlobals.gameState.getUnlockedResources(), neededIngredient);
 					campNode.entity.add(new TraderComponent(caravan));
-					logMsg = Text.capitalize(Text.addArticle(caravan.name)) + " arrives. ";
+					logMsg = caravan.name + " đã đến. ";
 					break;
 					
 				case OccurrenceConstants.campOccurrenceTypes.recruit:
@@ -517,8 +517,8 @@ define([
 					let isFoundAsReward = hasPendingExplorer && explorer.source != ExplorerConstants.explorerSource.EVENT;
 					campNode.entity.add(new RecruitComponent(explorer, isFoundAsReward));
 					
-					let building = hasInn ? "the inn" : "the camp";
-					logMsg = isFoundAsReward ? "Explorer met when exploring is waiting at " + building + "." : "An explorer arrives at " + building + ".";
+					let building = hasInn ? "nhà trọ" : "trại";
+					logMsg = isFoundAsReward ? "Một nhà thám hiểm gặp khi thám hiểm đang chờ ở " + building + "." : "Một nhà thám hiểm đã đến " + building + ".";
 					GameGlobals.playerActionFunctions.unlockFeature("explorers");
 					if (hasPendingExplorer) {
 						duration = OccurrenceConstants.EVENT_DURATION_INFINITE;
@@ -528,7 +528,7 @@ define([
 				case OccurrenceConstants.campOccurrenceTypes.raid:
 					campNode.entity.add(new RaidComponent());
 					if (this.isPlayerInCamp(campNode)) {
-						logMsg = "A raid! The camp is under attack.";
+						logMsg = "Đột kích! Trại đang bị tấn công.";
 					}
 					break;
 
@@ -538,7 +538,7 @@ define([
 					let isStoryRefugees = GameGlobals.gameState.getStoryFlag(StoryConstants.flags.APOCALYPSE_PENDING_REFUGEES);
 					let dialogueSource = isStoryRefugees ? "refugees_earthquake" : "refugees_default";
 					campNode.entity.add(new RefugeesComponent(refugeesNum, dialogueSource));
-					logMsg = "A group of refugees from the City arrives at the camp.";
+					logMsg = "Một nhóm người tị nạn từ Thành phố đã đến trại.";
 					break;
 
 				case OccurrenceConstants.campOccurrenceTypes.visitor:
@@ -546,7 +546,7 @@ define([
 					let isExpedition = GameGlobals.campHelper.isValidCampForExpeditionVisitors(campOrdinal);
 					let visitorDialogueSource = isExpedition ? "visitor_expedition" : CharacterConstants.getDialogueSourceID(visitorType);
 					campNode.entity.add(new VisitorComponent(visitorType, visitorDialogueSource));
-					logMsg = "A visitor arrives.";
+					logMsg = "Một vị khách đã đến.";
 					break;
 			}
 			

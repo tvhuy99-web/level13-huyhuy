@@ -89,7 +89,7 @@ define([
 			var canMove = this.playerLocationNodes.head.entity.get(MovementOptionsComponent).canMove();
 			
 			if (hasFood && hasWater && hasStamina && canMove) {
-				this.log("You rest a bit, eat and drink some. Then you decide to continue.");
+				this.log("Bạn nghỉ một lúc, ăn uống rồi quyết định tiếp tục.");
 				return;
 			}
 			
@@ -100,7 +100,7 @@ define([
 			// TODO rework texts
 			// TODO check distance to camp / safety - if fainted 1-2 tiles away from camp, be saved by workers
 			
-			var msgAdjective = hasWater ? (hasFood ? "exhausted" : "hungry") : "thirsty";
+			var msgAdjective = hasWater ? (hasFood ? "kiệt sức" : "đói") : "khát";
 			var msgMain = "";
 			var msgLog = "";
 
@@ -111,8 +111,8 @@ define([
 			if (hasRestartPerk && this.lastVisitedCampNodes.head && Math.random() < playerLuck / 100) {
 				let restarPerk = perksComponent.getOneOfPerks(PerkConstants.restartPerkIDs);
 				let perkName = restarPerk.name;
-				msgMain = "Weak and " + msgAdjective + ", you sit to rest. Your consciousness fades.<br/>You wake up back in camp. <span class='hl-functionality'>" + perkName + "</span> have guided you home.";
-				msgLog = "The world fades. You wake up back in camp.";
+				msgMain = "Yếu ớt và " + msgAdjective + ", bạn ngồi xuống nghỉ. Ý thức dần tan biến.<br/>Bạn tỉnh lại trong trại. <span class='hl-functionality'>" + perkName + "</span> đã đưa bạn về nhà.";
+				msgLog = "Thế giới mờ đi. Bạn tỉnh lại trong trại.";
 				this.fadeOut(msgMain, msgLog, true, this.lastVisitedCampNodes.head.entity, 0, 0.25, 0, 0);
 				return;
 			}
@@ -121,24 +121,24 @@ define([
 			if (hasExplorers && this.lastVisitedCampNodes.head && Math.random() < 0.1) {
 				let party = this.playerStatsNodes.head.explorers.getParty();
 				let explorer = party[MathUtils.randomIntBetween(0, party.length)];
-				msgMain = "Weak and " + msgAdjective + ", you sit to rest. Your consciousness fades.<br/>You wake up back in camp. <span class='hl-functionality'>" + explorer.name + "</span> brought you back.";
-				msgLog = "The world fades. You wake up back in camp.";
+				msgMain = "Yếu ớt và " + msgAdjective + ", bạn ngồi xuống nghỉ. Ý thức dần tan biến.<br/>Bạn tỉnh lại trong trại. <span class='hl-functionality'>" + explorer.name + "</span> đã đưa bạn về.";
+				msgLog = "Thế giới mờ đi. Bạn tỉnh lại trong trại.";
 				this.fadeOut(msgMain, msgLog, true, this.lastVisitedCampNodes.head.entity, 0, 0.5, 0, 0);
 				return;
 			}
 			
 			// rescued by campers: back to nearest camp, keep items, get injured
 			if (hasCampOnLevel && this.lastVisitedCampNodes.head && this.lastVisitedCampNodes.head.camp.population >= 1 && Math.random() < 0.2) {
-				msgMain = "Weak and " + msgAdjective + ", you sit to rest. Your consciousness fades.<br/>You wake up back in camp. Some of the scavengers found you and brought you home.";
-				msgLog = "The world fades. You wake up back in camp.";
+				msgMain = "Yếu ớt và " + msgAdjective + ", bạn ngồi xuống nghỉ. Ý thức dần tan biến.<br/>Bạn tỉnh lại trong trại. Một vài người lục lọi đã tìm thấy và đưa bạn về.";
+				msgLog = "Thế giới mờ đi. Bạn tỉnh lại trong trại.";
 				this.fadeOut(msgMain, msgLog, true, this.lastVisitedCampNodes.head.entity, 0, 1, 0, 0);
 				return;
 			}
 			
 			// rescued by deity: back to nearest camp, keep items, maybe injured
 			if (hasDeity && this.lastVisitedCampNodes.head && Math.random() < 0.1) {
-				msgMain = "Weak and " + msgAdjective + ", you sit to rest. Your consciousness fades.<br/>You wake up back in camp. The spirits have guided you home.";
-				msgLog = "The world fades. You wake up back in camp.";
+				msgMain = "Yếu ớt và " + msgAdjective + ", bạn ngồi xuống nghỉ. Ý thức dần tan biến.<br/>Bạn tỉnh lại trong trại. Các linh hồn đã dẫn bạn về.";
+				msgLog = "Thế giới mờ đi. Bạn tỉnh lại trong trại.";
 				this.fadeOut(msgMain, msgLog, true, this.lastVisitedCampNodes.head.entity, 0, 0.5, 0, 0);
 				return;
 			}
@@ -162,14 +162,14 @@ define([
 		
 		fadeOutToOutside: function (msgAdjective) {
 			let sector = this.getFadeOutOutsideSector();
-			let msgMain = "Weak and " + msgAdjective + ", you sit to rest. Your consciousness fades.<br/>When you wake up, you find yourself back in a familiar area.";
-			let msgLog = "The world fades. You wake up with no memory of how you got here.";
+			let msgMain = "Yếu ớt và " + msgAdjective + ", bạn ngồi xuống nghỉ. Ý thức dần tan biến.<br/>Khi tỉnh lại, bạn thấy mình ở một khu vực quen thuộc.";
+			let msgLog = "Thế giới mờ đi. Bạn tỉnh lại mà không nhớ mình đã đến đây thế nào.";
 			this.fadeOut(msgMain, msgLog, true, sector, 1, 0, 0, 0);
 		},
 		
 		fadeOutToLastVisitedCamp: function (sector, handleResults, msgAdjective) {
-			var msgMain = "Weak and " + msgAdjective + ", you sit to rest. Your consciousness fades.<br/>When you wake up, you find yourself back in camp.";
-			var msgLog = "The world fades. You wake up with no memory of how you found your way back.";
+			var msgMain = "Yếu ớt và " + msgAdjective + ", bạn ngồi xuống nghỉ. Ý thức dần tan biến.<br/>Khi tỉnh lại, bạn thấy mình đã trở về trại.";
+			var msgLog = "Thế giới mờ đi. Bạn tỉnh lại mà không nhớ mình đã tìm đường về thế nào.";
 			this.fadeOut(msgMain, msgLog, handleResults, sector, 1, 1, 0.5, 0.25);
 		},
 		

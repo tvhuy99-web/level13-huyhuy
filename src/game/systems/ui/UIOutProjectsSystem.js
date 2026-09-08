@@ -4,12 +4,13 @@ define([
 	'game/GameGlobals',
 	'game/GlobalSignals',
 	'game/constants/UIConstants',
+	'game/constants/ImprovementConstants',
 	'game/constants/PositionConstants',
 	'game/nodes/PlayerLocationNode',
 	'game/vos/TabCountsVO',
 	'utils/StringUtils',
 	'utils/UIList',
-], function (Ash, Text, GameGlobals, GlobalSignals, UIConstants, PositionConstants, PlayerLocationNode, TabCountsVO, StringUtils, UIList) {
+], function (Ash, Text, GameGlobals, GlobalSignals, UIConstants, ImprovementConstants, PositionConstants, PlayerLocationNode, TabCountsVO, StringUtils, UIList) {
 	
 	let UIOutProjectsSystem = Ash.System.extend({
 		
@@ -209,7 +210,7 @@ define([
 		
 		updateHiddenMsg: function () {
 			let numHidden = GameGlobals.gameState.uiStatus.hiddenProjects.length;
-			this.elements.hiddenImprovementsMsg.text(numHidden + " projects hidden");
+			this.elements.hiddenImprovementsMsg.text(numHidden + " dự án đang ẩn");
 		},
 		
 		updateContainers: function () {
@@ -230,8 +231,8 @@ define([
 			
 			tr += "<td class='label'></td>";
 			tr += "<td class='list-description'></td>";
-			tr += "<td class='minwidth'><button class='btn-mini btn-meta hide-project'>hide</button></td>";
-			tr += "<td class='minwidth'><button class='btn-mini navigation'>map</button></td>";
+			tr += "<td class='minwidth'><button class='btn-mini btn-meta hide-project'>ẩn</button></td>";
+			tr += "<td class='minwidth'><button class='btn-mini navigation'>bản đồ</button></td>";
 			
 			let btnAction = "<button class='action action-build action-level-project multiline tabbutton' data-tab='switch-projects'></button>";
 			tr += "<td style='width:138px;text-align:right;' class='bg-reset td-button'>" + btnAction + "</td>";
@@ -257,12 +258,18 @@ define([
 			let name = project.name;
 			let actionLabel = project.actionLabel;
 			let action = project.action;
+			if (project.improvement) {
+				let improvementID = ImprovementConstants.getImprovementID(project.improvement.name);
+				if (improvementID) name = ImprovementConstants.getImprovementDisplayName(improvementID, project.improvement.level);
+			}
 				
 			// TODO define building projects directions/links better and don't rely on improvement names
 			name = name.replace(" Up", "");
 			name = name.replace(" Down", "");
 			
 			let info = this.getProjectInfoText(project, isAvailable, isSmallLayout);
+			let actionLabels = { build: "Xây dựng", repair: "Sửa chữa", bridge: "Bắc cầu", clear: "Dọn dẹp" };
+			actionLabel = actionLabels[actionLabel] || actionLabel;
 			let showHideButton = isAvailable && !project.isColonyProject && UIConstants.canHideProject(projectID);
 			
 			li.$tdDescription.attr("colspan", isAvailable ? 1 : 4);
@@ -294,18 +301,18 @@ define([
 			let showLevel = GameGlobals.gameState.unlockedFeatures.levels;
 			let position = project.position.getPosition();
 			let location = position.getInGameFormat(false, short);
-			let levelWord = short ? "lvl" : "level";
-			let levelText = (showLevel ? (" on " + levelWord + " " + project.level) : "");
+			let levelWord = short ? "tầng" : "tầng";
+			let levelText = (showLevel ? (" ở " + levelWord + " " + project.level) : "");
 			
-			let info = "at " + location + levelText;
+			let info = "tại " + location + levelText;
 			
 			let isPassage = project.improvement && project.improvement.isPassage();
 			if (isPassage) {
 				let levels = this.getProjectLevels(project);
 				if (short) {
-					info = "connecting levels <span class='hl-functionality'>" + levels[0] + "</span> and <span class='hl-functionality'>" + levels[1] + "</span>";
+					info = "nối tầng <span class='hl-functionality'>" + levels[0] + "</span> và <span class='hl-functionality'>" + levels[1] + "</span>";
 				} else {
-					info = "connecting levels <span class='hl-functionality'>" + levels[0] + "</span> and <span class='hl-functionality'>" + levels[1] + "</span> at " + location;
+					info = "nối tầng <span class='hl-functionality'>" + levels[0] + "</span> và <span class='hl-functionality'>" + levels[1] + "</span> tại " + location;
 				}
 			}
 			
@@ -313,7 +320,7 @@ define([
 				if (project.action.startsWith("clear_debris_e") || project.action == "bridge_gap" || project.action.startsWith("clear_explosives")) {
 					let neighbourPosition = PositionConstants.getPositionOnPath(project.position.getPosition(), project.direction, 1);
 					let neighbourLocation = neighbourPosition.getInGameFormat();
-					info = "between " + location + " and " + neighbourLocation + levelText;
+					info = "giữa " + location + " và " + neighbourLocation + levelText;
 				}
 			}
 			
@@ -323,7 +330,7 @@ define([
 				let campLevel = GameGlobals.worldState.getLevelForCamp(campOrdinal);
 				let campNode = GameGlobals.campHelper.getCampNodeForLevel(campLevel);
 				let numWorkers = campNode.camp.assignedWorkers.gardener || 0;
-				info += " (used by " + numWorkers + " Gardeners at camp on level " + campLevel + ")";
+				info += " (được sử dụng bởi " + numWorkers + " người làm vườn tại trại ở tầng " + campLevel + ")";
 			}
 			
 			return info;

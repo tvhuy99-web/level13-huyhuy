@@ -44,16 +44,18 @@ if (missing.length) throw new Error(`Missing AMD dependencies on master:\n${miss
 
 const mobileHelper = fs.readFileSync(path.join(helperDir, 'AccessibilityMobileExperienceHelper.js'), 'utf8');
 for (const required of [
-  'accessibility-player-overview',
-  'accessibility-inventory-camp-overview',
-  'Player overview.',
-  'Inventory and camp overview.',
-  'Player status.',
-  'Inventory.',
-  'suppressVisualHeaders',
-  'accessibility-movement-status'
+  ['accessibility-player-overview'],
+  ['accessibility-inventory-camp-overview'],
+  ['Player overview.', 'Tổng quan người chơi.'],
+  ['Inventory and camp overview.', 'Tổng quan túi đồ và trại.'],
+  ['Player status.', 'Trạng thái người chơi.'],
+  ['Inventory.', 'Túi đồ.'],
+  ['suppressVisualHeaders'],
+  ['accessibility-movement-status']
 ]) {
-  if (!mobileHelper.includes(required)) throw new Error(`TalkBack accessibility regression contract missing: ${required}`);
+  if (!required.some(value => mobileHelper.includes(value))) {
+    throw new Error(`TalkBack accessibility regression contract missing: ${required.join(' or ')}`);
+  }
 }
 
 const focusPatch = fs.readFileSync(path.join(helperDir, 'AccessibilityFocusStabilityPatch.js'), 'utf8');

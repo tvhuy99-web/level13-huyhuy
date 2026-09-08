@@ -119,19 +119,19 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 		
 		getActionName: function (baseActionID) {
 			switch (baseActionID) {
-				case "scavenge_heap": return "Scavenge";
+				case "scavenge_heap": return "Lục lọi";
 				case "scout_locale_i":
 				case "scout_locale_u":
-					return "Scout";
-				case "clear_waste_r": return "clear radioactive waste";
-				case "clear_waste_t": return "clear toxic waste";
-				case "build_out_greenhouse": return "build greenhouse";
-				case "build_out_luxury_outpost": return "build resource outpost";
-				case "build_out_tradepost_connector": "build elevator";
-				case "build_out_sundome": "build sun dome";
-				case "bridge_gap": return "bridge gap";
-				case "repair_item": return "repair item";
-				case "clear_workshop": return "clear workshop";
+					return "Thám sát";
+				case "clear_waste_r": return "dọn chất thải phóng xạ";
+				case "clear_waste_t": return "dọn chất thải độc hại";
+				case "build_out_greenhouse": return "xây nhà kính";
+				case "build_out_luxury_outpost": return "xây tiền đồn tài nguyên";
+				case "build_out_tradepost_connector": return "xây thang máy";
+				case "build_out_sundome": return "xây mái vòm chống nắng";
+				case "bridge_gap": return "bắc cầu qua khoảng trống";
+				case "repair_item": return "sửa vật phẩm";
+				case "clear_workshop": return "dọn xưởng";
 				default:
 					return baseActionID;
 			}
@@ -140,24 +140,27 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 		getLevelFeatureName: function (featureType) {
 			switch (featureType) {
 				case WorldConstants.FEATURE_HOLE_COLLAPSE_EDGE:
-					return "collapse";
+					return "sụp đổ";
 				case WorldConstants.FEATURE_HOLE_WELL_EDGE:
-					return "sunwell";
+					return "giếng nắng";
 				case WorldConstants.FEATURE_HOLE_MOUNTAIN_EDGE:
-					return "mountain";
+					return "núi";
 				case WorldConstants.FEATURE_STRUCTURE_GIGA_CENTER:
-					return "giga center";
+					return "trung tâm khổng lồ";
 				case WorldConstants.FEATURE_STRUCTURE_PILLAR:
-					return "level pillar";
+					return "trụ tầng";
 				case WorldConstants.FEATURE_TRAIN_TRACKS_NEW:
 				case WorldConstants.FEATURE_TRAIN_TRACKS_OLD:
-					return "train tracks";
+					return "đường ray tàu";
 			}
 			log.w("no name defined for feature type [" +  featureType + "]");
 			return featureType;
 		},
 		
 		getSectorName: function (isScouted, features) {
+			if (Text.currentLanguage == "VI_VN") {
+				return this.getVietnameseSectorName(features);
+			}
 			var template = "{a-sectortype} {n-street}";
 			var params = this.getSectorTextParams(features);
 			var phrase = TextBuilder.build(template, params);
@@ -165,6 +168,13 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 		},
 		
 		getSectorHeader: function (hasVision, features) {
+			if (Text.currentLanguage == "VI_VN") {
+				let name = this.getVietnameseSectorName(features);
+				if (features.hasCamp) return name + " có trại";
+				if (features.hasGrove) return name + " có khu cây xanh";
+				if (!hasVision) return "Khu vực tối " + (features.sectorX + 1) + "-" + (features.sectorY + 1);
+				return name;
+			}
 			var template = "{a-street} {a-sectortype} {n-street}";
 			if (features.hasCamp) {
 				template = "{n-street} with camp";
@@ -185,11 +195,57 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 		},
 		
 		getSectorDescription: function (hasVision, features) {
+			if (Text.currentLanguage == "VI_VN") {
+				let typeName = this.getVietnameseSectorTypeName(features.sectorType);
+				let description = hasVision
+					? "Đây là một khu " + typeName + " trong Thành phố"
+					: "Bạn chỉ nhìn thấy những đường nét mờ tối của một khu vực " + typeName;
+				if (features.buildingDensity >= 8) description += ", dày đặc công trình";
+				else if (features.buildingDensity <= 3) description += ", thưa thớt công trình";
+				if (features.wear >= 7 || features.damage >= 4) description += ", đã xuống cấp nặng";
+				else if (features.wear >= 4 || features.damage >= 2) description += ", phủ dấu vết hao mòn";
+				if (features.ground) description += ", gần mặt đất";
+				if (features.sunlit) description += ", có ánh sáng tự nhiên";
+				if (features.levelFeatures && features.levelFeatures.length > 0) {
+					let featureNames = features.levelFeatures.map(feature => this.getLevelFeatureName(feature)).filter(Boolean);
+					if (featureNames.length > 0) description += ". Gần đó có " + featureNames.join(", ");
+				}
+				if (hasVision && features.enemyTags && features.enemyTags.length > 0) {
+					let enemyNames = features.enemyTags.map(tag => {
+						let names = {
+							apparition: "bóng ma", bandit: "kẻ cướp", big_animal: "động vật lớn",
+							bird: "chim", flora: "thực vật", fungi: "nấm", humanoid: "sinh vật hình người",
+							robot: "robot", small_animal: "động vật nhỏ", structure: "công trình tự động",
+						};
+						return names[tag] || tag;
+					});
+					description += ". Có dấu hiệu của " + enemyNames.join(", ");
+				}
+				return Text.capitalize(description + ".");
+			}
 			features.hasVision = hasVision;
 			let template = DescriptionMapper.get("sector-description", features);
 			let params = this.getSectorTextParams(features, hasVision);
 			let phrase = TextBuilder.build(template, params);
 			return Text.capitalize(phrase);
+		},
+
+		getVietnameseSectorTypeName: function (sectorType) {
+			switch (sectorType) {
+				case SectorConstants.SECTOR_TYPE_RESIDENTIAL: return "dân cư";
+				case SectorConstants.SECTOR_TYPE_INDUSTRIAL: return "công nghiệp";
+				case SectorConstants.SECTOR_TYPE_MAINTENANCE: return "bảo trì";
+				case SectorConstants.SECTOR_TYPE_COMMERCIAL: return "thương mại";
+				case SectorConstants.SECTOR_TYPE_PUBLIC: return "công cộng";
+				default: return "không xác định";
+			}
+		},
+
+		getVietnameseSectorName: function (features) {
+			let typeName = this.getVietnameseSectorTypeName(features.sectorType);
+			let x = features.sectorX != null ? features.sectorX + 1 : "?";
+			let y = features.sectorY != null ? features.sectorY + 1 : "?";
+			return "Khu " + typeName + " " + x + "-" + y;
 		},
 		
 		getSectorTextParams: function (features, hasVision) {
@@ -324,25 +380,25 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 		},
 		
 		getPassageRepairedMessage: function (passageType, direction, sectorPosVO, numCampsBuilt) {
-			let directionName = (direction === PositionConstants.DIRECTION_UP ? " up" : " down");
+			let directionName = (direction === PositionConstants.DIRECTION_UP ? " lên" : " xuống");
 			let includeLevelInPosition = numCampsBuilt > 1;
 			switch (passageType) {
 				case MovementConstants.PASSAGE_TYPE_HOLE:
-					return "Elevator " + directionName + " built at " + sectorPosVO.getInGameFormat(includeLevelInPosition);
+					return "Đã xây thang máy đi" + directionName + " tại " + sectorPosVO.getInGameFormat(includeLevelInPosition);
 				case MovementConstants.PASSAGE_TYPE_ELEVATOR:
-					return "Elevator " + directionName + " repaired at " + sectorPosVO.getInGameFormat(includeLevelInPosition);
+					return "Đã sửa thang máy đi" + directionName + " tại " + sectorPosVO.getInGameFormat(includeLevelInPosition);
 				case MovementConstants.PASSAGE_TYPE_STAIRWELL:
-					return "Stairwell " + directionName + " repaired at " + sectorPosVO.getInGameFormat(includeLevelInPosition);
+					return "Đã sửa cầu thang đi" + directionName + " tại " + sectorPosVO.getInGameFormat(includeLevelInPosition);
 				default:
 					log.w("Unknown passage type: [" + passageType + "]")
-					return "Passage " + directionName + " ready at " + sectorPosVO.getInGameFormat(includeLevelInPosition);
+					return "Lối đi" + directionName + " đã sẵn sàng tại " + sectorPosVO.getInGameFormat(includeLevelInPosition);
 			}
 		},
 				
 		getPassageDescription: function (passageVO, direction, isBuilt, isShort) {
 			let passageType = passageVO.type;
 			let passageTypeName = passageType;
-			let directionName = (direction === PositionConstants.DIRECTION_UP ? "up" : "down");
+			let directionName = (direction === PositionConstants.DIRECTION_UP ? "lên" : "xuống");
 
 			let result = "";
 
@@ -382,6 +438,16 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 		getReadBookMessage: function (itemVO, bookType, campOrdinal, storyFlags) {
 			let features = {};
 			let itemName = ItemConstants.getItemDisplayName(itemVO);
+			if (Text.currentLanguage == "VI_VN") {
+				let typeName = "một chủ đề chưa xác định";
+				switch (bookType) {
+					case ItemConstants.bookTypes.science: typeName = "khoa học"; break;
+					case ItemConstants.bookTypes.engineering: typeName = "kỹ thuật"; break;
+					case ItemConstants.bookTypes.history: typeName = "lịch sử"; break;
+					case ItemConstants.bookTypes.fiction: typeName = "hư cấu"; break;
+				}
+				return "Bạn mở " + itemName + " và đọc một cuốn sách " + typeName + ". Những trang sách ghi lại kiến thức, suy đoán và các câu chuyện còn sót lại từ trước Sụp đổ. Dù đã cũ, nó vẫn giúp bạn hiểu thêm về Thành phố và những người từng sống ở đây.";
+			}
 			features.bookType = bookType;
 			features.bookName = itemName;
 			features.bookLevel = itemVO.level || 1;
@@ -808,6 +874,9 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 		getReadNewspaperMessage: function (itemVO) {
 			let features = {};
 			let itemName = ItemConstants.getItemDisplayName(itemVO);
+			if (Text.currentLanguage == "VI_VN") {
+				return "Bạn lật đọc " + itemName + ". Tờ báo cũ kể về đời sống trong Thành phố, những biến động của cư dân và các tin tức đã bị thời gian vùi lấp. Một vài mẩu tin vẫn gợi ra những manh mối đáng chú ý.";
+			}
 			features.itemName = itemName;
 			features.itemLevel = itemVO.level || 1;
 			features.randomSeed = itemVO.itemID;
@@ -892,12 +961,16 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 		},
 		
 		getDonateSeedsMessage: function (itemVO) {
+			if (Text.currentLanguage == "VI_VN") return "Bạn đã dâng số hạt giống cho ngôi đền. Các giáo sĩ sẽ gìn giữ chúng, và biết đâu một mầm sống sẽ nảy lên.";
 			return "Donated the seeds to the temple. The clerics will cherish them and perhaps something will grow.";
 		},
 		
 		getReadResearchPaperMessage: function (itemVO) {
 			let features = {};
 			let itemName = ItemConstants.getItemDisplayName(itemVO);
+			if (Text.currentLanguage == "VI_VN") {
+				return "Bạn đọc " + itemName + ". Bài nghiên cứu phân tích những thay đổi của Thành phố và các điều kiện cần thiết để con người có thể tồn tại trong tương lai. Những kết luận chưa hoàn chỉnh nhưng vẫn mở ra vài hướng suy nghĩ mới.";
+			}
 			features.itemName = itemName;
 			features.itemLevel = itemVO.level || 1;
 			features.randomSeed = itemVO.itemID;
@@ -953,15 +1026,15 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 					let itemID = stashVO.itemID;
 					let item = ItemConstants.getItemDefinitionByID(itemID);
 					if (item.type == ItemConstants.itemTypes.note) {
-						return "Found some interesting documents.";
+						return "Đã tìm thấy vài tài liệu thú vị.";
 					} else { 
-						return "Found an item stash.";
+						return "Đã tìm thấy một kho vật phẩm.";
 					}
 				case ItemConstants.STASH_TYPE_SILVER:
-					return "Found some coins.";
+					return "Đã tìm thấy vài đồng xu.";
 				default:
 					log.w("Unknown stash type: " + stashVO.stashType);
-					return "Found a stash.";
+					return "Đã tìm thấy một kho đồ.";
 			}
 		},
 		
@@ -969,12 +1042,36 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 			let features = Object.assign({}, sectorFeatures);
 			features.waymarkType = waymarkVO.type;
 			features.direction = PositionConstants.getDirectionFrom(waymarkVO.fromPosition, waymarkVO.toPosition);
+
+			if (Text.currentLanguage == "VI_VN") {
+				let direction = PositionConstants.getDirectionName(features.direction, false);
+				let target = this.getWaymarkTargetName(waymarkVO, features);
+				let result = "Có dấu chỉ dẫn về " + target + " ở hướng " + direction + ".";
+				switch (waymarkVO.type) {
+					case SectorConstants.WAYMARK_TYPE_SPRING:
+						result = "Có dấu chỉ dẫn đến nguồn nước ở hướng " + direction + ".";
+						break;
+					case SectorConstants.WAYMARK_TYPE_CAMP:
+						result = "Có dấu chỉ dẫn đến nơi an toàn ở hướng " + direction + ".";
+						break;
+					case SectorConstants.WAYMARK_TYPE_CLINIC:
+						result = "Có dấu chỉ dẫn đến trạm y tế ở hướng " + direction + ".";
+						break;
+					case SectorConstants.WAYMARK_TYPE_RADIATION:
+					case SectorConstants.WAYMARK_TYPE_POLLUTION:
+					case SectorConstants.WAYMARK_TYPE_PASSAGE:
+						result = "Có dấu chỉ dẫn về " + target + " ở hướng " + direction + ".";
+						break;
+				}
+				if (GameConstants.isDebugVersion) result += " [" + waymarkVO.toPosition + "]";
+				return result;
+			}
 			
 			let template = DescriptionMapper.get("waymark", features);
 			let params = this.getWaymarkTextParams(waymarkVO, features);
 			let phrase = TextBuilder.build(template, params);
 			
-			result = phrase;
+			let result = phrase;
 			if (GameConstants.isDebugVersion) result += " [" + waymarkVO.toPosition + "]";
 			
 			return result;
@@ -995,22 +1092,22 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 		
 		getWaymarkTargetName: function (waymarkVO, features) {
 			switch (waymarkVO.type) {
-				case SectorConstants.WAYMARK_TYPE_SPRING: return "water";
-				case SectorConstants.WAYMARK_TYPE_CAMP: return "safety";
-				case SectorConstants.WAYMARK_TYPE_CLINIC: return "clinic";
-				case SectorConstants.WAYMARK_TYPE_RADIATION: return "hazard";
-				case SectorConstants.WAYMARK_TYPE_POLLUTION: return "hazard";
-				case SectorConstants.WAYMARK_TYPE_SETTLEMENT: return "trade";
-				case SectorConstants.WAYMARK_TYPE_DISTRICT: return features.districtType + " district";
-				case SectorConstants.WAYMARK_TYPE_PASSAGE: return "passage";
+				case SectorConstants.WAYMARK_TYPE_SPRING: return "nước";
+				case SectorConstants.WAYMARK_TYPE_CAMP: return "an toàn";
+				case SectorConstants.WAYMARK_TYPE_CLINIC: return "trạm y tế";
+				case SectorConstants.WAYMARK_TYPE_RADIATION: return "mối nguy";
+				case SectorConstants.WAYMARK_TYPE_POLLUTION: return "mối nguy";
+				case SectorConstants.WAYMARK_TYPE_SETTLEMENT: return "buôn bán";
+				case SectorConstants.WAYMARK_TYPE_DISTRICT: return features.districtType + " khu";
+				case SectorConstants.WAYMARK_TYPE_PASSAGE: return "lối đi";
 				default:
 					log.w("unknown waymark type: " + waymarkVO.type);
-					return "safe";
+					return "an toàn";
 			}
 		},
 
 		getCampTerm: function (isOutpost) {
-			return isOutpost ? "small camp" : "camp";
+			return isOutpost ? "tiền đồn nhỏ" : "trại";
 		},
 
 		getCampModifier: function (campComponent, improvementsComponent) {
@@ -1061,7 +1158,7 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 				let name = resourceNames[key];
 				let amount = resourcesVO.getResource(name);
 				if (amount > 0) {
-					let listFragment = { textKey: "ui.common.value_and_name", textParams: { value: Math.round(amount), name: name } };
+					let listFragment = { textKey: "ui.common.value_and_name", textParams: { value: Math.round(amount), name: this.getResourceDisplayName(name) } };
 					list.push(listFragment);
 				}
 			}
@@ -1102,24 +1199,24 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 		
 		getFightChancesText: function (probability) {
 			if (probability >= 0.9) {
-				return "fairly harmless";
+				return "khá vô hại";
 			}
 			if (probability > 0.8) {
-				return "slightly unnerving";
+				return "hơi đáng lo";
 			}
 			if (probability > 0.6) {
-				return "intimidating";
+				return "đáng sợ";
 			}
 			if (probability >= 0.5) {
-				return "risky";
+				return "mạo hiểm";
 			}
 			if (probability >= 0.4) {
-				return "dangerous";
+				return "nguy hiểm";
 			}
 			if (probability >= 0.2) {
-				return "very dangerous";
+				return "rất nguy hiểm";
 			}
-			return "deadly";
+			return "chết người";
 		},
 		
 		getLocaleName: function (locale, sectorFeatures, isShort) {
@@ -1145,9 +1242,9 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 		
 		getWorkshopName: function (resource) {
 			switch (resource) {
-				case resourceNames.fuel: return "refinery";
-				case resourceNames.rubber: return "plantation";
-				default: return "workshop";
+				case resourceNames.fuel: return "nhà máy lọc";
+				case resourceNames.rubber: return "đồn điền";
+				default: return "xưởng";
 			}
 		},
 		
@@ -1193,7 +1290,8 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 		},
 		
 		getEnemyNoun: function (enemyList, detailed, pluralify) {
-			var baseNoun = this.getCommonText(enemyList, "nouns", detailed ? "name" : "", "someone or something", true, pluralify);
+			var defaultNoun = Text.currentLanguage == "VI_VN" ? "sinh vật" : "someone or something";
+			var baseNoun = this.getCommonText(enemyList, "nouns", detailed ? "name" : "", defaultNoun, true, pluralify);
 			if (detailed) {
 				return baseNoun;
 			} else {
@@ -1203,15 +1301,17 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 		},
 		
 		getEnemyGroupNoun: function (enemyList) {
-			return this.getCommonText(enemyList, "groupN", "", "group", false)
+			let defaultGroup = Text.currentLanguage == "VI_VN" ? "nhóm" : "group";
+			return this.getCommonText(enemyList, "groupN", "", defaultGroup, false)
 		},
-		
 		getEnemyActiveVerb: function(enemyList) {
-			return this.getCommonText(enemyList, "activeV", "", "occupied by", false);
+			let defaultVerb = Text.currentLanguage == "VI_VN" ? "đang chiếm giữ" : "occupied by";
+			return this.getCommonText(enemyList, "activeV", "", defaultVerb, false);
 		},
 		
 		getEnemeyDefeatedVerb: function (enemyList) {
-			return this.getCommonText(enemyList, "defeatedV", "", "defeated", false);
+			let defaultVerb = Text.currentLanguage == "VI_VN" ? "bị đánh bại" : "defeated";
+			return this.getCommonText(enemyList, "defeatedV", "", defaultVerb, false);
 		},
 		
 		getScaResourcesString: function (discoveredResources, knownResources, resourcesScavengable) {
@@ -1220,20 +1320,20 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 				var name = resourceNames[key];
 				var amount = resourcesScavengable.getResource(name);
 				if (amount > 0 && discoveredResources.indexOf(name) >= 0) {
-					var amountDesc = "scarce";
-					if (amount == WorldConstants.resourcePrevalence.RARE) amountDesc = "rare";
-					if (amount == WorldConstants.resourcePrevalence.DEFAULT) amountDesc = "scarce";
-					if (amount == WorldConstants.resourcePrevalence.COMMON) amountDesc = "common";
-					if (amount == WorldConstants.resourcePrevalence.ABUNDANT) amountDesc = "abundant";
+					var amountDesc = "khan hiếm";
+					if (amount == WorldConstants.resourcePrevalence.RARE) amountDesc = "hiếm";
+					if (amount == WorldConstants.resourcePrevalence.DEFAULT) amountDesc = "khan hiếm";
+					if (amount == WorldConstants.resourcePrevalence.COMMON) amountDesc = "phổ biến";
+					if (amount == WorldConstants.resourcePrevalence.ABUNDANT) amountDesc = "dồi dào";
 					if (GameConstants.isDebugVersion) amountDesc += " " + Math.round(amount);
-					s += key + " (" + amountDesc + "), ";
+					s += this.getResourceDisplayName(name) + " (" + amountDesc + "), ";
 				} else if (amount > 0 && knownResources.indexOf(name) >= 0) {
-					s += key + " (??), ";
+					s += this.getResourceDisplayName(name) + " (chưa rõ), ";
 				}
 			}
 			if (s.length > 0) return s.substring(0, s.length - 2);
-			else if (resourcesScavengable.getTotal() > 0) return "Unknown";
-			else return "None";
+			else if (resourcesScavengable.getTotal() > 0) return "Chưa rõ";
+			else return "Không có";
 		},
 		
 		getScaItemString: function (discoveredItems, knownItems, itemsScavengeable) {
@@ -1249,9 +1349,9 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 			
 			if (validItems.length == 0) {
 				if (itemsScavengeable.length > 0) {
-					return "Some ingredient";
+					return "Một loại nguyên liệu";
 				} else {
-					return "None";
+					return "Không có";
 				}
 			}
 			
@@ -1264,7 +1364,7 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 					let enemies = this.getAllEnemies(null, gangComponent);
 					var groupNoun = this.getEnemyGroupNoun(enemies);
 					var enemyNoun = this.getEnemyNoun(enemies);
-					return groupNoun + " of " + Text.pluralify(enemyNoun);
+					return Text.currentLanguage == "VI_VN" ? groupNoun + " gồm " + enemyNoun : groupNoun + " of " + Text.pluralify(enemyNoun);
 				default:
 					return blockerVO.name;
 			}
@@ -1273,13 +1373,13 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 		
 		getMovementBlockerAction: function (blockerVO, enemiesComponent, gangComponent) {
 			switch (blockerVO.type) {
-				case MovementConstants.BLOCKER_TYPE_GAP: return "Bridge gap";
-				case MovementConstants.BLOCKER_TYPE_WASTE_TOXIC: return "Clear waste";
-				case MovementConstants.BLOCKER_TYPE_WASTE_RADIOACTIVE: return "Clear waste";
+				case MovementConstants.BLOCKER_TYPE_GAP: return "Bắc cầu qua khoảng trống";
+				case MovementConstants.BLOCKER_TYPE_WASTE_TOXIC: return "Dọn chất thải";
+				case MovementConstants.BLOCKER_TYPE_WASTE_RADIOACTIVE: return "Dọn chất thải";
 				case MovementConstants.BLOCKER_TYPE_GANG:
 					let enemies = this.getAllEnemies(null, gangComponent);
-					return "Fight " + this.getEnemyNoun(enemies, false, true);
-				case MovementConstants.BLOCKER_TYPE_TOLL_GATE: return "Pay toll";
+					return "Đánh bại " + this.getEnemyNoun(enemies, false, true);
+				case MovementConstants.BLOCKER_TYPE_TOLL_GATE: return "Trả phí";
 			}
 		},
 		
@@ -1299,13 +1399,13 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 		
 		getUnblockedVerb: function (blockerType) {
 			switch (blockerType) {
-				case MovementConstants.BLOCKER_TYPE_GAP: return "bridged";
-				case MovementConstants.BLOCKER_TYPE_WASTE_TOXIC: return "cleared";
-				case MovementConstants.BLOCKER_TYPE_WASTE_RADIOACTIVE: return "cleared";
-				case MovementConstants.BLOCKER_TYPE_GANG: return "defeated";
-				case MovementConstants.BLOCKER_TYPE_DEBRIS: return "cleared";
-				case MovementConstants.BLOCKER_TYPE_EXPLOSIVES: return "cleared";
-				case MovementConstants.BLOCKER_TYPE_TOLL_GATE: return "paid";
+				case MovementConstants.BLOCKER_TYPE_GAP: return "đã bắc cầu";
+				case MovementConstants.BLOCKER_TYPE_WASTE_TOXIC: return "đã dọn";
+				case MovementConstants.BLOCKER_TYPE_WASTE_RADIOACTIVE: return "đã dọn";
+				case MovementConstants.BLOCKER_TYPE_GANG: return "đã đánh bại";
+				case MovementConstants.BLOCKER_TYPE_DEBRIS: return "đã dọn";
+				case MovementConstants.BLOCKER_TYPE_EXPLOSIVES: return "đã dọn";
+				case MovementConstants.BLOCKER_TYPE_TOLL_GATE: return "đã trả phí";
 			}
 		},
 		
@@ -1361,7 +1461,8 @@ function (Ash, TextData, ArrayUtils, ObjectUtils, DescriptionMapper, Text, TextB
 			} else if (validWords.length > 0) {
 				return pluralify ? Text.pluralify(validWords[0]) : validWords[0];
 			} else if (allowSeveral && minimumWords.length > 1) {
-				return pluralify ? (Text.pluralify(minimumWords[0]) + " and " + Text.pluralify(minimumWords[1])) : (minimumWords[0] + " and " + minimumWords[1]);
+				let delimiter = Text.currentLanguage == "VI_VN" ? " và " : " and ";
+				return pluralify ? (Text.pluralify(minimumWords[0]) + delimiter + Text.pluralify(minimumWords[1])) : (minimumWords[0] + delimiter + minimumWords[1]);
 			} else {
 				return defaultWord;
 			}

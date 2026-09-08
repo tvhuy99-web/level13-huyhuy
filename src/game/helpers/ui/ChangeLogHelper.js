@@ -39,9 +39,9 @@ function (Ash, GameGlobals, GlobalSignals, GameConstants) {
 			var currentVersion = this.getCurrentVersion();
 			if (!currentVersion || !currentVersion.final) {
 				GameGlobals.uiFunctions.showInfoPopup(
-					"Warning",
-					"Looks like you are playing an unsupported version of Level 13.</br>Continue at your own risk or play the latest official version <a href='" + GameConstants.gameURL + "'>here</a>.",
-					"Continue"
+					"Cảnh báo",
+					"Có vẻ bạn đang chơi một phiên bản Level 13 không được hỗ trợ.</br>Bạn có thể tiếp tục và tự chịu rủi ro, hoặc chơi phiên bản chính thức mới nhất <a href='" + GameConstants.gameURL + "'>tại đây</a>.",
+					"Tiếp tục"
 				);
 			}
 		},

@@ -171,19 +171,19 @@ define(['ash', 'utils/MathUtils', 'game/constants/CampConstants', 'game/constant
 		},
 		
 		getRaidDefenceString: function (improvements, soldiers, soldierLevel) {
-			let result = "Base: " + CampConstants.CAMP_BASE_DEFENCE;
+			let result = "Cơ bản: " + CampConstants.CAMP_BASE_DEFENCE;
 			
 			let fortificationsPoints = this.getFortificationsDefencePoints(improvements);
 			let fortificationsPointsWithoutDamaged = this.getFortificationsDefencePoints(improvements, true);
 			let fortificationsPointsDiff = fortificationsPoints - fortificationsPointsWithoutDamaged;
 			if (fortificationsPointsWithoutDamaged > 0) {
-				result += "<br/>Fortifications: " + fortificationsPointsWithoutDamaged;
+				result += "<br/>Công sự: " + fortificationsPointsWithoutDamaged;
 				if (fortificationsPoints != fortificationsPointsWithoutDamaged) {
-					result += "<br/>Damage: -" + fortificationsPointsDiff;
+					result += "<br/>Hư hại: -" + fortificationsPointsDiff;
 				}
 			}
 			let soldierPoints = this.getSoldierDefencePoints(soldiers, soldierLevel, improvements.getLevel(improvementNames.barracks));
-			if (soldierPoints > 0) result += "<br/>Soldiers: " + soldierPoints;
+			if (soldierPoints > 0) result += "<br/>Lính: " + soldierPoints;
 			
 			return result;
 		},

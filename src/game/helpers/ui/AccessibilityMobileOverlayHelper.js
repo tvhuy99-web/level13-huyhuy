@@ -25,11 +25,11 @@ define([], function () {
 
 		this.overlay.setAttribute("role", "dialog");
 		this.overlay.setAttribute("aria-modal", "true");
-		this.overlay.setAttribute("aria-label", "Mobile compatibility notice");
+		this.overlay.setAttribute("aria-label", "Thông báo tương thích di động");
 		this.overlay.setAttribute("aria-hidden", this.isVisible() ? "false" : "true");
 
 		if (this.dismiss) {
-			this.dismiss.setAttribute("aria-label", "Dismiss mobile compatibility notice");
+			this.dismiss.setAttribute("aria-label", "Đóng thông báo tương thích di động");
 			this.dismiss.addEventListener("keydown", function (event) {
 				if (event.key !== " ") return;
 				event.preventDefault();

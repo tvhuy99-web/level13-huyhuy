@@ -147,7 +147,7 @@ define([
 			};
 			let fnUpdateItem = function (li, data) {
 				let actionName = "repair_item_" + data.itemID;
-				let actionVerb = "Repair";
+				let actionVerb = "Sửa";
 				let buttonLabel = actionVerb + " " + ItemConstants.getItemDisplayName(data, false);
 				let $btn = li.$root.find("button.action");
 				$btn.attr("action", actionName);

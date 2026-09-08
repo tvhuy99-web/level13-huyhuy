@@ -185,11 +185,11 @@ define([
 					let msg = "";
 					switch (penaltyType) {
 						case CampConstants.REPUTATION_PENALTY_TYPE_DEFENCES:
-							msg = "People are anxious. They say the camp needs better defences.";
+							msg = "Mọi người lo lắng. Họ nói trại cần phòng thủ tốt hơn.";
 							GameGlobals.playerHelper.addLogMessageWithPosition(LogConstants.MSG_ID_REPUTATION_PENALTY_DEFENCES, msg, messagePosition);
 							break;
 						case CampConstants.REPUTATION_PENALTY_TYPE_HOUSING:
-							msg = "People are unhappy because the camp is over-crowded.";
+							msg = "Mọi người không hài lòng vì trại quá đông.";
 							GameGlobals.playerHelper.addLogMessageWithPosition(LogConstants.MSG_ID_REPUTATION_PENALTY_HOUSING, msg, messagePosition);
 							break;
 					}

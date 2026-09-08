@@ -45,13 +45,13 @@ define([], function () {
 		if (bar.getAttribute("aria-label") || bar.getAttribute("aria-labelledby")) return;
 
 		let knownLabels = {
-			"notification-player-bar-mobile": "Current action progress",
-			"notification-player-bar-regular": "Current action progress",
-			"in-population-bar-next": "Population progress",
-			"fight-bar-enemy": "Enemy health",
-			"fight-bar-enemy-shield": "Enemy shield",
-			"fight-bar-self": "Your health",
-			"fight-bar-self-shield": "Your shield",
+			"notification-player-bar-mobile": "Tiến trình hành động hiện tại",
+			"notification-player-bar-regular": "Tiến trình hành động hiện tại",
+			"in-population-bar-next": "Tiến trình dân số",
+			"fight-bar-enemy": "Sinh lực kẻ địch",
+			"fight-bar-enemy-shield": "Khiên kẻ địch",
+			"fight-bar-self": "Sinh lực của bạn",
+			"fight-bar-self-shield": "Khiên của bạn",
 		};
 		if (bar.id && knownLabels[bar.id]) {
 			bar.setAttribute("aria-label", knownLabels[bar.id]);
@@ -99,8 +99,8 @@ define([], function () {
 
 		let progressLabel = bar.querySelector(".progress-label");
 		let labelText = progressLabel ? this.normalize(progressLabel.textContent) : "";
-		let valueText = value + " percent";
-		if (labelText && labelText.toLowerCase().indexOf("percent") < 0) {
+			let valueText = value + "%";
+			if (labelText && labelText.toLowerCase().indexOf("percent") < 0 && labelText.toLowerCase().indexOf("phần trăm") < 0) {
 			valueText = labelText + ", " + valueText;
 		}
 		bar.setAttribute("aria-valuetext", valueText);

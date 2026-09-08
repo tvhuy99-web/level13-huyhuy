@@ -242,13 +242,13 @@ define([
 			if (GameConstants.cheatModeHazards) return null;
 			var hazards = this.getEffectiveHazards(featuresComponent, statusComponent);
 			if (hazards.radiation > itemsComponent.getCurrentBonus(ItemConstants.itemBonusTypes.res_radiation))
-				return "area too radioactive";
+				return "khu vực có quá nhiều phóng xạ";
 			if (hazards.poison > itemsComponent.getCurrentBonus(ItemConstants.itemBonusTypes.res_poison))
-				return "area too polluted";
+				return "khu vực quá ô nhiễm";
 			if (hazards.cold > itemsComponent.getCurrentBonus(ItemConstants.itemBonusTypes.res_cold))
-				return "area too cold";
+				return "khu vực quá lạnh";
 			if (hazards.flooded > itemsComponent.getCurrentBonus(ItemConstants.itemBonusTypes.res_water))
-				return "area too flooded";
+				return "khu vực bị ngập quá nhiều";
 			return null;
 		},
 		

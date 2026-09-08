@@ -342,17 +342,17 @@ define([
 			
 			rowHTML += "<td class='camp-overview-stats nowrap hide-in-small-layout'>";
 			rowHTML += "<span class='camp-overview-stats-evidence hide-in-small-layout info-callout-target info-callout-target-small'>";
-			rowHTML += "<span class='icon'><img src='img/stat-evidence.png' alt='evidence'/></span><span class='change-indicator'></span> ";
+			rowHTML += "<span class='icon'><img src='img/stat-evidence.png' alt='bằng chứng'/></span><span class='change-indicator'></span> ";
 			rowHTML += "</span> ";
 			rowHTML += "<span class='camp-overview-stats-rumours hide-in-small-layout info-callout-target info-callout-target-small'>";
-			rowHTML += "<span class='icon'><img src='img/stat-rumours.png' alt='rumours'/></span><span class='change-indicator'></span> ";
+			rowHTML += "<span class='icon'><img src='img/stat-rumours.png' alt='tin đồn'/></span><span class='change-indicator'></span> ";
 			rowHTML += "</span>";
 			rowHTML += "<span class='camp-overview-stats-hope hide-in-small-layout info-callout-target info-callout-target-small'>";
-			rowHTML += "<span class='icon'><img src='img/stat-hope.png' alt='hope'/></span><span class='change-indicator'></span> ";
+			rowHTML += "<span class='icon'><img src='img/stat-hope.png' alt='hy vọng'/></span><span class='change-indicator'></span> ";
 			rowHTML += "</span>";
 			rowHTML += "</td>";
 
-			rowHTML += "<td class='camp-overview-btn'><button class='btn-mini action action-move' id='" + btnID + "' action='" + btnAction + "'>Go</button></td>";
+			rowHTML += "<td class='camp-overview-btn'><button class='btn-mini action action-move' id='" + btnID + "' action='" + btnAction + "'>Đi tới</button></td>";
 			rowHTML += "<td class='camp-overview-camp-bubble'><div class='bubble info-callout-target info-callout-target-small' description=''>!</div></td>";
 
 			rowHTML += "</tr>";
@@ -489,33 +489,33 @@ define([
 			var evidenceChange = evidenceComponent.accumulationPerCamp[level] || 0;
 			GameGlobals.uiFunctions.toggle($("#camp-overview tr#" + rowID + " .camp-overview-stats-evidence"), evidenceChange > 0);
 			this.updateChangeIndicator($("#camp-overview tr#" + rowID + " .camp-overview-stats-evidence .change-indicator"), evidenceChange);
-			UIConstants.updateCalloutContent("#camp-overview tr#" + rowID + " .camp-overview-stats-evidence", "evidence: " + UIConstants.roundValue(evidenceChange, true, true, 1000), true);
+			UIConstants.updateCalloutContent("#camp-overview tr#" + rowID + " .camp-overview-stats-evidence", "bằng chứng: " + UIConstants.roundValue(evidenceChange, true, true, 1000), true);
 			
 			var rumoursComponent = this.playerStatsNodes.head.rumours;
 			var rumoursChange = rumoursComponent.accumulationPerCamp[level] || 0;
 			GameGlobals.uiFunctions.toggle($("#camp-overview tr#" + rowID + " .camp-overview-stats-rumours"), rumoursChange > 0);
 			this.updateChangeIndicator($("#camp-overview tr#" + rowID + " .camp-overview-stats-rumours .change-indicator"), rumoursChange);
-			UIConstants.updateCalloutContent("#camp-overview tr#" + rowID + " .camp-overview-stats-rumours", "rumours: " + UIConstants.roundValue(rumoursChange, true, true, 1000), true);
+			UIConstants.updateCalloutContent("#camp-overview tr#" + rowID + " .camp-overview-stats-rumours", "tin đồn: " + UIConstants.roundValue(rumoursChange, true, true, 1000), true);
 			
 			var hopeComponent = this.playerStatsNodes.head.entity.get(HopeComponent);
 			var hopeChange = hopeComponent ? hopeComponent.accumulationPerCamp[level] || 0 : 0;
 			GameGlobals.uiFunctions.toggle($("#camp-overview tr#" + rowID + " .camp-overview-stats-hope"), hopeChange > 0);
 			this.updateChangeIndicator($("#camp-overview tr#" + rowID + " .camp-overview-stats-hope .change-indicator"), hopeChange);
-			UIConstants.updateCalloutContent("#camp-overview tr#" + rowID + " .camp-overview-stats-hope", "hope: " + UIConstants.roundValue(hopeChange, true, true, 1000), true);
+			UIConstants.updateCalloutContent("#camp-overview tr#" + rowID + " .camp-overview-stats-hope", "hy vọng: " + UIConstants.roundValue(hopeChange, true, true, 1000), true);
 		},
 
 		getAlertDescription: function (notificationType) {
 			switch (notificationType) {
-				case this.campNotificationTypes.EVENT_RAID_ONGOING: return "raid";
-				case this.campNotificationTypes.EVENT_TRADER: return "trader";
-				case this.campNotificationTypes.EVENT_RECRUIT: return "recruit";
-				case this.campNotificationTypes.EVENT_REFUGEES: return "refugees";
-				case this.campNotificationTypes.EVENT_DISEASE: return "disease";
-				case this.campNotificationTypes.EVENT_VISITOR: return "visitor";
-				case this.campNotificationTypes.POP_UNASSIGNED: return "unassigned workers";
-				case this.campNotificationTypes.POP_DECREASING: return "population decreasing";
-				case this.campNotificationTypes.BUILDING_DAMAGED: return "damaged building";
-				case this.campNotificationTypes.EVENT_OUTGOING_CARAVAN: return "outgoing caravan";
+				case this.campNotificationTypes.EVENT_RAID_ONGOING: return "đang bị đột kích";
+				case this.campNotificationTypes.EVENT_TRADER: return "thương nhân";
+				case this.campNotificationTypes.EVENT_RECRUIT: return "tuyển mộ";
+				case this.campNotificationTypes.EVENT_REFUGEES: return "người tị nạn";
+				case this.campNotificationTypes.EVENT_DISEASE: return "dịch bệnh";
+				case this.campNotificationTypes.EVENT_VISITOR: return "khách ghé thăm";
+				case this.campNotificationTypes.POP_UNASSIGNED: return "lao động chưa phân công";
+				case this.campNotificationTypes.POP_DECREASING: return "dân số đang giảm";
+				case this.campNotificationTypes.BUILDING_DAMAGED: return "công trình hư hại";
+				case this.campNotificationTypes.EVENT_OUTGOING_CARAVAN: return "đoàn xe đang rời đi";
 				default: return "";
 			}
 		},

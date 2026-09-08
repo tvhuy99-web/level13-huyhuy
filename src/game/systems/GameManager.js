@@ -544,16 +544,16 @@ define([
 				msg += "<p>" + Text.t("ui.meta.world_change_outro_default") + "</p>";
 			}
 
-			GameGlobals.uiFunctions.showInfoPopup("City Update", msg, null, null, cb, true, false);
+			GameGlobals.uiFunctions.showInfoPopup("Cập nhật Thành phố", msg, null, null, cb, true, false);
 		},
 		
 		showSaveWarning: function (saveVersion) {
 			let currentVersion = GameGlobals.changeLogHelper.getCurrentVersionNumber();
 			GameGlobals.uiFunctions.showQuestionPopup(
-				"Warning",
-				"Part of the save could not be loaded. Most likely your save is old and incompatible with the current version. Restart the game or continue at your own risk.<br><br/>Save version: " + saveVersion + "<br/>Current version: " + currentVersion,
-				"Restart",
-				"Continue",
+				"Cảnh báo",
+				"Không thể tải một phần dữ liệu lưu. Có thể dữ liệu lưu đã cũ và không tương thích với phiên bản hiện tại. Hãy chơi lại hoặc tiếp tục và tự chịu rủi ro.<br><br/>Phiên bản dữ liệu lưu: " + saveVersion + "<br/>Phiên bản hiện tại: " + currentVersion,
+				"Chơi lại",
+				"Tiếp tục",
 				function () {
 					GameGlobals.uiFunctions.showGame();
 					GameGlobals.uiFunctions.restart();
@@ -574,14 +574,14 @@ define([
 				return;
 			}
 
-			let changelogLink = "<a href='changelog.html' target='changelog'>changelog</a>";
+			let changelogLink = "<a href='changelog.html' target='changelog'>nhật ký thay đổi</a>";
 			let message = "";
-			message += "<p>The game has been updated.</p>";
-			message += "<span class='text-list-entry p-meta'>Save version: " + saveVersion + "</span>";
-			message += "<span class='text-list-entry p-meta'>Current version: " + currentVersion + "</span>";
-			message += "<p>See the " + changelogLink + " for details.</p>";
+			message += "<p>Trò chơi đã được cập nhật.</p>";
+			message += "<span class='text-list-entry p-meta'>Phiên bản dữ liệu lưu: " + saveVersion + "</span>";
+			message += "<span class='text-list-entry p-meta'>Phiên bản hiện tại: " + currentVersion + "</span>";
+			message += "<p>Xem " + changelogLink + " để biết chi tiết.</p>";
 			GameGlobals.uiFunctions.showInfoPopup(
-				"Update",
+				"Cập nhật",
 				message,
 				null,
 				null,
@@ -594,18 +594,18 @@ define([
 		showVersionWarning: function (saveVersion, continueCallback) {
 			GameGlobals.uiFunctions.hideGame();
 			var currentVersion = GameGlobals.changeLogHelper.getCurrentVersionNumber();
-			var changelogLink = "<a href='changelog.html' target='changelog'>changelog</a>";
+			var changelogLink = "<a href='changelog.html' target='changelog'>nhật ký thay đổi</a>";
 			var message = "";
-			message += "Your save version is incompatible than the current version. Most likely the game has been updated since you last played. See the " + changelogLink + " for details."
+			message += "Phiên bản dữ liệu lưu không tương thích với phiên bản hiện tại. Có thể trò chơi đã được cập nhật từ lần cuối bạn chơi. Xem " + changelogLink + " để biết chi tiết."
 			message += "<br><br/>";
-			message += "Save version: " + saveVersion + "<br/>Current version: " + currentVersion;
+			message += "Phiên bản dữ liệu lưu: " + saveVersion + "<br/>Phiên bản hiện tại: " + currentVersion;
 			message += "<br><br/>";
-			message += "<span class='warning'>It is recommended to restart the game. Continue at your own risk.</span>";
+			message += "<span class='warning'>Bạn nên chơi lại. Nếu tiếp tục, bạn sẽ tự chịu rủi ro.</span>";
 			GameGlobals.uiFunctions.showQuestionPopup(
-				"Update",
+				"Cập nhật",
 				message,
-				"Restart",
-				"Continue",
+				"Chơi lại",
+				"Tiếp tục",
 				function () {
 					GameGlobals.uiFunctions.showGame();
 					GameGlobals.uiFunctions.restart();

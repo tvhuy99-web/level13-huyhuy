@@ -75,9 +75,9 @@ define([
 		pendingResourceBarUpdateTime: null, 
 		
 		SCAVENGE_BONUS_TYPES: [
-			{ itemBonusType: ItemConstants.itemBonusTypes.scavenge_general, displayName: "general", containerID: "scavenge-bonus-general" },
-			{ itemBonusType: ItemConstants.itemBonusTypes.scavenge_ingredients, displayName: "ingredients", containerID: "scavenge-bonus-ingredients" },
-			{ itemBonusType: ItemConstants.itemBonusTypes.scavenge_supplies, displayName: "supplies", containerID: "scavenge-bonus-supplies" },
+			{ itemBonusType: ItemConstants.itemBonusTypes.scavenge_general, displayName: "chung", containerID: "scavenge-bonus-general" },
+			{ itemBonusType: ItemConstants.itemBonusTypes.scavenge_ingredients, displayName: "nguyên liệu", containerID: "scavenge-bonus-ingredients" },
+			{ itemBonusType: ItemConstants.itemBonusTypes.scavenge_supplies, displayName: "nhu yếu phẩm", containerID: "scavenge-bonus-supplies" },
 		],
 
 		constructor: function () {
@@ -398,18 +398,18 @@ define([
 
 			GameGlobals.uiFunctions.toggle(this.elements.statIndicatorVision, !isSmallLayout || !isInCamp);
 			this.elements.valVision.text(shownVision + " / " + maxVision);
-			this.updateStatCalloutWithMax("Makes exploration safer and scavenging more effective", this.elements.statIndicatorVision, playerStatsNode.vision.maxSources);
+			this.updateStatCalloutWithMax("Giúp thám hiểm an toàn hơn và thu nhặt hiệu quả hơn", this.elements.statIndicatorVision, playerStatsNode.vision.maxSources);
 			this.updateChangeIndicator(this.elements.changeIndicatorVision, maxVision - shownVision, shownVision < maxVision);
 
 			GameGlobals.uiFunctions.toggle(this.elements.statIndicatorHealth, !isSmallLayout);
 			this.elements.valHealth.text(Math.round(playerStatsNode.stamina.health));
-			this.updateHealthStatCallout("Determines maximum stamina", this.elements.statIndicatorHealth);
+			this.updateHealthStatCallout("Quyết định thể lực tối đa", this.elements.statIndicatorHealth);
 			let healthAccumulation = playerStatsNode.stamina.healthAccumulation;
 			this.updateChangeIndicator(this.elements.changeIndicatorHealth, healthAccumulation, healthAccumulation != 0, false);
 
 			GameGlobals.uiFunctions.toggle($("#stats-stamina"), GameGlobals.gameState.unlockedFeatures.scavenge);
 			this.elements.valStamina.text(showStamina + " / " + maxStamina);
-			this.updateStatCalloutWithAcc("Required for exploration", this.elements.statIndicatorStamina, playerStatsNode.stamina.accSources);
+			this.updateStatCalloutWithAcc("Cần thiết để thám hiểm", this.elements.statIndicatorStamina, playerStatsNode.stamina.accSources);
 			this.updateChangeIndicator(this.elements.changeIndicatorStamina, playerStatsNode.stamina.accumulation, playerStamina < maxStamina, isResting || isHealing);
 
 			this.elements.valVision.toggleClass("warning", playerVision <= 25);
@@ -451,9 +451,9 @@ define([
 
 				$(".header-camp-population .value").text(Math.floor(campComponent.population) + " / " + maxPopulation);
 				this.updateChangeIndicator(this.elements.changeIndicatorPopulation, campComponent.populationChangePerSecWithoutCooldown, maxPopulation > 0);
-				var populationCalloutContent = "Required reputation:<br/>";
-				populationCalloutContent += "current: " + reqReputationCurrent + "<br/>";
-				populationCalloutContent += "next: " + reqReputationNext;
+				var populationCalloutContent = "Danh tiếng cần thiết:<br/>";
+				populationCalloutContent += "hiện tại: " + reqReputationCurrent + "<br/>";
+				populationCalloutContent += "tiếp theo: " + reqReputationNext;
 				UIConstants.updateCalloutContent($(".header-camp-population"), populationCalloutContent);
 				GameGlobals.uiFunctions.toggle(".header-camp-population", true);
 				GameGlobals.uiFunctions.toggle(".header-camp-reputation", true);
@@ -476,7 +476,27 @@ define([
 			if (source.isPercentage && source.percentageValue) {
 				displayValue = (source.amount > 0 ? "+" : "") + Math.round(source.percentageValue) + "%";
 			}
-			return source.source + ": " + displayValue + "<br/>";
+			return this.getDisplaySourceName(source.source) + ": " + displayValue + "<br/>";
+		},
+
+		getDisplaySourceName: function (source) {
+			let sourceNames = {
+				"Base": "Cơ bản",
+				"Population": "Dân số",
+				"Campfires": "Lửa trại",
+				"Markets": "Chợ",
+				"Inns": "Quán trọ",
+				"Temples": "Đền thờ",
+				"Clerics": "Giáo sĩ",
+				"Libraries": "Thư viện",
+				"Scientists": "Nhà khoa học",
+				"Research Center": "Trung tâm nghiên cứu",
+				"Radio": "Đài phát thanh",
+				"Level population": "Dân số theo tầng",
+				"milestones": "Cột mốc",
+				"luxury-resources": "Tài nguyên quý",
+			};
+			return sourceNames[source] || source;
 		},
 		
 		updateScavengeBonus: function (showScavangeAbility) {
@@ -582,26 +602,26 @@ define([
 				source = changeSources[i];
 				if (source.amount != 0) {
 					if (hideNumbers) {
-						sources += source.source + "<br/>";
+						sources += this.getDisplaySourceName(source.source) + "<br/>";
 					} else {
 						var amount = Math.round(source.amount * 1000)/1000;
 						if (amount == 0 && source.amount > 0) {
 							amount = "<&nbsp;" + (1/1000);
 						}
-						sources += source.source + ": " + amount + "/s<br/>";
+						sources += this.getDisplaySourceName(source.source) + ": " + amount + "/s<br/>";
 						total+= source.amount;
 					}
 				}
 			}
 
 			if (sources.length <= 0) {
-				sources = "(no change)";
+				sources = "(không thay đổi)";
 			}
 			
 			var content = description + (description && sources ? "<hr/>" : "") + sources;
 			
 			if (!hideNumbers) {
-				var totals = "Total: " + Math.round(total * 10000)/10000 + "/s";
+				var totals = "Tổng: " + Math.round(total * 10000)/10000 + "/s";
 				content += (total > 0 ? ("<hr/>" + totals) : "");
 			}
 			
@@ -618,7 +638,7 @@ define([
 					if (amount == 0 && source.amount > 0) {
 						amount = "<&nbsp;" + (1/1000);
 					}
-					sources += source.source + ": " + amount + "<br/>";
+					sources += this.getDisplaySourceName(source.source) + ": " + amount + "<br/>";
 				}
 			}
 			
@@ -715,19 +735,19 @@ define([
 			let statuses = [];
 			
 			if (GameGlobals.playerHelper.getCurrentBonus(ItemConstants.itemBonusTypes.detect_hazards) > 0) {
-				statuses.push({ name: "Hazard foresight", icon: "img/status-hazard-prediction.png", isNegative: false });
+				statuses.push({ name: "Dự cảm mối nguy", icon: "img/status-hazard-prediction.png", isNegative: false });
 			}
 			
 			if (GameGlobals.playerHelper.getCurrentBonus(ItemConstants.itemBonusTypes.detect_supplies) > 0) {
-				statuses.push({ name: "Supplies detection", icon: "img/status-supplies-prediction.png", isNegative: false });
+				statuses.push({ name: "Phát hiện vật tư", icon: "img/status-supplies-prediction.png", isNegative: false });
 			}
 			
 			if (GameGlobals.playerHelper.getCurrentBonus(ItemConstants.itemBonusTypes.detect_ingredients) > 0) {
-				statuses.push({ name: "Ingredients detection", icon: "img/status-ingredients-prediction.png", isNegative: false });
+				statuses.push({ name: "Phát hiện nguyên liệu", icon: "img/status-ingredients-prediction.png", isNegative: false });
 			}
 			
 			if (GameGlobals.playerHelper.getCurrentBonus(ItemConstants.itemBonusTypes.detect_poi) > 0) {
-				statuses.push({ name: "POI detection", icon: "img/status-poi-prediction.png", isNegative: false });
+				statuses.push({ name: "Phát hiện điểm đáng chú ý", icon: "img/status-poi-prediction.png", isNegative: false });
 			}
 			
 			for (let i = 0; i < statuses.length; i++) {
@@ -863,7 +883,7 @@ define([
 				$(".header-camp-storage .value").text(storageCap);
 
 				let showStorageNameKey = GameGlobals.resourcesHelper.getCurrentStorageNameKey(isSmallLayout);
-				UIConstants.updateCalloutContent(".header-camp-storage", "Amount of each resource that can be stored");
+				UIConstants.updateCalloutContent(".header-camp-storage", "Số lượng tối đa của mỗi tài nguyên có thể lưu trữ");
 				GameGlobals.uiFunctions.setText(".header-camp-storage .label", showStorageNameKey);
 			}
 
@@ -1126,7 +1146,7 @@ define([
 				let showLevel = GameGlobals.gameState.unlockedFeatures.levels;
 				positionText = this.currentLocationNodes.head.entity.get(PositionComponent).getPosition().getInGameFormat(showLevel, true);
 			}
-			$("#out-position-indicator").text("Position: " + positionText);
+			$("#out-position-indicator").text("Vị trí: " + positionText);
 			
 			this.updateLevelIcon();
 		},
@@ -1432,37 +1452,37 @@ define([
 			
 			if (inCamp) {
 				base = levelComponent.habitability < 1 ? "ui-camp-outpost" : "ui-camp-default";
-				desc = levelComponent.habitability < 1 ? "in camp | outpost" : "in camp | regular";
+					desc = levelComponent.habitability < 1 ? "trong trại | tiền đồn" : "trong trại | thông thường";
 			} else if (!GameGlobals.levelHelper.isLevelTypeRevealed(position.level)) {
 				base = "ui-level-unknown";
-				desc = "outside | unknown level";
+					desc = "bên ngoài | tầng chưa biết";
 			} else {
 				var surfaceLevel = GameGlobals.worldState.getSurfaceLevel();
 				var groundLevel = GameGlobals.worldState.getGroundLevel();
 				if (position.level == surfaceLevel) {
 					base = "ui-level-sun";
-					desc = "outside | surface";
+					desc = "bên ngoài | mặt đất";
 				} else if (position.level == groundLevel) {
 					base = "ui-level-ground";
-					desc = "outside | ground";
+					desc = "bên ngoài | tầng mặt đất";
 				} else if (!levelComponent.isCampable) {
 					switch (levelComponent.notCampableReason) {
 						case LevelConstants.UNCAMPABLE_LEVEL_TYPE_RADIATION:
 							base = "ui-level-radiation";
-							desc = "outside | radiation level";
+							desc = "bên ngoài | tầng phóng xạ";
 							break;
 						case LevelConstants.UNCAMPABLE_LEVEL_TYPE_POLLUTION:
 							base = "ui-level-poison";
-							desc = "outside | polluted level";
+							desc = "bên ngoài | tầng ô nhiễm";
 							break;
 						default:
 							base = "ui-level-empty";
-							desc = "outside | uninhabitable level";
+							desc = "bên ngoài | tầng không thể sinh sống";
 							break;
 					}
 				} else {
 					base = "ui-level-default";
-					desc = "outside | regular level";
+					desc = "bên ngoài | tầng thông thường";
 				}
 			}
 			

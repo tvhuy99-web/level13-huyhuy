@@ -393,21 +393,21 @@ define([
 			let hasCheated = GameGlobals.gameState.hasCheated;
 			let showReportBugNudge = !hasPlayedOnIncompatibleVersions && !hasCheated;
 
-			let text  = "You've found a bug! Please reload the page to continue playing. ";
-			text += "If reloading doesn't help, you can clear your data and restart the game, but you will lose all your progress.<br\><br\>";
+			let text  = "Đã xảy ra lỗi! Hãy tải lại trang để tiếp tục chơi. ";
+			text += "Nếu tải lại không giúp ích, bạn có thể xóa dữ liệu và chơi lại, nhưng sẽ mất toàn bộ tiến trình.<br\><br\>";
 
-			if (showReportBugNudge) text += "You can also help the developer by <a href='" + url + "' target='_blank'>reporting</a> the problem on GitHub.";
+			if (showReportBugNudge) text += "Bạn cũng có thể giúp nhà phát triển bằng cách <a href='" + url + "' target='_blank'>báo cáo</a> vấn đề trên GitHub.";
 
-			if (hasPlayedOnIncompatibleVersions) text += "<span class='warning'>The game state contains data from two incompatible versions. ";
-			if (hasCheated) text += "<span class='warning'>It appears that you have used cheats. ";
-			if (hasPlayedOnIncompatibleVersions || hasCheated) text += "This may have caused the issue.</span>"
+			if (hasPlayedOnIncompatibleVersions) text += "<span class='warning'>Trạng thái trò chơi chứa dữ liệu từ hai phiên bản không tương thích. ";
+			if (hasCheated) text += "<span class='warning'>Có vẻ bạn đã dùng gian lận. ";
+			if (hasPlayedOnIncompatibleVersions || hasCheated) text += "Điều này có thể đã gây ra lỗi.</span>"
 			
 			GameGlobals.uiFunctions.popupManager.closeAllPopups();
 			GameGlobals.uiFunctions.showQuestionPopup(
-				"Error",
+				"Lỗi",
 				text,
-				"reload",
-				"clear data",
+				"Tải lại",
+				"Xóa dữ liệu",
 				() => { location.reload(); },
 				() => { 
 					GameGlobals.uiFunctions.onRestartButton(true); 

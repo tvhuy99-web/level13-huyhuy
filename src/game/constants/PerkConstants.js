@@ -94,7 +94,30 @@ define(['ash', 'game/vos/PerkVO'], function (Ash, PerkVO) {
 			}
 			
 			let icon = "img/items/injury-" + levelAsNumber + ".png";
-			let perkVO = new PerkVO(id, name, "Injury", effect, icon, 0);
+			let translatedName = name
+				.replace("Chemical burn", "Bỏng hóa chất")
+				.replace("Sprained ankle", "Bong gân mắt cá chân")
+				.replace("Dislocated shoulder", "Trật khớp vai")
+				.replace("Broken wrist", "Gãy cổ tay")
+				.replace("Broken thumb", "Gãy ngón cái")
+				.replace("Broken finger", "Gãy ngón tay")
+				.replace("Broken toe", "Gãy ngón chân")
+				.replace("Broken rib", "Gãy xương sườn")
+				.replace("Bruised Leg", "Bầm tím ở chân")
+				.replace("Bruised Arm", "Bầm tím ở tay")
+				.replace("Bruised Shoulder", "Bầm tím ở vai")
+				.replace("Bruised Knee", "Bầm tím ở đầu gối")
+				.replace("Leg wound", "Chân bị thương")
+				.replace("Arm wound", "Tay bị thương")
+				.replace("Head wound", "Đầu bị thương")
+				.replace("Foot wound", "Bàn chân bị thương")
+				.replace("Chest wound", "Ngực bị thương")
+				.replace("Hand wound", "Bàn tay bị thương")
+				.replace("Burn", "Bỏng")
+				.replace("(light)", "(nhẹ)")
+				.replace("(medium)", "(vừa)")
+				.replace("(serious)", "(nặng)");
+			let perkVO = new PerkVO(id, translatedName, "Injury", effect, icon, 0);
 			perkVO.injuryType = injuryType;
 			
 			PerkConstants.perkDefinitions.injury.push(perkVO);
@@ -219,36 +242,36 @@ define(['ash', 'game/vos/PerkVO'], function (Ash, PerkVO) {
 		
 	};
 	
-	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.healthBonus1, "Healthy", "Health", 1.1, "img/items/health-positive.png"));
-	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.healthBonus2, "Health Augment (L1)", "Health", 1.25, "img/items/health-positive.png"));
-	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.healthBonus3, "Health Augment (L2)", "Health", 1.5, "img/items/health-positive.png"));
+	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.healthBonus1, "Khỏe mạnh", "Health", 1.1, "img/items/health-positive.png"));
+	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.healthBonus2, "Tăng cường sức khỏe (C1)", "Health", 1.25, "img/items/health-positive.png"));
+	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.healthBonus3, "Tăng cường sức khỏe (C2)", "Health", 1.5, "img/items/health-positive.png"));
 	
-	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.hunger, "Hunger", "Health", 0.75, "img/items/health-negative.png"));
-	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.thirst, "Thirst", "Health", 0.75, "img/items/health-negative.png"));
+	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.hunger, "Đói", "Health", 0.75, "img/items/health-negative.png"));
+	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.thirst, "Khát", "Health", 0.75, "img/items/health-negative.png"));
 
-	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.hazardRadiation, "Radiation sickness", "Health", 0.25, "img/items/health-negative.png"));
-	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.hazardPoison, "Poisoned", "Health", 0.5, "img/items/health-negative.png"));
-	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.hazardCold, "Cold", "Health", 0.75, "img/items/health-negative.png"));
+	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.hazardRadiation, "Nhiễm phóng xạ", "Health", 0.25, "img/items/health-negative.png"));
+	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.hazardPoison, "Nhiễm độc", "Health", 0.5, "img/items/health-negative.png"));
+	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.hazardCold, "Lạnh", "Health", 0.75, "img/items/health-negative.png"));
 	
-	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.encumbered, "Encumbered", "Movement", 1.5, "img/items/weight.png"));
-	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.accomplished, "Accomplished", "Movement", 0.8, "img/items/perk-accomplished.png"));
+	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.encumbered, "Quá tải", "Movement", 1.5, "img/items/weight.png"));
+	PerkConstants.perkDefinitions.health.push(new PerkVO(PerkConstants.perkIds.accomplished, "Mãn nguyện", "Movement", 0.8, "img/items/perk-accomplished.png"));
 	
-	PerkConstants.perkDefinitions.stamina.push(new PerkVO(PerkConstants.perkIds.staminaBonus, "Energized", "Stamina", 1, "img/items/health-positive.png"));
-	PerkConstants.perkDefinitions.stamina.push(new PerkVO(PerkConstants.perkIds.staminaBonusPenalty, "Headache", "Stamina", 0.9, "img/items/health-negative.png"));
-	PerkConstants.perkDefinitions.stamina.push(new PerkVO(PerkConstants.perkIds.stressed, "Stressed", "Stamina", 0.8, "img/items/health-negative.png"));
+	PerkConstants.perkDefinitions.stamina.push(new PerkVO(PerkConstants.perkIds.staminaBonus, "Tràn đầy năng lượng", "Stamina", 1, "img/items/health-positive.png"));
+	PerkConstants.perkDefinitions.stamina.push(new PerkVO(PerkConstants.perkIds.staminaBonusPenalty, "Đau đầu", "Stamina", 0.9, "img/items/health-negative.png"));
+	PerkConstants.perkDefinitions.stamina.push(new PerkVO(PerkConstants.perkIds.stressed, "Căng thẳng", "Stamina", 0.8, "img/items/health-negative.png"));
 	
-	PerkConstants.perkDefinitions.stamina.push(new PerkVO(PerkConstants.perkIds.lightBeacon, "Beacon", "Light", 20, "img/items/perk-light-beacon.png"));
+	PerkConstants.perkDefinitions.stamina.push(new PerkVO(PerkConstants.perkIds.lightBeacon, "Đèn hiệu", "Light", 20, "img/items/perk-light-beacon.png"));
 	
-	PerkConstants.perkDefinitions.luck.push(new PerkVO(PerkConstants.perkIds.blessed, "Blessed", "Luck", 20, "img/items/perk-blessed.png"));
-	PerkConstants.perkDefinitions.luck.push(new PerkVO(PerkConstants.perkIds.blessedShort, "Blessed", "Luck", 10, "img/items/perk-blessed.png"));
-	PerkConstants.perkDefinitions.luck.push(new PerkVO(PerkConstants.perkIds.lucky, "Lucky", "Luck", 5, "img/items/perk-blessed.png"));
-	PerkConstants.perkDefinitions.luck.push(new PerkVO(PerkConstants.perkIds.cursed, "Cursed", "Luck", -20, "img/items/perk-cursed.png"));
-	PerkConstants.perkDefinitions.luck.push(new PerkVO(PerkConstants.perkIds.restartBonusSmall, "Dreams of past lives", "Luck", 10, "img/items/perk-restart.png"));
-	PerkConstants.perkDefinitions.luck.push(new PerkVO(PerkConstants.perkIds.restartBonusCompletion, "Dreams of escape", "Luck", 30, "img/items/perk-restart.png"));
+	PerkConstants.perkDefinitions.luck.push(new PerkVO(PerkConstants.perkIds.blessed, "Được ban phước", "Luck", 20, "img/items/perk-blessed.png"));
+	PerkConstants.perkDefinitions.luck.push(new PerkVO(PerkConstants.perkIds.blessedShort, "Được ban phước", "Luck", 10, "img/items/perk-blessed.png"));
+	PerkConstants.perkDefinitions.luck.push(new PerkVO(PerkConstants.perkIds.lucky, "May mắn", "Luck", 5, "img/items/perk-blessed.png"));
+	PerkConstants.perkDefinitions.luck.push(new PerkVO(PerkConstants.perkIds.cursed, "Bị nguyền rủa", "Luck", -20, "img/items/perk-cursed.png"));
+	PerkConstants.perkDefinitions.luck.push(new PerkVO(PerkConstants.perkIds.restartBonusSmall, "Giấc mơ về những kiếp sống đã qua", "Luck", 10, "img/items/perk-restart.png"));
+	PerkConstants.perkDefinitions.luck.push(new PerkVO(PerkConstants.perkIds.restartBonusCompletion, "Giấc mơ trốn thoát", "Luck", 30, "img/items/perk-restart.png"));
 	
-	PerkConstants.perkDefinitions.visualNegative.push(new PerkVO(PerkConstants.perkIds.tired, "Tired", "VisualN", 0, "img/items/perk-tired.png"));
+	PerkConstants.perkDefinitions.visualNegative.push(new PerkVO(PerkConstants.perkIds.tired, "Mệt mỏi", "VisualN", 0, "img/items/perk-tired.png"));
 
-	PerkConstants.perkDefinitions.visualPositive.push(new PerkVO(PerkConstants.perkIds.grit, "Grit", "VisualP", 0, "img/items/perk-grit.png"));
+	PerkConstants.perkDefinitions.visualPositive.push(new PerkVO(PerkConstants.perkIds.grit, "Bền bỉ", "VisualP", 0, "img/items/perk-grit.png"));
 	
 	let woundBodyParts = ["Leg", "Arm", "Head", "Foot", "Chest", "Hand"];
 	for (let i = 0; i < woundBodyParts.length; i++) {

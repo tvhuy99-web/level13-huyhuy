@@ -96,7 +96,7 @@ define([
 					let sectors = GameGlobals.levelHelper.addFallbackInvestigateSectors();
 					let positions = sectors.map(sector => sector.get(PositionComponent).getPosition());
 					log.w("insight missing! adding fallback investigate sectors: " + positions.join(","));
-					GameGlobals.playerHelper.addLogMessage("We have discovered new locations to investigate");
+					GameGlobals.playerHelper.addLogMessage("Đã phát hiện những địa điểm mới để điều tra");
 					return;
 				}
 			}

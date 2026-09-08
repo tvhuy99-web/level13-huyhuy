@@ -127,7 +127,7 @@ define([
 				if (sellsS.length <= 0) sellsS = "-";
 				let tdTrades = "<td>Buys: " + buysS + "<br/>Sells: " + sellsS + "</td>";
 				let toggleBtnID = "btn_send_caravan_" + partner.campOrdinal + "_toggle";
-				let btn = "<button id='" + toggleBtnID + "' class='btn-trade-caravans-outgoing-toggle'>Send caravan</button>";
+				let btn = "<button id='" + toggleBtnID + "' class='btn-trade-caravans-outgoing-toggle'>Gửi đoàn xe</button>";
 				if (totalCaravans < 1) {
 					btn = "";
 				}
@@ -138,7 +138,7 @@ define([
 				let sendTR = "<tr style='display:none;' class='trade-caravans-outgoing-plan highlightbox' id='trade-caravans-outgoing-plan-" + partner.campOrdinal + "'>";
 				sendTR += "<td colspan='2'>";
 				sendTR += "<div class='row-detail-indicator'>></div>";
-				sendTR += "Sell: <select class='trade-caravans-outgoing-select-sell' data-trader-id='" + traderId +"'>";
+				sendTR += "Bán: <select class='trade-caravans-outgoing-select-sell' data-trader-id='" + traderId +"'>";
 				for (let j = 0; j < partner.buysResources.length; j++) {
 					sendTR += getOptionElement(partner.buysResources[j], partner.buysResources[j], savedSellOption);
 				}
@@ -159,7 +159,7 @@ define([
 				sendTR += "<span class='trade-caravans-outgoing-buy'>";
 				sendTR += "&nbsp;&nbsp;|&nbsp;&nbsp;"
 				
-				sendTR += "Get: <select class='trade-caravans-outgoing-select-buy' data-trader-id='" + traderId + "'>";
+				sendTR += "Nhận: <select class='trade-caravans-outgoing-select-buy' data-trader-id='" + traderId + "'>";
 				for (let k = 0; k < partner.sellsResources.length; k++) {
 					let sellRes = partner.sellsResources[k];
 					sendTR += getOptionElement(sellRes, sellRes, savedBuyOption);
@@ -175,7 +175,7 @@ define([
 				sendTR += " <span class='trade-buy-value'>0</span>";
 				sendTR += "</span>";
 				sendTR += "</td>";
-				sendTR += "<td class='minwidth'><button class='action btn-trade-caravans-outgoing-send' action='send_caravan_" + partner.campOrdinal + "'>Send</button></td></tr>";
+				sendTR += "<td class='minwidth'><button class='action btn-trade-caravans-outgoing-send' action='send_caravan_" + partner.campOrdinal + "'>Gửi</button></td></tr>";
 				$("#trade-caravans-outgoing-container table").append(sendTR);
 			}
 			
@@ -238,12 +238,12 @@ define([
 				// caravans summary
 				if (totalCaravans > 0) {
 					$("#trade-caravans-outgoing-num").html(
-						"Available caravans: <span class='hl-functionality'>" + numAvailableCaravans + "/" + totalCaravans + "</span>. " +
-						"Capacity: <span class='hl-functionality'>" + this.getCaravanCapacity() + "</span> per caravan.");
+						"Đoàn buôn khả dụng: <span class='hl-functionality'>" + numAvailableCaravans + "/" + totalCaravans + "</span>. " +
+						"Sức chứa: <span class='hl-functionality'>" + this.getCaravanCapacity() + "</span> mỗi đoàn buôn.");
 				} else {
 					var stableUnlocked = GameGlobals.playerActionsHelper.isRequirementsMet("build_in_stable");
 					if (stableUnlocked) {
-						$("#trade-caravans-outgoing-num").html("Available caravans: <span class='hl-functionality'>0</span> (build the stable to send caravans)");
+						$("#trade-caravans-outgoing-num").html("Đoàn buôn khả dụng: <span class='hl-functionality'>0</span> (xây chuồng ngựa để cử đoàn buôn)");
 					} else {
 						$("#trade-caravans-outgoing-num").html("");
 					}
@@ -264,9 +264,9 @@ define([
 					let li = "<li class='trade-caravan-outgoing-item'>";
 					li += "<span class='name'>" + partner.name + "</span>";
 					li += " - ";
-					li += "<span class='sell'>Sell: " + caravan.sellGood + " x" + caravan.sellAmount + "</span>";
-					li += "<span class='buy'>Get: " + caravan.buyGood + " x" + buyAmount + "</span>";
-					li += "<span class='return-time'>Returns in: " + timeUntilString + "</span>";
+					li += "<span class='sell'>Bán: " + caravan.sellGood + " x" + caravan.sellAmount + "</span>";
+					li += "<span class='buy'>Nhận: " + caravan.buyGood + " x" + buyAmount + "</span>";
+					li += "<span class='return-time'>Trở về sau: " + timeUntilString + "</span>";
 					li += "</li>";
 					$("#trade-caravans-outgoing-list").append(li);
 				}
@@ -274,14 +274,14 @@ define([
 		},
 
 		hideOutgoingPlanRows: function () {
-			$(".btn-trade-caravans-outgoing-toggle").text("Send caravan");
+			$(".btn-trade-caravans-outgoing-toggle").text("Cử đoàn buôn");
 			GameGlobals.uiFunctions.toggle(".trade-caravans-outgoing-plan", false, true);
 			$(".trade-caravans-outgoing").toggleClass("selected", false);
 		},
 
 		showOutgoingPlanRow: function (tradePartnerOrdinal) {
 			var tr = $("#trade-caravans-outgoing-plan-" + tradePartnerOrdinal);
-			$("#trade-caravans-outgoing-" + tradePartnerOrdinal + " button").text("cancel");
+			$("#trade-caravans-outgoing-" + tradePartnerOrdinal + " button").text("hủy");
 			$("#trade-caravans-outgoing-" + tradePartnerOrdinal).toggleClass("selected", true);
 			GameGlobals.uiFunctions.toggle(tr, true);
 			this.initPendingCaravan(tradePartnerOrdinal);
@@ -311,7 +311,7 @@ define([
 			$("#trade-caravans-incoming-container table").empty();
 			if (caravan) {
 				let traderLevel = GameGlobals.campHelper.getEventUpgradeLevel(OccurrenceConstants.campOccurrenceTypes.trader);
-				let nameTD = "<td class='item-name'>" + caravan.name + " <span class='p-meta'>level " + traderLevel + "</span></td>";
+				let nameTD = "<td class='item-name'>" + caravan.name + " <span class='p-meta'>tầng " + traderLevel + "</span></td>";
 
 				let inventoryUL = "<ul class='ul-horizontal'>";
 				let numLis = 0;
@@ -358,8 +358,8 @@ define([
 
 				inventoryUL += "</ul>";
 				var inventoryTD = "<td><div style='margin-right: 5px'>" + inventoryUL + "</div></td>";
-				var buttonsTD = "<td class='nowrap-on-regular-layout'><button class='trade-caravans-incoming-trade'>Trade</button>";
-				buttonsTD += "<button class='trade-caravans-incoming-dismiss btn-secondary'>Dismiss</button></td>";
+				var buttonsTD = "<td class='nowrap-on-regular-layout'><button class='trade-caravans-incoming-trade'>Giao thương</button>";
+				buttonsTD += "<button class='trade-caravans-incoming-dismiss btn-secondary'>Bỏ qua</button></td>";
 
 				var tr = "<tr>" + nameTD + (isSmallLayout ? "" : inventoryTD) + buttonsTD + "</tr>";
 				$("#trade-caravans-incoming-container table").append(tr);
@@ -412,7 +412,7 @@ define([
 			} else {
 				GameGlobals.uiFunctions.toggle(sellSlider, false);
 				GameGlobals.uiFunctions.toggle(trID + " .trade-sell-value-invalid", true);
-				$(trID + " .trade-sell-value-invalid").text("Not enough " + selectedSell);
+				$(trID + " .trade-sell-value-invalid").text("Không đủ " + selectedSell);
 				GameGlobals.uiFunctions.toggle(trID + " .trade-sell-value", false);
 			}
 

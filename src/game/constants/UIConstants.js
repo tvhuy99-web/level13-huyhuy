@@ -24,8 +24,8 @@ define(['ash',
 		THEME_DUSKY: "dusky",
 		THEME_DARK: "dark",
 
-		FEATURE_MISSING_TITLE: "Missing feature",
-		FEATURE_MISSING_COPY: "This feature is not yet implemented. Come back later!",
+		FEATURE_MISSING_TITLE: "Thiếu tính năng",
+		FEATURE_MISSING_COPY: "Tính năng này chưa được triển khai. Hãy quay lại sau!",
 
 		MAP_MINIMAP_SIZE: 7,
 		SCROLL_INDICATOR_SIZE: 5,
@@ -216,13 +216,13 @@ define(['ash',
 			if (detail.length < 5) detail = "";
 			var weight = BagConstants.getItemCapacity(item);
 			let itemName = ItemConstants.getItemDisplayName(item);
-			var itemCalloutContent = "<b>" + itemName + "</b><br/>Type: " + ItemConstants.getItemTypeDisplayName(item.type, false) + " " + detail;
-			itemCalloutContent += "</br>Weight: " + weight;
+			var itemCalloutContent = "<b>" + itemName + "</b><br/>Loại: " + ItemConstants.getItemTypeDisplayName(item.type, false) + " " + detail;
+			itemCalloutContent += "</br>Khối lượng: " + weight;
 			if (ItemConstants.hasItemTypeQualityLevels(item.type)) {
 				let quality = ItemConstants.getItemQuality(item);
-				itemCalloutContent += "</br>Quality: " + ItemConstants.getQualityDisplayName(quality);
+				itemCalloutContent += "</br>Chất lượng: " + ItemConstants.getQualityDisplayName(quality);
 			}
-			if (item.broken) itemCalloutContent += "<br><span class='warning'>Broken</span>";
+			if (item.broken) itemCalloutContent += "<br><span class='warning'>Hỏng</span>";
 			itemCalloutContent += "</br>" + ItemConstants.getItemDescription(item);
 			if (smallCallout) itemCalloutContent = itemName + (detail.length > 0 ? " " + detail : "");
 			
@@ -244,20 +244,20 @@ define(['ash',
 
 				if (bagOptions.canRepair) {
 					var action = "repair_item_" + item.itemID;
-					options += makeButton(action, "Repair");
+					options += makeButton(action, "Sửa chữa");
 				}
 
 				if (bagOptions.canEquip) {
 					var action = "equip_" + item.itemID;
-					options += makeButton(action, "Equip");
+					options += makeButton(action, "Trang bị");
 				} else if (bagOptions.canUnequip) {
 					var action = "unequip_" + item.id;
-					options += makeButton(action, "Unequip");
+					options += makeButton(action, "Tháo trang bị");
 				}
 
 				if (bagOptions.canDiscard) {
 					var action = "discard_" + item.itemID;
-					options += makeButton(action, "Discard");
+					options += makeButton(action, "Bỏ");
 				}
 
 				options += "</div>";
@@ -342,13 +342,13 @@ define(['ash',
 			div += "<div class='interaction-options'>";
 			div += "<button class='action btn-narrow' action='" + talkAction + "'>" + talkLabel + "</button>";
 			div += "<table class='button-row-2'><tr>";
-			div += "<td><button class='action btn-mini' action='" + switchAction + "' aria-label='switch'>" + switchLabel + "</button></td>";
-			div += "<td><button class='action btn-mini' action='" + dismissAction + "' aria-label='dismiss'>" + dismissLabel + "</button></td>";
+			div += "<td><button class='action btn-mini' action='" + switchAction + "' aria-label='đổi thành viên'>" + switchLabel + "</button></td>";
+			div += "<td><button class='action btn-mini' action='" + dismissAction + "' aria-label='cho thôi'>" + dismissLabel + "</button></td>";
 			div += "</tr></table>";
 
 			// hack to avoid temporary empty space in layout when changing to explorers tab
 			// this assumes an explorer never gets injured while this div is active (explorers tab open)
-			if (!isInCamp && explorerVO.injuredTimer > 0) div += "<button class='action btn-narrow btn-heal-explorer' action='" + healAction + "' style='display:none'>heal</button>";
+			if (!isInCamp && explorerVO.injuredTimer > 0) div += "<button class='action btn-narrow btn-heal-explorer' action='" + healAction + "' style='display:none'>Chữa trị</button>";
 			div += "</div>";
 
 			div += "</div>";
@@ -381,30 +381,30 @@ define(['ash',
 			let explorerType = ExplorerConstants.getExplorerTypeForAbilityType(explorer.abilityType);
 			let result = "<b>" + explorer.name + "</b>";
 			if (isRecruited) {
-				result += "<br/>In party: " + (explorer.inParty ? "yes" : "no");
+				result += "<br/>Trong đội: " + (explorer.inParty ? "có" : "không");
 			}
-			result += "<br/>Type: " + ExplorerConstants.getExplorerTypeDisplayName(explorerType);
-			result += "<br/>Ability: " + Text.t(ExplorerConstants.getAbilityTypeDisplayNameKey(explorer.abilityType))
+			result += "<br/>Loại: " + ExplorerConstants.getExplorerTypeDisplayName(explorerType);
+			result += "<br/>Khả năng: " + Text.t(ExplorerConstants.getAbilityTypeDisplayNameKey(explorer.abilityType))
 				+ " (" + Text.t(UIConstants.getExplorerAbilityDescriptionTextVO(explorer, [])) + ")";
 
 			if (questTextKey) {
-				result += "<br/>Quest: " + Text.t(questTextKey);
+				result += "<br/>Nhiệm vụ: " + Text.t(questTextKey);
 			}
 
 			if (explorer.injuredTimer >= 0) {
 				if (explorer.inParty) {
-					result += "<br/>Status: " + this.warning("Injured");
+					result += "<br/>Trạng thái: " + this.warning("Bị thương");
 				} else {
-					result += "<br/>Status: " + this.warning("Injured (recovering)");
+					result += "<br/>Trạng thái: " + this.warning("Bị thương (đang hồi phục)");
 				}
 			} else if (explorer.hasUrgentDialogue) {
-				result += "<br/>Status: Wants to talk";
+				result += "<br/>Trạng thái: Muốn nói chuyện";
 			} else if (isForced) {
-				result += "<br/>Status: Wants to go exploring";
+				result += "<br/>Trạng thái: Muốn đi khám phá";
 			}
 
 			if (GameConstants.isCheatsEnabled) {
-				result += "<br/>" + "<span class='debug-info'>" + this.meta("Trust: " + explorer.trust) + "</span>";;
+				result += "<br/>" + "<span class='debug-info'>" + this.meta("Mức tin cậy: " + explorer.trust) + "</span>";;
 			}
 			
 			if (isRecruited && isInCamp && !hideButtons) {
@@ -413,11 +413,11 @@ define(['ash',
 				};
 
 				var options = "<div class='item-bag-options'>";
-				options += makeButton("dismiss_explorer_" + explorer.id, "Dismiss");
+				options += makeButton("dismiss_explorer_" + explorer.id, "Sa thải");
 				if (!explorer.inParty) {
-					options += makeButton("select_explorer_" + explorer.id, "Add to party");
+					options += makeButton("select_explorer_" + explorer.id, "Thêm vào đội");
 				} else {
-					options += makeButton("deselect_explorer_" + explorer.id, "Switch out");
+					options += makeButton("deselect_explorer_" + explorer.id, "Đổi ra");
 				}
 				options += "</div>";
 				result += options;
@@ -487,7 +487,7 @@ define(['ash',
 
 		createNPCDiv: function () {
 			let div = "<div class='npc-container'>";
-			let calloutContent = "Visitor";
+			let calloutContent = "Khách";
 			
 			div += "<div class='npc-type-indicator'><img src='img/eldorado/icon_time-dark.png'/></div>";
 			div += "<div class='info-callout-target info-callout-target-small fullwidth' description='" + this.cleanupText(calloutContent) + "'>";
@@ -557,7 +557,8 @@ define(['ash',
 		getResourceLi: function (name, amount, isLost, simple) {
 			var divclasses = "res item-with-count";
 			var div = "<div class='" + divclasses + "' data-resourcename='" + name + "'>";
-			div += "<div class='info-callout-target info-callout-target-small' description='" + name + "'>";
+			let displayName = TextConstants.getResourceDisplayName(name);
+			div += "<div class='info-callout-target info-callout-target-small' description='" + displayName + "'>";
 			div += this.getResourceImg(name);
 			if (amount || amount === 0)
 				div += "<div class='item-count lvl13-box-1'>" + Math.floor(amount) + "x</div>";
@@ -581,7 +582,7 @@ define(['ash',
 		getCurrencyLi: function (amount, simple) {
 			var classes = "res item-with-count";
 			var div = "<div class='" + classes + "' data-resourcename='currency'>";
-			div += "<div class='info-callout-target info-callout-target-small' description='silver'>";
+			div += "<div class='info-callout-target info-callout-target-small' description='" + TextConstants.getResourceDisplayName("currency") + "'>";
 			div += this.getResourceImg("currency");
 			div += "<div class='item-count lvl13-box-1'>" + Math.floor(amount) + "x </div>";
 			div += "</div>";
@@ -602,7 +603,7 @@ define(['ash',
 
 		getBlueprintPieceLI: function (upgradeID) {
 			let name = TextConstants.getUpgradeDisplayName(upgradeID);
-			return "<li><div class='info-callout-target' description='Blueprint (" + name + ")'>" + this.getBlueprintPieceIcon(upgradeID) + " blueprint</li>";
+			return "<li><div class='info-callout-target' description='Bản thiết kế (" + name + ")'>" + this.getBlueprintPieceIcon(upgradeID) + " bản thiết kế</li>";
 		},
 
 		getResourceList: function (resourceVO) {
@@ -649,30 +650,30 @@ define(['ash',
 
 		getItemBonusName: function (bonusType, short) {
 			switch (bonusType) {
-				case ItemConstants.itemBonusTypes.light: return "light";
-				case ItemConstants.itemBonusTypes.fight_att: return "attack";
-				case ItemConstants.itemBonusTypes.fight_def: return "defence";
-				case ItemConstants.itemBonusTypes.fight_shield: return "shield";
-				case ItemConstants.itemBonusTypes.fight_speed: return "attack speed";
-				case ItemConstants.itemBonusTypes.movement: return "movement cost";
-				case ItemConstants.itemBonusTypes.scavenge_cost: return "scavenge cost";
-				case ItemConstants.itemBonusTypes.scavenge_general: return "scavenge bonus";
-				case ItemConstants.itemBonusTypes.scavenge_supplies: return "scavenge bonus";
-				case ItemConstants.itemBonusTypes.scavenge_ingredients: return "scavenge bonus";
-				case ItemConstants.itemBonusTypes.scavenge_blueprints: return "scavenge bonus";
-				case ItemConstants.itemBonusTypes.scavenge_valuables: return "scavenge bonus";
-				case ItemConstants.itemBonusTypes.scout_cost: return "scouting cost";
-				case ItemConstants.itemBonusTypes.collector_cost: return "trap/bucket cost";
-				case ItemConstants.itemBonusTypes.bag: return "bag size";
-				case ItemConstants.itemBonusTypes.res_cold: return "warmth";
-				case ItemConstants.itemBonusTypes.res_radiation: return short ? "radiation prot" : "radiation protection";
-				case ItemConstants.itemBonusTypes.res_poison: return short ? "poison prot" : "poison protection";
-				case ItemConstants.itemBonusTypes.res_water: return short ? "water prot" : "water protection";
-				case ItemConstants.itemBonusTypes.shade: return short ? "sun prot" : "sunblindness protection";
-				case ItemConstants.itemBonusTypes.detect_hazards: return short ? "hazards" : "surveying (hazards)";
-				case ItemConstants.itemBonusTypes.detect_supplies: return short ? "supplies" : "surveying (supplies)";
-				case ItemConstants.itemBonusTypes.detect_ingredients: return short ? "ingredients" : "surveying (ingredients)";
-				case ItemConstants.itemBonusTypes.detect_poi: return short ? "poi" : "surveying (poi)";
+				case ItemConstants.itemBonusTypes.light: return "ánh sáng";
+				case ItemConstants.itemBonusTypes.fight_att: return "tấn công";
+				case ItemConstants.itemBonusTypes.fight_def: return "phòng thủ";
+				case ItemConstants.itemBonusTypes.fight_shield: return "khiên";
+				case ItemConstants.itemBonusTypes.fight_speed: return "tốc độ tấn công";
+				case ItemConstants.itemBonusTypes.movement: return "chi phí di chuyển";
+				case ItemConstants.itemBonusTypes.scavenge_cost: return "chi phí lục soát";
+				case ItemConstants.itemBonusTypes.scavenge_general: return "thưởng lục soát";
+				case ItemConstants.itemBonusTypes.scavenge_supplies: return "thưởng lục soát";
+				case ItemConstants.itemBonusTypes.scavenge_ingredients: return "thưởng lục soát";
+				case ItemConstants.itemBonusTypes.scavenge_blueprints: return "thưởng lục soát";
+				case ItemConstants.itemBonusTypes.scavenge_valuables: return "thưởng lục soát";
+				case ItemConstants.itemBonusTypes.scout_cost: return "chi phí trinh sát";
+				case ItemConstants.itemBonusTypes.collector_cost: return "chi phí bẫy/xô";
+				case ItemConstants.itemBonusTypes.bag: return "sức chứa túi";
+				case ItemConstants.itemBonusTypes.res_cold: return "giữ ấm";
+				case ItemConstants.itemBonusTypes.res_radiation: return short ? "kháng phóng xạ" : "khả năng kháng phóng xạ";
+				case ItemConstants.itemBonusTypes.res_poison: return short ? "kháng độc" : "khả năng kháng độc";
+				case ItemConstants.itemBonusTypes.res_water: return short ? "kháng nước" : "khả năng kháng nước";
+				case ItemConstants.itemBonusTypes.shade: return short ? "kháng nắng" : "khả năng chống chói nắng";
+				case ItemConstants.itemBonusTypes.detect_hazards: return short ? "mối nguy" : "khảo sát (mối nguy)";
+				case ItemConstants.itemBonusTypes.detect_supplies: return short ? "vật tư" : "khảo sát (vật tư)";
+				case ItemConstants.itemBonusTypes.detect_ingredients: return short ? "nguyên liệu" : "khảo sát (nguyên liệu)";
+				case ItemConstants.itemBonusTypes.detect_poi: return short ? "điểm đáng chú ý" : "khảo sát (điểm đáng chú ý)";
 				default:
 					log.w("no display name defined for item bonus type: " + bonusType);
 					return "";
@@ -717,9 +718,9 @@ define(['ash',
 			if (perk.removeTimer >= 0) {
 				var factor = PerkConstants.getRemoveTimeFactor(perk, isResting);
 				var timeleft = perk.removeTimer / factor;
-				return "time left: " + this.getTimeToNum(timeleft);
+				return "thời gian còn lại: " + this.getTimeToNum(timeleft);
 			} else if (perk.startTimer >= 0) {
-				return "time to full: " + this.getTimeToNum(perk.startTimer);
+				return "thời gian đến khi hồi đầy: " + this.getTimeToNum(perk.startTimer);
 			} else {
 				return null;
 			}
@@ -742,17 +743,27 @@ define(['ash',
 			let effect = perk.type;
 			switch (perk.type) {
 				case PerkConstants.perkTypes.movement:
-					effect = "movement cost";
+					effect = "chi phí di chuyển";
 					break;
 				case PerkConstants.perkTypes.injury:
 				case PerkConstants.perkTypes.health:
-					effect = "health";
+					effect = "sức khỏe";
+					break;
+				case PerkConstants.perkTypes.stamina:
+					effect = "thể lực";
+					break;
+				case PerkConstants.perkTypes.light:
+					effect = "ánh sáng";
+					break;
+				case PerkConstants.perkTypes.visualNegative:
+				case PerkConstants.perkTypes.visualPositive:
+					effect = "tầm nhìn";
 					break;
 				case PerkConstants.perkTypes.luck:
 					if (perk.effect > 0) {
-						return "Lower probability of negative random events when exploring";
+						return "Giảm khả năng gặp sự kiện ngẫu nhiên tiêu cực khi thám hiểm";
 					} else { 
-						return "Higher probability of negative random events when exploring";
+						return "Tăng khả năng gặp sự kiện ngẫu nhiên tiêu cực khi thám hiểm";
 					}
 			}
 
@@ -769,7 +780,7 @@ define(['ash',
 					result += "<span class='action-cost action-cost-" + key + "'>" + name + ": <span class='action-cost-value'>" + UIConstants.getDisplayValue(value) + "</span><br/></span>";
 				}
 			} else if (this.isActionFreeCostShown(action)) {
-				result += "<span class='action-cost p-meta'>free</span><br />";
+				result += "<span class='action-cost p-meta'>miễn phí</span><br />";
 			}
 			return result;
 		},
@@ -938,11 +949,11 @@ define(['ash',
 				
 				if (showDetails) {
 					if (change > 0 && (storage - value > 0)) {
-						$indicator.children(".forecast").text("(" + this.getTimeToNum((storage - value) / change) + " to cap)");
+						$indicator.children(".forecast").text("(còn " + this.getTimeToNum((storage - value) / change) + " để đầy)");
 					} else if (change < 0 && value > 0) {
-						$indicator.children(".forecast").text("(" + this.getTimeToNum(value / change) + " to 0)");
+						$indicator.children(".forecast").text("(còn " + this.getTimeToNum(value / change) + " để hết)");
 					} else if (value >= storage) {
-						$indicator.children(".forecast").text("(full)");
+						$indicator.children(".forecast").text("(đầy)");
 					} else {
 						$indicator.children(".forecast").text("");
 					}
@@ -976,7 +987,7 @@ define(['ash',
 			let displayName = TextConstants.getResourceDisplayName(name);
 
 			if (content.length <= 0) {
-				content = displayName + " (no change)";
+				content = displayName + " (không thay đổi)";
 			} else {
 				content = displayName + "<br/>" + content;
 			}
@@ -1054,25 +1065,25 @@ define(['ash',
 				html += "<br/>";
 			};
 			
-			addValue("Base reputation", baseReputation);
-			
-			addValue("Max evidence", milestone.maxEvidence);
-			addValue("Max rumours", milestone.maxRumours);
+			addValue("Uy tín cơ bản", baseReputation);
+
+			addValue("Bằng chứng tối đa", milestone.maxEvidence);
+			addValue("Tin đồn tối đa", milestone.maxRumours);
 			
 			if (milestone.maxHope && hasDeity) {
-				addValue("Max hope", milestone.maxHope);
+				addValue("Hy vọng tối đa", milestone.maxHope);
 			}
 			
 			if (milestone.maxInsight && hasInvestigate) {
-				addValue("Max insight", milestone.maxInsight);
+				addValue("Sáng tỏ tối đa", milestone.maxInsight);
 			}
 			
 			if (isNew) {
 				addGroup("", milestone.unlockedFeatures, UIConstants.getUnlockedFeatureDisplayName);
-				addGroup("New events", milestone.unlockedEvents);
+				addGroup("Sự kiện mới", milestone.unlockedEvents);
 				
 				let unlockedUpgrades = GameGlobals.milestoneEffectsHelper.getUnlockedUpgrades(milestone.index);
-				addGroup("Unlocked upgrades", unlockedUpgrades, (upgradeID) => {
+				addGroup("Nâng cấp đã mở", unlockedUpgrades, (upgradeID) => {
 					let upgrade = UpgradeConstants.upgradeDefinitions[upgradeID];
 					let name = TextConstants.getUpgradeDisplayName(upgradeID);
 					let isOtherRequirementsMet = GameGlobals.playerActionsHelper.isRequirementsMet(upgradeID, null, [ PlayerActionConstants.DISABLED_REASON_MILESTONE ]);
@@ -1081,7 +1092,7 @@ define(['ash',
 				});
 				
 				let unlockedActions = GameGlobals.milestoneEffectsHelper.getUnlockedGeneralActions(milestone.index);
-				addGroup("Other", unlockedActions);
+				addGroup("Khác", unlockedActions);
 			}
 			
 			return html;
@@ -1215,15 +1226,15 @@ define(['ash',
 			var days = hours / 24;
 
 			if (days > 2) {
-				return Math.floor(days) + "days";
+				return Math.floor(days) + " ngày";
 			} else if (hours > 2) {
-				return Math.floor(hours) + "h";
+				return Math.floor(hours) + " giờ";
 			} else if (minutes > 2) {
-				return Math.floor(minutes) + "min";
+				return Math.floor(minutes) + " phút";
 			} else if (hideSeconds) {
-				return "very soon";
+				return "sắp xong";
 			} else {
-				return Math.round(seconds) + "s";
+				return Math.round(seconds) + " giây";
 			}
 		},
 
@@ -1234,32 +1245,32 @@ define(['ash',
 
 			var interval = Math.floor(seconds / 31536000);
 			if (interval > 1) {
-				return interval + " years";
+				return interval + " năm trước";
 			}
 			interval = Math.floor(seconds / 2592000);
 			if (interval > 1) {
-				return interval + " months";
+				return interval + " tháng trước";
 			}
 			interval = Math.floor(seconds / 86400);
 			if (interval > 1) {
-				return interval + " days";
+				return interval + " ngày trước";
 			}
 			interval = Math.floor(seconds / 3600);
 			if (interval > 1) {
-				return interval + " hours";
+				return interval + " giờ trước";
 			}
 			interval = Math.floor(seconds / 60);
 			if (interval > 1) {
-				return interval + " minutes";
+				return interval + " phút trước";
 			}
 			if (interval === 1) {
-				return interval + " minute";
+				return interval + " phút trước";
 			}
 			if (seconds < 10) {
-				return "a few seconds";
+				return "vài giây trước";
 			}
 
-			return "less than a minute";
+			return "chưa đến một phút trước";
 		},
 
 		getInGameDate: function (gameTime) {
@@ -1285,34 +1296,34 @@ define(['ash',
 
 		getFactorLabel: function (factor) {
 			if (factor < 0.5) {
-				return "very low";
+				return "rất thấp";
 			}
 
 			if (factor < 1) {
-				return "low";
+				return "thấp";
 			}
 
 			if (factor == 1) {
-				return "average";
+				return "trung bình";
 			}
 
 			if (factor < 1.5) {
-				return "high";
+				return "cao";
 			}
 
-			return "very high";
+			return "rất cao";
 		},
 
 		getUnlockedFeatureDisplayName: function (featureID) {
 			switch (featureID) {
-				case UIConstants.UNLOCKABLE_FEATURE_MAP_MODES: return "map modes";
-				case UIConstants.UNLOCKABLE_FEATURE_WORKER_AUTO_ASSIGNMENT: return "worker auto-assignment";
+				case UIConstants.UNLOCKABLE_FEATURE_MAP_MODES: return "chế độ bản đồ";
+				case UIConstants.UNLOCKABLE_FEATURE_WORKER_AUTO_ASSIGNMENT: return "tự động phân công người lao động";
 			}
 			return featureID;
 		},
 
 		getCampDisplayName: function (campNode, short) {
-			return "camp on level " + campNode.position.level;
+			return "trại ở tầng " + campNode.position.level;
 		},
 
 		getCostDisplayName: function (name) {
@@ -1438,7 +1449,8 @@ define(['ash',
 		},
 
 		getResourceImg: function (name) {
-			return "<img src='img/res-" + name + ".png' alt='" + name + "'/>"
+			let alt = name == "currency" ? Text.t("game.resources.currency_name") : Text.t("game.resources." + name + "_name");
+			return "<img src='img/res-" + name + ".png' alt='" + alt + "'/>"
 		},
 		
 		getRangeText: function (range, count) {
@@ -1451,10 +1463,10 @@ define(['ash',
 					return min + "-" + max;
 				}
 				if (min >= 0) {
-					return "min " + min;
+					return "tối thiểu " + min;
 				}
 				if (max >= 0) {
-					return "max " + max;
+					return "tối đa " + max;
 				}
 			} else {
 				// text with current count

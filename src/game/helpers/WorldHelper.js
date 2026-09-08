@@ -465,9 +465,9 @@ define([
 		showWorldGenerationFailedWarning: function () {
 			GameGlobals.uiFunctions.setGameOverlay(false, false);
 			GameGlobals.uiFunctions.showInfoPopup(
-				"Warning",
-				"World generation failed.",
-				"Continue"
+				"Cảnh báo",
+				"Không thể tạo thế giới.",
+				"Tiếp tục"
 			);
 		},
 		

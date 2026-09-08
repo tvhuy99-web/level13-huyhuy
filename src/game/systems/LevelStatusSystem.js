@@ -294,18 +294,18 @@ define([
 			
 			if (levelComponent.isCampable) {
 				if (level % 2 == 0) {
-					return "This level seems safe enough that it should be possible to find a spot for a camp.";
+					return "Tầng này có vẻ đủ an toàn để tìm một chỗ dựng trại.";
 				} else {
-					return "There are enough signs of life on this level that it should be possible to find a spot for a camp.";
+					return "Tầng này có đủ dấu hiệu sự sống để có thể tìm một chỗ dựng trại.";
 				}
 			} else {
 				switch (levelComponent.notCampableReason) {
 					case LevelConstants.UNCAMPABLE_LEVEL_TYPE_RADIATION:
-						return "This level is too radioactive for a permanent settlement.";
+						return "Tầng này có quá nhiều phóng xạ để định cư lâu dài.";
 					case LevelConstants.UNCAMPABLE_LEVEL_TYPE_POLLUTION:
-						return "This level is too polluted for a permanent settlement.";
+						return "Tầng này quá ô nhiễm để định cư lâu dài.";
 					default:
-						return "This level seems eerily devoid of any signs of recent human activity.";
+						return "Tầng này đáng sợ đến mức không có dấu hiệu hoạt động gần đây của con người.";
 				}
 			}
 			
