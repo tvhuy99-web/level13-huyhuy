@@ -1,6 +1,6 @@
 require.config({
 
-	deps: ["level13-app"],
+	deps: ["game/helpers/ui/AccessibilityDetailedErrorHelper", "level13-app"],
 
 	waitSeconds: 30,
 
@@ -27,6 +27,6 @@ require.config({
 		}
 	},
 	
-	urlArgs: "v=0.7.3&build=fresh-start-fix-20260908",
+	urlArgs: "v=0.7.4&build=detailed-errors-20260908",
 
 });
