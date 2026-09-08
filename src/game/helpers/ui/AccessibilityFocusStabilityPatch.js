@@ -105,20 +105,45 @@ define([
 		return region;
 	};
 
+	H.prototype.getMovementDisabledReason = function (button) {
+		if (!button || !button.closest) return "";
+		let callout = button.closest(".callout-container");
+		let reason = callout ? callout.querySelector(".btn-disabled-reason") : null;
+		return this.norm(reason ? reason.textContent : "");
+	};
+
+	H.prototype.configureDirectionButtonAccessibility = function (button, baseLabel) {
+		if (!button) return null;
+		let disabled = !!button.disabled || button.classList.contains("btn-disabled");
+		let reason = disabled ? this.getMovementDisabledReason(button) : "";
+		let label = baseLabel;
+		if (disabled) {
+			label += ". Cannot move.";
+			if (reason) label += " " + reason + ".";
+			button.setAttribute("aria-disabled", "true");
+		} else {
+			button.removeAttribute("aria-disabled");
+		}
+		if (button.getAttribute("aria-label") !== label) button.setAttribute("aria-label", label);
+		return { button: button, disabled: disabled, reason: reason };
+	};
+
 	H.prototype.configureMovement = function () {
 		let dirs = { nw:"northwest", north:"north", ne:"northeast", west:"west", east:"east", sw:"southwest", south:"south", se:"southeast" };
 		let directionButtons = [];
+		let directionStates = [];
 		for (let k in dirs) {
 			let button = document.getElementById("out-action-move-" + k);
 			let emergencyButton = document.getElementById("out-action-move-" + k + "-grit");
-			if (button) {
-				button.setAttribute("aria-label", "Move " + dirs[k]);
-				directionButtons.push(button);
-			}
-			if (emergencyButton) {
-				emergencyButton.setAttribute("aria-label", "Move " + dirs[k] + " using emergency movement");
-				directionButtons.push(emergencyButton);
-			}
+			let normalState = this.configureDirectionButtonAccessibility(button, "Move " + dirs[k]);
+			let emergencyState = this.configureDirectionButtonAccessibility(emergencyButton, "Move " + dirs[k] + " using emergency movement");
+			if (button) directionButtons.push(button);
+			if (emergencyButton) directionButtons.push(emergencyButton);
+
+			let activeState = null;
+			if (button && this.visible(button)) activeState = normalState;
+			else if (emergencyButton && this.visible(emergencyButton)) activeState = emergencyState;
+			if (activeState) directionStates.push({ name: dirs[k], state: activeState });
 		}
 
 		let compass = document.getElementById("out-container-compass-actions");
@@ -134,11 +159,15 @@ define([
 		let getUp = this.visible(document.getElementById("out-action-get-up"));
 		let movementTable = document.getElementById("table-out-actions-movement");
 		let hasVisibleMovementTable = this.visible(movementTable);
-		let visibleDirectionCount = 0;
-		for (let i = 0; i < directionButtons.length; i++) {
-			if (this.visible(directionButtons[i])) visibleDirectionCount++;
+		let visibleDirectionCount = directionStates.length;
+		let availableDirections = [];
+		let blockedDirections = [];
+		for (let i = 0; i < directionStates.length; i++) {
+			let item = directionStates[i];
+			if (item.state && item.state.disabled) blockedDirections.push(item.name);
+			else availableDirections.push(item.name);
 		}
-		let movementAvailable = hasVisibleMovementTable && visibleDirectionCount > 0;
+		let movementAvailable = hasVisibleMovementTable && availableDirections.length > 0;
 		let buildCamp = document.querySelector("button[action='build_out_camp']");
 		let enterCamp = document.getElementById("out-action-enter");
 		let scout = document.getElementById("out-action-scout");
@@ -148,8 +177,14 @@ define([
 			message = "Movement is not available during the current dialogue or popup. Continue or close it first.";
 		} else if (getUp) {
 			message = "Movement is not available yet. Choose Get up.";
-		} else if (movementAvailable) {
-			message = "Movement is available. Direction buttons follow: north, northeast, east, southeast, south, southwest, west, and northwest.";
+		} else if (hasVisibleMovementTable && visibleDirectionCount > 0) {
+			if (movementAvailable) {
+				message = "Movement is available. Available directions: " + availableDirections.join(", ") + ".";
+			} else {
+				message = "No movement direction is currently available.";
+			}
+			if (blockedDirections.length > 0) message += " Cannot move: " + blockedDirections.join(", ") + ".";
+			message += " Direction buttons follow.";
 		} else if (this.visible(buildCamp)) {
 			message = "Movement directions are not unlocked yet. This is the opening exploration area: build a camp, enter it, then leave camp when ready to explore to unlock direction buttons.";
 		} else if (this.visible(enterCamp)) {
