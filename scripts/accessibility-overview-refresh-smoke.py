@@ -60,11 +60,11 @@ try:
         if (!player || !inventory) return false;
         player.textContent = 'Tổng quan người chơi. Chưa có thông tin trạng thái người chơi.';
         inventory.textContent = 'Tổng quan túi đồ và trại. Chưa có thông tin về túi đồ hoặc trại.';
-        req('game/GlobalSignals').inventoryChangedSignal.dispatch();
+        req('game/GlobalSignals').updateButtonsSignal.dispatch();
         return true;
     """)
     if not dispatched:
-        raise RuntimeError('Could not dispatch inventoryChangedSignal for overview refresh test')
+        raise RuntimeError('Could not dispatch updateButtonsSignal for overview refresh test')
 
     WebDriverWait(driver, 10).until(lambda d: summaries_ready(overview_state(d)))
     after = overview_state(driver)
