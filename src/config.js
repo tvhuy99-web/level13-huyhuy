@@ -27,6 +27,6 @@ require.config({
 		}
 	},
 	
-	urlArgs: "v=0.6.3&build=a11y-temporary-movement-20260908-11",
+	urlArgs: "v=0.6.3&build=a11y-disabled-action-feedback-20260908-12",
 
 });
