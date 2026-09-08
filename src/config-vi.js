@@ -27,6 +27,6 @@ require.config({
 		}
 	},
 	
-	urlArgs: "v=0.7.7&build=overview-refresh-fix-20260908",
+	urlArgs: "v=0.7.8&build=scout-actionable-state-sync-20260909",
 
 });
