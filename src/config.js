@@ -27,6 +27,6 @@ require.config({
 		}
 	},
 	
-	urlArgs: "v=0.6.3&build=a11y-auto-scout-coordinates-20260908-7",
+	urlArgs: "v=0.6.3&build=a11y-auto-press-scout-20260908-8",
 
 });
