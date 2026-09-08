@@ -150,10 +150,9 @@ const autoScoutPath = path.join(helperDir, 'AccessibilityAutoScoutCoordinatesHel
 if (!fs.existsSync(autoScoutPath)) throw new Error('Automatic sector scouting / coordinate helper is missing');
 const autoScout = fs.readFileSync(autoScoutPath, 'utf8');
 for (const autoScoutContract of [
-  'sectorStatus.scouted = true',
-  'GlobalSignals.sectorScoutedSignal.dispatch(sector)',
-  'unlockFeature("evidence")',
-  'unlockFeature("scout")',
+  'autoPressScout',
+  'checkAvailability("scout", false, sector)',
+  'actions.startAction("scout")',
   'accessibility-location-coordinates',
   'Vị trí. Tầng ',
   'data-a11y-summary-key", "location-coordinates',
@@ -161,15 +160,21 @@ for (const autoScoutContract of [
   'formatCoordinate',
   'playerLocationChangedSignal',
   'playerMoveCompletedSignal',
+  'featureUnlockedSignal',
+  'visionChangedSignal',
+  'actionCompletedSignal',
   '#out-action-scout{display:none !important;}'
 ]) {
   if (!autoScout.includes(autoScoutContract)) throw new Error(`Automatic scouting/coordinates contract missing: ${autoScoutContract}`);
 }
-if (autoScout.includes('startAction("scout")') || autoScout.includes('completeAction("scout")')) {
-  throw new Error('Automatic sector scouting must not become a separate player action');
+if (autoScout.includes('sectorStatus.scouted = true') || autoScout.includes('GlobalSignals.sectorScoutedSignal.dispatch(sector)')) {
+  throw new Error('Automatic scouting must not reimplement Scout state changes; it must execute the original action');
+}
+if (autoScout.includes('unlockFeature("evidence")') || autoScout.includes('unlockFeature("scout")')) {
+  throw new Error('Automatic scouting must leave feature unlocks to the original Scout action');
 }
 if (autoScout.includes('setAttribute("role", "status")') || autoScout.includes('setAttribute("aria-live"')) {
   throw new Error('Coordinates must be stable browse text, not a live region that can steal TalkBack attention');
 }
 
-console.log(`Stable accessibility wiring OK: ${helpers.length} helpers, stable TalkBack overviews, action details, automatic scouting, coordinates, and movement guidance present.`);
+console.log(`Stable accessibility wiring OK: ${helpers.length} helpers, stable TalkBack overviews, action details, original-action automatic scouting, coordinates, and movement guidance present.`);
