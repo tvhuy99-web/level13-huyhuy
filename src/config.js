@@ -27,6 +27,6 @@ require.config({
 		}
 	},
 	
-	urlArgs: "v=0.6.3&build=a11y-one-shot-scout-manual-fallback-20260908-9",
+	urlArgs: "v=0.6.3&build=a11y-blocked-directions-20260908-10",
 
 });
