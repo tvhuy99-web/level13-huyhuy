@@ -31,13 +31,15 @@ jobs:
           node --check scripts/accessibility-stable-smoke.js
           node --check scripts/accessibility-overview-refresh-contract.js
           node --check scripts/accessibility-scout-actionable-contract.js
-          python3 -m py_compile scripts/accessibility-master-runtime-smoke.py scripts/accessibility-overview-refresh-smoke.py scripts/accessibility-scout-actionable-smoke.py
+          node --check scripts/accessibility-movement-position-contract.js
+          python3 -m py_compile scripts/accessibility-master-runtime-smoke.py scripts/accessibility-overview-refresh-smoke.py scripts/accessibility-scout-actionable-smoke.py scripts/accessibility-movement-position-smoke.py
 
       - name: Verify accessibility wiring on master
         run: |
           node scripts/accessibility-stable-smoke.js
           node scripts/accessibility-overview-refresh-contract.js
           node scripts/accessibility-scout-actionable-contract.js
+          node scripts/accessibility-movement-position-contract.js
 
       - name: Install browser test dependency
         run: python3 -m pip install --disable-pip-version-check selenium
@@ -53,3 +55,4 @@ jobs:
           python3 scripts/accessibility-master-runtime-smoke.py
           python3 scripts/accessibility-overview-refresh-smoke.py
           python3 scripts/accessibility-scout-actionable-smoke.py
+          python3 scripts/accessibility-movement-position-smoke.py
