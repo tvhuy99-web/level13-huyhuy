@@ -91,5 +91,6 @@ define([], function () {
 		else popup.appendChild(details);
 	};
 
+	new AccessibilityDetailedErrorHelper();
 	return AccessibilityDetailedErrorHelper;
 });
