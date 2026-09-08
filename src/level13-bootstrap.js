@@ -6,8 +6,17 @@ define([
 		'game/helpers/ui/AccessibilityDirectErrorPopupHelper',
 		'game/helpers/ui/AccessibilityMapIconPathFixHelper',
 		'game/helpers/ui/AccessibilityOverviewRefreshPatch',
-		'game/helpers/ui/AccessibilityScoutActionablePatch'
-	], function () {
+		'game/helpers/ui/AccessibilityScoutActionablePatch',
+		'game/helpers/ui/AccessibilityMovementPositionHelper'
+	], function (
+		AccessibilityDetailedErrorHelper,
+		AccessibilityDirectErrorPopupHelper,
+		AccessibilityMapIconPathFixHelper,
+		AccessibilityOverviewRefreshPatch,
+		AccessibilityScoutActionablePatch,
+		AccessibilityMovementPositionHelper
+	) {
+		if (AccessibilityMovementPositionHelper) new AccessibilityMovementPositionHelper();
 		require(['level13-app']);
 	});
 });
