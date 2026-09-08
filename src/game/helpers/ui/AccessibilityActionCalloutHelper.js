@@ -107,6 +107,16 @@ define([], function () {
 		let isImproveAction = button.classList.contains("action-improve") || action.indexOf("improve_") === 0;
 		let isDetailedAction = isBuildAction || isImproveAction;
 
+		let wasDisabledLabel = button.getAttribute("data-a11y-disabled-label") === "1";
+		if (!button.disabled && wasDisabledLabel && !isDetailedAction) {
+			let originalLabel = button.getAttribute("data-a11y-action-original-aria-label");
+			if (originalLabel) button.setAttribute("aria-label", originalLabel);
+			else button.removeAttribute("aria-label");
+			button.removeAttribute("data-a11y-disabled-label");
+			button.removeAttribute("data-a11y-action-original-aria-label");
+			existingLabel = this.normalize(button.getAttribute("aria-label"));
+		}
+
 		let parts = [baseLabel];
 		if (isDetailedAction) {
 			let costText = this.getActionCostText(callout);
@@ -117,6 +127,10 @@ define([], function () {
 		}
 
 		if (button.disabled) {
+			if (!wasDisabledLabel && !isDetailedAction) {
+				button.setAttribute("data-a11y-disabled-label", "1");
+				button.setAttribute("data-a11y-action-original-aria-label", existingLabel);
+			}
 			parts.push("Unavailable");
 			let disabledReason = this.getDisabledReasonText(callout);
 			if (disabledReason) {
@@ -208,7 +222,6 @@ define([], function () {
 		buttonContainer.setAttribute("tabindex", "0");
 		buttonContainer.setAttribute("aria-disabled", "true");
 		buttonContainer.setAttribute("aria-label", proxyLabel);
-		if (calloutID) this.appendAriaReference(buttonContainer, "aria-describedby", calloutID);
 		button.setAttribute("aria-hidden", "true");
 
 		if (buttonContainer.getAttribute("data-a11y-disabled-proxy-bound") === "1") return;
