@@ -1,6 +1,6 @@
 require.config({
 
-	deps: ["game/helpers/ui/AccessibilityDetailedErrorHelper", "level13-bootstrap"],
+	deps: ["level13-bootstrap"],
 
 	waitSeconds: 30,
 
@@ -27,6 +27,6 @@ require.config({
 		}
 	},
 	
-	urlArgs: "v=0.7.5&build=direct-error-details-20260908",
+	urlArgs: "v=0.7.6&build=map-icon-path-fix-20260908",
 
 });

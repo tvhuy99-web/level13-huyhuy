@@ -1,10 +1,11 @@
 import json
+import os
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 
-BASE_URL = 'http://127.0.0.1:8000/'
+BASE_URL = os.environ.get('LEVEL13_BASE_URL', 'http://127.0.0.1:8000/')
 
 
 def make_driver(width, height):
@@ -29,6 +30,16 @@ def snapshot(driver):
             const s = getComputedStyle(p);
             return s.display !== 'none' && s.visibility !== 'hidden';
         }).map(p => (p.textContent || '').replace(/\\s+/g, ' ').trim()).join(' | ');
+        let mapElements = null;
+        try {
+            mapElements = req && req.defined('utils/MapElements') ? req('utils/MapElements') : null;
+        } catch (e) {}
+        const iconEntries = mapElements ? Object.entries(mapElements.icons || {}) : [];
+        const visibleButtons = Array.from(document.querySelectorAll('button')).filter(b => {
+            const s = getComputedStyle(b);
+            const r = b.getBoundingClientRect();
+            return s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0;
+        }).map(b => ((b.getAttribute('aria-label') || b.textContent || '').replace(/\\s+/g, ' ').trim())).filter(Boolean);
         return {
             requirejs: !!req,
             initializer: !!(req && req.defined('game/GameGlobalsInitializer')),
@@ -37,6 +48,7 @@ def snapshot(driver):
             overviewCleanup: !!(req && req.defined('game/helpers/ui/AccessibilityOverviewCleanupPatch')),
             finalAudit: !!(req && req.defined('game/helpers/ui/AccessibilityFinalAuditHelper')),
             detailedErrorReporter: !!(req && req.defined('game/helpers/ui/AccessibilityDetailedErrorHelper')),
+            mapIconPathFix: !!(req && req.defined('game/helpers/ui/AccessibilityMapIconPathFixHelper')),
             detailedError: window.__level13LastDetailedError || null,
             playerText: player ? (player.textContent || '').trim() : '',
             inventoryText: inventory ? (inventory.textContent || '').trim() : '',
@@ -47,6 +59,11 @@ def snapshot(driver):
             loadingDisplay: loading ? getComputedStyle(loading).display : 'missing',
             mainDisplay: main ? getComputedStyle(main).display : 'missing',
             visiblePopupText,
+            visibleButtons,
+            mapIconUrls: iconEntries.slice(0, 8).map(([key, img]) => [key, img && img.src ? img.src : '']),
+            brokenMapIcons: iconEntries.filter(([key, img]) => img && img.complete && img.naturalWidth === 0).map(([key]) => key),
+            loadedMapIcons: iconEntries.filter(([key, img]) => img && img.complete && img.naturalWidth > 0).length,
+            totalMapIcons: iconEntries.length,
             silentTabStops: Array.from(document.querySelectorAll('[tabindex="0"]')).filter(e => {
                 const r = (e.getAttribute('role') || '').toLowerCase();
                 if (e.matches('button,input,select,textarea,a[href]')) return false;
@@ -67,33 +84,31 @@ def is_inventory_overview_ready(text):
     return text.startswith('Inventory and camp overview.') or text.startswith('Tổng quan túi đồ và trại.')
 
 
-def click_intro_continue(driver):
+def click_visible_button(driver, labels):
     return driver.execute_script("""
-        const popups = Array.from(document.querySelectorAll('.popup')).filter(p => {
-            const s = getComputedStyle(p);
-            return s.display !== 'none' && s.visibility !== 'hidden';
+        const labels = arguments[0];
+        const buttons = Array.from(document.querySelectorAll('button')).filter(b => {
+            if (b.disabled) return false;
+            const s = getComputedStyle(b);
+            const r = b.getBoundingClientRect();
+            return s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0;
         });
-        for (const popup of popups) {
-            const text = (popup.textContent || '').replace(/\\s+/g, ' ').trim();
-            if (!text.includes('Bóng tối') && !text.includes('Darkness')) continue;
-            const button = Array.from(popup.querySelectorAll('button')).find(b => {
-                const label = (b.textContent || '').replace(/\\s+/g, ' ').trim();
-                return label === 'Tiếp tục' || label === 'Continue';
-            });
-            if (button) {
-                button.click();
-                return true;
-            }
-        }
-        return false;
-    """)
+        const button = buttons.find(b => {
+            const label = (b.textContent || '').replace(/\\s+/g, ' ').trim();
+            const aria = (b.getAttribute('aria-label') || '').replace(/\\s+/g, ' ').trim();
+            return labels.includes(label) || labels.includes(aria);
+        });
+        if (!button) return false;
+        button.click();
+        return true;
+    """, labels)
 
 
 def browser_errors(driver):
     result = []
     for entry in driver.get_log('browser'):
         msg = entry.get('message', '')
-        if entry.get('level') == 'SEVERE' and ('127.0.0.1:8000' in msg or 'Uncaught' in msg or 'TypeError' in msg or 'ReferenceError' in msg):
+        if entry.get('level') == 'SEVERE' and ('127.0.0.1:8000' in msg or 'Uncaught' in msg or 'TypeError' in msg or 'ReferenceError' in msg or 'InvalidStateError' in msg):
             result.append(msg)
     return result
 
@@ -103,21 +118,30 @@ def has_fatal_popup(state):
     return 'Đã xảy ra lỗi!' in text or "You've found a bug!" in text
 
 
+def assert_no_fatal(driver, phase):
+    state = snapshot(driver)
+    errors = browser_errors(driver)
+    print(f'Accessibility browser state {phase}:', json.dumps(state, ensure_ascii=False, sort_keys=True))
+    if has_fatal_popup(state):
+        detail = json.dumps(state['detailedError'], ensure_ascii=False, sort_keys=True)
+        console = '\n'.join(errors) if errors else '(no severe browser log captured)'
+        raise RuntimeError(f'Fatal error {phase}. Detailed error: {detail}\nBrowser console:\n{console}')
+    if errors:
+        raise RuntimeError(f'Browser console errors {phase}:\n' + '\n'.join(errors))
+    return state
+
+
 def run_case(width, height):
     driver = make_driver(width, height)
     try:
         driver.get(BASE_URL)
         WebDriverWait(driver, 45).until(lambda d: all(snapshot(d)[k] for k in (
-            'requirejs', 'initializer', 'accessibility', 'mobileExperience', 'overviewCleanup', 'finalAudit', 'detailedErrorReporter'
+            'requirejs', 'initializer', 'accessibility', 'mobileExperience', 'overviewCleanup', 'finalAudit', 'detailedErrorReporter', 'mapIconPathFix'
         )))
         WebDriverWait(driver, 45).until(lambda d: snapshot(d)['loadingDisplay'] == 'none' and snapshot(d)['mainDisplay'] != 'none')
         WebDriverWait(driver, 25).until(lambda d: is_player_overview_ready(snapshot(d)['playerText']) and is_inventory_overview_ready(snapshot(d)['inventoryText']))
 
-        state = snapshot(driver)
-        print(f'Accessibility browser state before intro continue {width}x{height}:', json.dumps(state, ensure_ascii=False, sort_keys=True))
-
-        if has_fatal_popup(state):
-            raise RuntimeError('Fresh startup opened the fatal JavaScript error popup before intro continue')
+        state = assert_no_fatal(driver, f'before intro Continue {width}x{height}')
         if state['playerSynthetic'] or state['inventorySynthetic']:
             raise RuntimeError('Read-only TalkBack summaries became synthetic focus stops')
         if not state['headersHidden'] or not state['headersInert']:
@@ -125,24 +149,27 @@ def run_case(width, height):
         if state['silentTabStops'] != 0:
             raise RuntimeError(f"Silent tabindex=0 stops remain: {state['silentTabStops']}")
 
-        WebDriverWait(driver, 20).until(click_intro_continue)
-        WebDriverWait(driver, 15).until(lambda d: 'Bóng tối' not in snapshot(d)['visiblePopupText'] or has_fatal_popup(snapshot(d)))
-        time.sleep(2)
+        WebDriverWait(driver, 20).until(lambda d: click_visible_button(d, ['Tiếp tục', 'Continue']))
+        time.sleep(1)
+        assert_no_fatal(driver, f'after intro Continue {width}x{height}')
 
+        WebDriverWait(driver, 20).until(lambda d: click_visible_button(d, ['Đứng dậy', 'Đứng lên', 'Stand up', 'Get up']))
+        time.sleep(3)
+
+        post_state = assert_no_fatal(driver, f'after intro Stand up {width}x{height}')
+        WebDriverWait(driver, 15).until(lambda d: snapshot(d)['totalMapIcons'] > 0 and snapshot(d)['loadedMapIcons'] == snapshot(d)['totalMapIcons'])
         post_state = snapshot(driver)
-        errors = browser_errors(driver)
-        print(f'Accessibility browser state after intro continue {width}x{height}:', json.dumps(post_state, ensure_ascii=False, sort_keys=True))
-
-        if has_fatal_popup(post_state):
-            detail = json.dumps(post_state['detailedError'], ensure_ascii=False, sort_keys=True)
-            console = '\n'.join(errors) if errors else '(no severe browser log captured)'
-            raise RuntimeError('Fatal error after intro Continue. Detailed error: ' + detail + '\nBrowser console:\n' + console)
-        if errors:
-            raise RuntimeError('Browser console errors after intro Continue:\n' + '\n'.join(errors))
+        if post_state['brokenMapIcons']:
+            raise RuntimeError('Broken map icons after Stand up: ' + ', '.join(post_state['brokenMapIcons']))
+        if '/level13-huyhuy/' in BASE_URL:
+            wrong_prefix = 'http://127.0.0.1:8000/img/map/'
+            wrong_urls = [url for _, url in post_state['mapIconUrls'] if url.startswith(wrong_prefix)]
+            if wrong_urls:
+                raise RuntimeError('Map icons escaped the GitHub Pages subpath: ' + ', '.join(wrong_urls))
     finally:
         driver.quit()
 
 
 run_case(390, 844)
 run_case(980, 844)
-print('Fresh Vietnamese startup, intro Continue, and accessibility compatibility passed in phone and wide viewport modes.')
+print('Fresh Vietnamese startup, Continue, Stand up, map icons, and accessibility compatibility passed in phone and wide viewport modes.')
