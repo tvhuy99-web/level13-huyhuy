@@ -1,0 +1,46 @@
+name: Accessibility checks
+
+on:
+  push:
+    branches: [ accessibility-master-integration, master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check helper syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            echo "Checking $file"
+            node --check "$file"
+          done < <(find src/game/helpers/ui -maxdepth 1 -name 'Accessibility*.js' -print0)
+          node --check src/game/GameGlobalsInitializer.js
+          node --check scripts/accessibility-stable-smoke.js
+
+      - name: Verify accessibility wiring on master
+        run: node scripts/accessibility-stable-smoke.js
+
+      - name: Install browser test dependency
+        run: python3 -m pip install --disable-pip-version-check selenium
+
+      - name: Verify game leaves Loading state in Chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8000 >/tmp/level13-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          python3 scripts/accessibility-runtime-smoke.py
