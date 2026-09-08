@@ -1,6 +1,7 @@
 define([
 	'text/TextLoader',
 	'game/GameGlobals',
+	'game/constants/WorldConstants',
 	'game/GameState',
 	'game/GameFlowLogger',
 	'game/MetaState',
@@ -56,6 +57,7 @@ define([
 ], function (
 	TextLoader,
 	GameGlobals,
+	WorldConstants,
 	GameState,
 	GameFlowLogger,
 	MetaState,
@@ -132,6 +134,22 @@ define([
 			GameGlobals.campBalancingHelper = new CampBalancingHelper();
 			GameGlobals.dialogueHelper = new DialogueHelper(engine);
 			GameGlobals.worldHelper = new WorldHelper();
+
+			// A new game has no saved world template to compare against. WorldHelper 0.7.1
+			// assumes one exists when detecting world changes, which throws on fresh starts.
+			let originalDetectWorldChanges = GameGlobals.worldHelper.detectWorldChanges;
+			GameGlobals.worldHelper.detectWorldChanges = function (worldVO, worldTemplateVO, levels) {
+				if (!worldTemplateVO) {
+					return {
+						changes: [],
+						worldGeneratorVersion: WorldConstants.version,
+						worldVersion: worldVO ? worldVO.version : null,
+						worldTemplateVersion: null,
+					};
+				}
+				return originalDetectWorldChanges.call(this, worldVO, worldTemplateVO, levels);
+			};
+
 			GameGlobals.tribeBalancingHelper = new TribeBalancingHelper();
 			GameGlobals.textLoader = new TextLoader();
 			
