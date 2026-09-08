@@ -17,11 +17,17 @@ define([
 
 		let popupVisible = this.hasVisiblePopup();
 		let originalHasVisiblePopup = this.hasVisiblePopup;
+		let originalIsVisible = this.isVisible;
 		this.hasVisiblePopup = function () { return false; };
+		this.isVisible = function (element) {
+			if (element && element.id === "out-action-get-up") return false;
+			return originalIsVisible.call(this, element);
+		};
 		try {
 			originalRenderPositionWarning.call(this, states);
 		} finally {
 			this.hasVisiblePopup = originalHasVisiblePopup;
+			this.isVisible = originalIsVisible;
 		}
 
 		if (!popupVisible) return;
