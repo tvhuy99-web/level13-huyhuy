@@ -1,4 +1,7 @@
-define([], function () {
+define([
+	'game/GameGlobals',
+	'game/components/common/PositionComponent'
+], function (GameGlobals, PositionComponent) {
 
 	let AccessibilitySectorFocusCompressionHelper = function () {
 		this.refreshTimer = null;
@@ -56,10 +59,13 @@ define([], function () {
 		this.hideFromTalkBack(document.getElementById("accessibility-movement-status"));
 
 		let description = document.getElementById("out-desc");
-		if (!description || !description.parentElement) return;
+		if (!description || !description.parentElement) {
+			window.setTimeout(() => this.scheduleRefresh(), 100);
+			return;
+		}
 
-		let coordinates = document.getElementById("accessibility-location-coordinates");
-		let coordinateText = this.normalize(coordinates ? coordinates.textContent : "");
+		let oldCoordinates = document.getElementById("accessibility-location-coordinates");
+		let coordinateText = this.getCoordinateText();
 		let descriptionText = this.getDescriptionText(description);
 		let summary = this.ensureSummary(description);
 		if (!summary) return;
@@ -70,7 +76,7 @@ define([], function () {
 			if (summary.textContent !== combined) summary.textContent = combined;
 			summary.removeAttribute("aria-hidden");
 			description.setAttribute("aria-hidden", "true");
-			this.hideFromTalkBack(coordinates);
+			this.hideFromTalkBack(oldCoordinates);
 			return;
 		}
 
@@ -78,7 +84,7 @@ define([], function () {
 			if (summary.textContent !== this.lastGoodText) summary.textContent = this.lastGoodText;
 			summary.removeAttribute("aria-hidden");
 			description.setAttribute("aria-hidden", "true");
-			this.hideFromTalkBack(coordinates);
+			this.hideFromTalkBack(oldCoordinates);
 			return;
 		}
 
@@ -86,6 +92,17 @@ define([], function () {
 		// description. This avoids a silent gap during initial game startup.
 		summary.setAttribute("aria-hidden", "true");
 		description.removeAttribute("aria-hidden");
+		window.setTimeout(() => this.scheduleRefresh(), 100);
+	};
+
+	AccessibilitySectorFocusCompressionHelper.prototype.getCoordinateText = function () {
+		let actions = GameGlobals.playerActionFunctions;
+		let nodes = actions && actions.playerLocationNodes;
+		let sector = nodes && nodes.head ? nodes.head.entity : null;
+		if (!sector || !sector.get) return "";
+		let position = sector.get(PositionComponent);
+		if (!position) return "";
+		return "Vị trí. Tầng " + position.level + ". X " + this.formatCoordinate(position.sectorX) + ". Y " + this.formatCoordinate(position.sectorY) + ".";
 	};
 
 	AccessibilitySectorFocusCompressionHelper.prototype.ensureSummary = function (description) {
@@ -128,6 +145,11 @@ define([], function () {
 		if (!element) return;
 		if (element.getAttribute("aria-hidden") !== "true") element.setAttribute("aria-hidden", "true");
 		element.removeAttribute("tabindex");
+	};
+
+	AccessibilitySectorFocusCompressionHelper.prototype.formatCoordinate = function (value) {
+		let number = Number(value) || 0;
+		return number < 0 ? "âm " + Math.abs(number) : String(number);
 	};
 
 	AccessibilitySectorFocusCompressionHelper.prototype.normalize = function (text) {
