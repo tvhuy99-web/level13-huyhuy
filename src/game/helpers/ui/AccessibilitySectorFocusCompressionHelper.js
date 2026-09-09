@@ -73,16 +73,14 @@ define([
 		if (coordinateText && descriptionText) {
 			let combined = this.normalize(coordinateText + " " + descriptionText);
 			this.lastGoodText = combined;
-			if (summary.textContent !== combined) summary.textContent = combined;
-			summary.removeAttribute("aria-hidden");
+			this.exposeSingleFocusSummary(summary, combined);
 			description.setAttribute("aria-hidden", "true");
 			this.hideFromTalkBack(oldCoordinates);
 			return;
 		}
 
 		if (this.lastGoodText) {
-			if (summary.textContent !== this.lastGoodText) summary.textContent = this.lastGoodText;
-			summary.removeAttribute("aria-hidden");
+			this.exposeSingleFocusSummary(summary, this.lastGoodText);
 			description.setAttribute("aria-hidden", "true");
 			this.hideFromTalkBack(oldCoordinates);
 			return;
@@ -90,7 +88,7 @@ define([
 
 		// Before both dynamic sources are ready, do not hide the original sector
 		// description. This avoids a silent gap during initial game startup.
-		summary.setAttribute("aria-hidden", "true");
+		this.hideSingleFocusSummary(summary);
 		description.removeAttribute("aria-hidden");
 		window.setTimeout(() => this.scheduleRefresh(), 100);
 	};
@@ -115,19 +113,37 @@ define([
 	AccessibilitySectorFocusCompressionHelper.prototype.ensureSummary = function (description) {
 		let summary = document.getElementById("accessibility-sector-summary");
 		if (!summary) {
-			summary = document.createElement("p");
+			summary = document.createElement("div");
 			summary.id = "accessibility-sector-summary";
 			summary.className = "hide-from-visual-layout accessibility-compact-summary";
 			summary.setAttribute("data-a11y-summary", "1");
 			summary.setAttribute("data-a11y-summary-key", "sector-overview");
+			summary.setAttribute("data-a11y-single-focus", "1");
 			description.parentElement.insertBefore(summary, description);
 		}
-		summary.removeAttribute("tabindex");
 		summary.removeAttribute("role");
 		summary.removeAttribute("aria-live");
 		summary.removeAttribute("aria-atomic");
-		summary.removeAttribute("aria-label");
 		return summary;
+	};
+
+	AccessibilitySectorFocusCompressionHelper.prototype.exposeSingleFocusSummary = function (summary, text) {
+		if (!summary || !text) return;
+		// Keep this node childless and put the complete spoken string in one
+		// accessible name. A single focusable accessibility object gives TalkBack
+		// one swipe stop instead of several navigable text descendants.
+		if (summary.textContent) summary.textContent = "";
+		if (summary.getAttribute("aria-label") !== text) summary.setAttribute("aria-label", text);
+		summary.setAttribute("tabindex", "0");
+		summary.removeAttribute("aria-hidden");
+	};
+
+	AccessibilitySectorFocusCompressionHelper.prototype.hideSingleFocusSummary = function (summary) {
+		if (!summary) return;
+		summary.setAttribute("aria-hidden", "true");
+		summary.removeAttribute("tabindex");
+		summary.removeAttribute("aria-label");
+		if (summary.textContent) summary.textContent = "";
 	};
 
 	AccessibilitySectorFocusCompressionHelper.prototype.getDescriptionText = function (description) {
