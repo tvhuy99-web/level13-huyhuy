@@ -57,6 +57,10 @@ define([
 		this.hideFromTalkBack(document.getElementById("out-position-indicator"));
 		this.hideFromTalkBack(document.getElementById("out-distance-indicator"));
 		this.hideFromTalkBack(document.getElementById("accessibility-movement-status"));
+		this.hideFromTalkBack(document.getElementById("accessibility-location-coordinates"));
+
+		let oldSummary = document.getElementById("accessibility-sector-summary");
+		if (oldSummary) this.hideFromTalkBack(oldSummary);
 
 		let description = document.getElementById("out-desc");
 		if (!description || !description.parentElement) {
@@ -64,34 +68,24 @@ define([
 			return;
 		}
 
-		let oldCoordinates = document.getElementById("accessibility-location-coordinates");
 		let coordinateText = this.getCoordinateText();
 		let descriptionText = this.getDescriptionText(description);
-		let summary = this.ensureSummary(description);
-		if (!summary) return;
 
 		if (coordinateText && descriptionText) {
 			let combined = this.normalize(coordinateText + " " + descriptionText);
 			this.lastGoodText = combined;
-			if (summary.textContent !== combined) summary.textContent = combined;
-			summary.removeAttribute("aria-hidden");
-			description.setAttribute("aria-hidden", "true");
-			this.hideFromTalkBack(oldCoordinates);
+			this.exposeDescriptionAsSingleFocus(description, combined);
 			return;
 		}
 
 		if (this.lastGoodText) {
-			if (summary.textContent !== this.lastGoodText) summary.textContent = this.lastGoodText;
-			summary.removeAttribute("aria-hidden");
-			description.setAttribute("aria-hidden", "true");
-			this.hideFromTalkBack(oldCoordinates);
+			this.exposeDescriptionAsSingleFocus(description, this.lastGoodText);
 			return;
 		}
 
-		// Before both dynamic sources are ready, do not hide the original sector
-		// description. This avoids a silent gap during initial game startup.
-		summary.setAttribute("aria-hidden", "true");
-		description.removeAttribute("aria-hidden");
+		// Until the game has enough vision/data to build the complete description,
+		// leave the native description readable rather than creating an empty focus.
+		this.restoreNativeDescription(description);
 		window.setTimeout(() => this.scheduleRefresh(), 100);
 	};
 
@@ -100,8 +94,6 @@ define([
 		let playerPositionNodes = actions && actions.playerPositionNodes;
 		let position = playerPositionNodes && playerPositionNodes.head ? playerPositionNodes.head.position : null;
 
-		// Fallback to the current sector entity if the player position node has not
-		// been populated yet. Both sources use the same PositionComponent values.
 		if (!position) {
 			let playerLocationNodes = actions && actions.playerLocationNodes;
 			let sector = playerLocationNodes && playerLocationNodes.head ? playerLocationNodes.head.entity : null;
@@ -112,22 +104,37 @@ define([
 		return "Vị trí. Tầng " + position.level + ". X " + this.formatCoordinate(position.sectorX) + ". Y " + this.formatCoordinate(position.sectorY) + ".";
 	};
 
-	AccessibilitySectorFocusCompressionHelper.prototype.ensureSummary = function (description) {
-		let summary = document.getElementById("accessibility-sector-summary");
-		if (!summary) {
-			summary = document.createElement("p");
-			summary.id = "accessibility-sector-summary";
-			summary.className = "hide-from-visual-layout accessibility-compact-summary";
-			summary.setAttribute("data-a11y-summary", "1");
-			summary.setAttribute("data-a11y-summary-key", "sector-overview");
-			description.parentElement.insertBefore(summary, description);
+	AccessibilitySectorFocusCompressionHelper.prototype.exposeDescriptionAsSingleFocus = function (description, text) {
+		if (!description || !text) return;
+
+		// Bind the complete spoken sector summary to the actual visible description
+		// block. This gives TalkBack one real navigation stop at the same screen
+		// location instead of relying on a separate off-screen summary element.
+		description.removeAttribute("aria-hidden");
+		description.setAttribute("tabindex", "0");
+		description.setAttribute("data-a11y-single-focus", "1");
+		if (description.getAttribute("aria-label") !== text) description.setAttribute("aria-label", text);
+		description.removeAttribute("role");
+		description.removeAttribute("aria-live");
+		description.removeAttribute("aria-atomic");
+
+		// The visible descendants stay on screen but are removed from the
+		// accessibility tree so TalkBack cannot split this block into extra stops.
+		let descendants = description.querySelectorAll("*");
+		for (let i = 0; i < descendants.length; i++) {
+			descendants[i].setAttribute("aria-hidden", "true");
+			descendants[i].removeAttribute("tabindex");
 		}
-		summary.removeAttribute("tabindex");
-		summary.removeAttribute("role");
-		summary.removeAttribute("aria-live");
-		summary.removeAttribute("aria-atomic");
-		summary.removeAttribute("aria-label");
-		return summary;
+	};
+
+	AccessibilitySectorFocusCompressionHelper.prototype.restoreNativeDescription = function (description) {
+		if (!description) return;
+		description.removeAttribute("tabindex");
+		description.removeAttribute("aria-label");
+		description.removeAttribute("data-a11y-single-focus");
+		description.removeAttribute("aria-hidden");
+		let descendants = description.querySelectorAll("[aria-hidden='true']");
+		for (let i = 0; i < descendants.length; i++) descendants[i].removeAttribute("aria-hidden");
 	};
 
 	AccessibilitySectorFocusCompressionHelper.prototype.getDescriptionText = function (description) {

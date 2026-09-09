@@ -27,6 +27,6 @@ require.config({
 		}
 	},
 	
-	urlArgs: "v=0.7.10&build=focus-compression-round2-20260909",
+	urlArgs: "v=0.7.11&build=sector-single-focus-20260909",
 
 });
