@@ -32,7 +32,7 @@ jobs:
           node --check scripts/accessibility-overview-refresh-contract.js
           node --check scripts/accessibility-scout-actionable-contract.js
           node --check scripts/accessibility-movement-position-contract.js
-          python3 -m py_compile scripts/accessibility-master-runtime-smoke.py scripts/accessibility-overview-refresh-smoke.py scripts/accessibility-scout-actionable-smoke.py scripts/accessibility-movement-position-smoke.py
+          python3 -m py_compile scripts/accessibility-master-runtime-smoke.py scripts/accessibility-overview-refresh-smoke.py scripts/accessibility-scout-actionable-smoke.py scripts/accessibility-movement-position-smoke.py scripts/accessibility-focus-compression-smoke.py
 
       - name: Verify accessibility wiring on master
         run: |
@@ -56,3 +56,4 @@ jobs:
           python3 scripts/accessibility-overview-refresh-smoke.py
           python3 scripts/accessibility-scout-actionable-smoke.py
           python3 scripts/accessibility-movement-position-smoke.py
+          python3 scripts/accessibility-focus-compression-smoke.py

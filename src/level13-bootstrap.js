@@ -8,7 +8,9 @@ define([
 		'game/helpers/ui/AccessibilityOverviewRefreshPatch',
 		'game/helpers/ui/AccessibilityScoutActionablePatch',
 		'game/helpers/ui/AccessibilityMovementPositionHelper',
-		'game/helpers/ui/AccessibilityMovementPositionPriorityPatch'
+		'game/helpers/ui/AccessibilityMovementPositionPriorityPatch',
+		'game/helpers/ui/AccessibilityMovementSummaryHiddenPatch',
+		'game/helpers/ui/AccessibilitySectorFocusCompressionHelper'
 	], function (
 		AccessibilityDetailedErrorHelper,
 		AccessibilityDirectErrorPopupHelper,
@@ -16,9 +18,12 @@ define([
 		AccessibilityOverviewRefreshPatch,
 		AccessibilityScoutActionablePatch,
 		AccessibilityMovementPositionHelper,
-		AccessibilityMovementPositionPriorityPatch
+		AccessibilityMovementPositionPriorityPatch,
+		AccessibilityMovementSummaryHiddenPatch,
+		AccessibilitySectorFocusCompressionHelper
 	) {
 		if (AccessibilityMovementPositionHelper) new AccessibilityMovementPositionHelper();
+		if (AccessibilitySectorFocusCompressionHelper) new AccessibilitySectorFocusCompressionHelper();
 		require(['level13-app']);
 	});
 });
