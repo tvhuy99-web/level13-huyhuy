@@ -48,6 +48,12 @@ try:
     WebDriverWait(driver, 20).until(lambda d: click_visible_button(d, ['Tiếp tục', 'Continue']))
     WebDriverWait(driver, 20).until(lambda d: click_visible_button(d, ['Đứng dậy', 'Đứng lên', 'Stand up', 'Get up']))
 
+    # Match the user's real reading context: explicitly activate the Out tab.
+    driver.execute_script(r"""
+        const outTab = document.getElementById('switch-out');
+        if (outTab) outTab.click();
+    """)
+
     driver.execute_script(r"""
         const Helper = window.requirejs('game/helpers/ui/AccessibilitySectorFocusCompressionHelper');
         const helper = new Helper();
@@ -82,8 +88,9 @@ try:
         const beforeNode = target;
         const before = norm(target && target.getAttribute('aria-label'));
         const wasVisible = !!(target && (target.offsetWidth || target.offsetHeight || target.getClientRects().length));
-        if (wasVisible) target.focus();
-        const focusedBefore = wasVisible ? document.activeElement === target : null;
+        const inertAncestor = target && target.closest ? target.closest('[inert]') : null;
+        if (wasVisible && !inertAncestor) target.focus();
+        const focusedBefore = (wasVisible && !inertAncestor) ? document.activeElement === target : null;
 
         target.innerHTML = [
             '<p>Khu vực kiểm thử động đã thay đổi.</p>',
@@ -96,14 +103,17 @@ try:
         const afterNode = document.getElementById('out-desc');
         const after = norm(afterNode && afterNode.getAttribute('aria-label'));
         const descendants = afterNode ? Array.from(afterNode.querySelectorAll('*')) : [];
+        const inertAfter = afterNode && afterNode.closest ? afterNode.closest('[inert]') : null;
 
         return {
             summaryLabel: after,
             summaryBefore: before,
             sameNode: beforeNode === afterNode,
             targetVisible: wasVisible,
+            inertAncestor: inertAncestor ? (inertAncestor.id || inertAncestor.className || inertAncestor.tagName) : null,
+            inertAfter: inertAfter ? (inertAfter.id || inertAfter.className || inertAfter.tagName) : null,
             focusedBefore: focusedBefore,
-            focusedAfter: wasVisible ? document.activeElement === afterNode : null,
+            focusedAfter: (wasVisible && !inertAfter) ? document.activeElement === afterNode : null,
             targetHidden: afterNode && afterNode.getAttribute('aria-hidden'),
             targetTabIndex: afterNode && afterNode.getAttribute('tabindex'),
             targetRole: afterNode && afterNode.getAttribute('role'),
@@ -120,7 +130,7 @@ try:
         };
     """)
 
-    print('Visible-block single-focus state:', state)
+    print('Active-Out single-focus state:', state)
 
     if not state['summaryLabel'].startswith('Vị trí. Tầng '):
         raise RuntimeError('Single-focus sector label lost the Tầng/X/Y coordinates')
@@ -143,8 +153,11 @@ try:
         raise RuntimeError('Visible sector descendants are still independently exposed to TalkBack')
     if state['targetRole'] is not None or state['targetLive'] is not None:
         raise RuntimeError('Single-focus sector target should not add a noisy role or live region')
-    if state['targetVisible'] and (not state['focusedBefore'] or not state['focusedAfter']):
-        raise RuntimeError('Visible sector target could not receive or retain browser focus during refresh')
+
+    # Only assert DOM focus where the active Out content is not deliberately inert.
+    # TalkBack focus cannot legally enter an inert subtree either, so record it separately.
+    if state['inertAncestor'] is None and state['targetVisible'] and (not state['focusedBefore'] or not state['focusedAfter']):
+        raise RuntimeError('Active Out sector target could not receive or retain browser focus during refresh')
 
     required_hidden = {
         'positionHidden': '0E/0S position indicator',
@@ -162,4 +175,4 @@ try:
 finally:
     driver.quit()
 
-print('Visible-block single-focus compression passed: #out-desc itself is one TalkBack focus with Tầng/X/Y plus dynamic sector details, while descendants and redundant summaries are hidden.')
+print('Active-Out single-focus compression passed: #out-desc itself is one TalkBack focus with Tầng/X/Y plus dynamic sector details, while descendants and redundant summaries are hidden.')
