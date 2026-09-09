@@ -48,22 +48,58 @@ try:
     WebDriverWait(driver, 20).until(lambda d: click_visible_button(d, ['Tiếp tục', 'Continue']))
     WebDriverWait(driver, 20).until(lambda d: click_visible_button(d, ['Đứng dậy', 'Đứng lên', 'Stand up', 'Get up']))
 
-    WebDriverWait(driver, 30).until(lambda d: d.execute_script(r"""
+    # Fresh-start vision is intentionally too low to expose the full sector prose.
+    # Put dynamic text in the real #out-desc source, then refresh the real helper.
+    # This tests the focus-compression contract without hard-coding gameplay state.
+    first_state = driver.execute_script(r"""
+        const Helper = window.requirejs('game/helpers/ui/AccessibilitySectorFocusCompressionHelper');
+        const helper = new Helper();
+        if (helper.observer) helper.observer.disconnect();
+        const desc = document.getElementById('out-desc');
+        desc.innerHTML = [
+            '<p>Khu vực kiểm thử động.</p>',
+            '<p>Có vẻ xung quanh không có gì thù địch.</p>',
+            '<p>Đã lục lọi: 18%</p>',
+            '<p>Tài nguyên tìm thấy: thức ăn phổ biến, kim loại dồi dào</p>'
+        ].join('');
+        helper.refresh();
+        const summary = document.getElementById('accessibility-sector-summary');
+        return {
+            summary: summary ? summary.textContent : '',
+            helper: helper
+        };
+    """)
+
+    WebDriverWait(driver, 10).until(lambda d: d.execute_script(r"""
         const s = document.getElementById('accessibility-sector-summary');
         return !!(s && s.getAttribute('aria-hidden') !== 'true' && /Vị trí\.\s*Tầng\s+\d+\.\s*X\s+/i.test(s.textContent || ''));
     """))
 
     state = driver.execute_script(r"""
         function norm(v) { return String(v || '').replace(/\s+/g, ' ').trim(); }
+        const Helper = window.requirejs('game/helpers/ui/AccessibilitySectorFocusCompressionHelper');
+        const helper = new Helper();
+        if (helper.observer) helper.observer.disconnect();
         const summary = document.getElementById('accessibility-sector-summary');
         const coords = document.getElementById('accessibility-location-coordinates');
         const desc = document.getElementById('out-desc');
         const position = document.getElementById('out-position-indicator');
         const distance = document.getElementById('out-distance-indicator');
         const movement = document.getElementById('accessibility-movement-status');
+
+        const before = norm(summary && summary.textContent);
+        desc.innerHTML = [
+            '<p>Khu vực kiểm thử động đã thay đổi.</p>',
+            '<p>Có dấu hiệu nguy hiểm mới.</p>',
+            '<p>Đã lục lọi: 37%</p>',
+            '<p>Tài nguyên tìm thấy: nước hiếm, kim loại phổ biến</p>'
+        ].join('');
+        helper.refresh();
+        const after = norm(summary && summary.textContent);
+
         return {
-            summaryText: norm(summary && summary.textContent),
-            coordinateText: norm(coords && coords.textContent),
+            summaryText: after,
+            summaryBefore: before,
             descriptionText: norm(desc && (desc.innerText || desc.textContent)),
             summaryHidden: summary && summary.getAttribute('aria-hidden'),
             summaryTabIndex: summary && summary.getAttribute('tabindex'),
@@ -84,13 +120,12 @@ try:
         raise RuntimeError('Combined sector summary lost the Tầng/X/Y coordinates')
     if '. X ' not in state['summaryText'] or '. Y ' not in state['summaryText']:
         raise RuntimeError('Combined sector summary does not contain both X and Y coordinates')
-    if not state['descriptionText']:
-        raise RuntimeError('Dynamic sector description is empty in focus compression test')
-
-    description_words = [w for w in state['descriptionText'].split(' ') if len(w) >= 5][:6]
-    missing = [w for w in description_words if w not in state['summaryText']]
-    if missing:
-        raise RuntimeError('Combined sector summary is missing dynamic sector description content: ' + ', '.join(missing))
+    if 'Đã lục lọi: 37%' not in state['summaryText']:
+        raise RuntimeError('Combined sector summary did not update the dynamic scavenging percentage')
+    if 'nước hiếm' not in state['summaryText'] or 'kim loại phổ biến' not in state['summaryText']:
+        raise RuntimeError('Combined sector summary did not update dynamic found resources')
+    if state['summaryBefore'] == state['summaryText'] or '18%' in state['summaryText']:
+        raise RuntimeError('Combined sector summary kept stale dynamic sector text')
 
     required_hidden = {
         'descriptionHidden': 'original sector description',
