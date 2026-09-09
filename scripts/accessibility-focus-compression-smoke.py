@@ -50,7 +50,7 @@ try:
 
     WebDriverWait(driver, 30).until(lambda d: d.execute_script(r"""
         const s = document.getElementById('accessibility-sector-summary');
-        return !!(s && s.getAttribute('aria-hidden') !== 'true' && /Vị trí\.\s*Tầng/i.test(s.textContent || ''));
+        return !!(s && s.getAttribute('aria-hidden') !== 'true' && /Vị trí\.\s*Tầng\s+\d+\.\s*X\s+/i.test(s.textContent || ''));
     """))
 
     state = driver.execute_script(r"""
@@ -69,6 +69,7 @@ try:
             summaryTabIndex: summary && summary.getAttribute('tabindex'),
             summaryRole: summary && summary.getAttribute('role'),
             summaryLive: summary && summary.getAttribute('aria-live'),
+            coordinatesPresent: !!coords,
             coordinatesHidden: coords && coords.getAttribute('aria-hidden'),
             descriptionHidden: desc && desc.getAttribute('aria-hidden'),
             positionHidden: position && position.getAttribute('aria-hidden'),
@@ -79,10 +80,10 @@ try:
 
     print('Focus compression state:', state)
 
-    if not state['coordinateText'] or not state['coordinateText'].startswith('Vị trí.'):
-        raise RuntimeError('Coordinate source missing or no longer uses the compact Tầng/X/Y wording')
-    if state['coordinateText'] not in state['summaryText']:
+    if not state['summaryText'].startswith('Vị trí. Tầng '):
         raise RuntimeError('Combined sector summary lost the Tầng/X/Y coordinates')
+    if '. X ' not in state['summaryText'] or '. Y ' not in state['summaryText']:
+        raise RuntimeError('Combined sector summary does not contain both X and Y coordinates')
     if not state['descriptionText']:
         raise RuntimeError('Dynamic sector description is empty in focus compression test')
 
@@ -92,7 +93,6 @@ try:
         raise RuntimeError('Combined sector summary is missing dynamic sector description content: ' + ', '.join(missing))
 
     required_hidden = {
-        'coordinatesHidden': 'old coordinate summary',
         'descriptionHidden': 'original sector description',
         'positionHidden': '0E/0S position indicator',
         'distanceHidden': 'distance-to-camp indicator',
@@ -101,6 +101,9 @@ try:
     for key, label in required_hidden.items():
         if state[key] != 'true':
             raise RuntimeError(label + ' is still exposed to TalkBack: ' + repr(state[key]))
+
+    if state['coordinatesPresent'] and state['coordinatesHidden'] != 'true':
+        raise RuntimeError('Legacy coordinate summary is still exposed separately to TalkBack')
 
     if state['summaryHidden'] == 'true':
         raise RuntimeError('Combined sector summary is hidden from TalkBack')
