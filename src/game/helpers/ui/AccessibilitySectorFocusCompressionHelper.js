@@ -97,10 +97,17 @@ define([
 
 	AccessibilitySectorFocusCompressionHelper.prototype.getCoordinateText = function () {
 		let actions = GameGlobals.playerActionFunctions;
-		let nodes = actions && actions.playerLocationNodes;
-		let sector = nodes && nodes.head ? nodes.head.entity : null;
-		if (!sector || !sector.get) return "";
-		let position = sector.get(PositionComponent);
+		let playerPositionNodes = actions && actions.playerPositionNodes;
+		let position = playerPositionNodes && playerPositionNodes.head ? playerPositionNodes.head.position : null;
+
+		// Fallback to the current sector entity if the player position node has not
+		// been populated yet. Both sources use the same PositionComponent values.
+		if (!position) {
+			let playerLocationNodes = actions && actions.playerLocationNodes;
+			let sector = playerLocationNodes && playerLocationNodes.head ? playerLocationNodes.head.entity : null;
+			position = sector && sector.get ? sector.get(PositionComponent) : null;
+		}
+
 		if (!position) return "";
 		return "Vị trí. Tầng " + position.level + ". X " + this.formatCoordinate(position.sectorX) + ". Y " + this.formatCoordinate(position.sectorY) + ".";
 	};
