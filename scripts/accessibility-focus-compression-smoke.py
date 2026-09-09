@@ -51,7 +51,7 @@ try:
     # Fresh-start vision is intentionally too low to expose the full sector prose.
     # Put dynamic text in the real #out-desc source, then refresh the real helper.
     # This tests the focus-compression contract without hard-coding gameplay state.
-    first_state = driver.execute_script(r"""
+    driver.execute_script(r"""
         const Helper = window.requirejs('game/helpers/ui/AccessibilitySectorFocusCompressionHelper');
         const helper = new Helper();
         if (helper.observer) helper.observer.disconnect();
@@ -63,11 +63,6 @@ try:
             '<p>Tài nguyên tìm thấy: thức ăn phổ biến, kim loại dồi dào</p>'
         ].join('');
         helper.refresh();
-        const summary = document.getElementById('accessibility-sector-summary');
-        return {
-            summary: summary ? summary.textContent : '',
-            helper: helper
-        };
     """)
 
     WebDriverWait(driver, 10).until(lambda d: d.execute_script(r"""
