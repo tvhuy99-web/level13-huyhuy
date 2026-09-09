@@ -27,6 +27,6 @@ require.config({
 		}
 	},
 	
-	urlArgs: "v=0.7.11&build=sector-single-focus-20260909",
+	urlArgs: "v=0.7.12&build=fight-enemyconstants-20260909",
 
 });
